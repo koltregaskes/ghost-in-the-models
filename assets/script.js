@@ -1,17 +1,21 @@
 /**
- * SYNTHETIC THOUGHTS - Interactive JavaScript
- * Designed by Claude, Gemini, and Codex
+ * SYNTHETIC THOUGHTS — Interactive JavaScript
+ * Premium dark theme with cinematic scroll animations
  *
  * Features:
- * - GSAP ScrollTrigger animations
+ * - GSAP ScrollTrigger with staggered reveals
+ * - Cinematic hero entrance
+ * - Hero stage boot sequence
  * - Reading progress bar
  * - Header scroll effect
- * - Parallax effects
- * - Staggered reveal animations
- * - Smooth scroll behavior
+ * - Parallax depth layers
+ * - Cursor glow (desktop)
+ * - Card spotlight tracking
+ * - Magnetic micro-interactions
+ * - Konami easter egg
  */
 
-(function() {
+(function () {
     'use strict';
 
     // ========================================
@@ -19,50 +23,35 @@
     // ========================================
 
     function initReadingProgress() {
-        // Create progress bar element
-        const progressBar = document.createElement('div');
-        progressBar.className = 'reading-progress';
-        progressBar.setAttribute('aria-hidden', 'true');
-        document.body.prepend(progressBar);
+        const bar = document.createElement('div');
+        bar.className = 'reading-progress';
+        bar.setAttribute('aria-hidden', 'true');
+        document.body.prepend(bar);
 
-        // Update on scroll
-        function updateProgress() {
+        function update() {
             const scrollTop = window.scrollY;
             const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-            progressBar.style.width = `${Math.min(progress, 100)}%`;
+            bar.style.width = docHeight > 0 ? `${Math.min((scrollTop / docHeight) * 100, 100)}%` : '0%';
         }
 
-        window.addEventListener('scroll', updateProgress, { passive: true });
-        updateProgress(); // Initial call
+        window.addEventListener('scroll', update, { passive: true });
+        update();
     }
 
     // ========================================
-    // HEADER SCROLL EFFECT
+    // HEADER SCROLL
     // ========================================
 
     function initHeaderScroll() {
         const header = document.querySelector('.site-header');
         if (!header) return;
 
-        let lastScroll = 0;
-        const scrollThreshold = 50;
-
         function handleScroll() {
-            const currentScroll = window.scrollY;
-
-            // Add/remove scrolled class
-            if (currentScroll > scrollThreshold) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-
-            lastScroll = currentScroll;
+            header.classList.toggle('scrolled', window.scrollY > 40);
         }
 
         window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll(); // Initial call
+        handleScroll();
     }
 
     // ========================================
@@ -70,225 +59,48 @@
     // ========================================
 
     function initGSAPAnimations() {
-        // Check if GSAP is available
         if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-            console.log('GSAP not loaded, falling back to CSS animations');
             initFallbackAnimations();
             return;
         }
 
-        // Register ScrollTrigger plugin
         gsap.registerPlugin(ScrollTrigger);
 
-        // Hero section animation
+        // --- Hero entrance ---
         const hero = document.querySelector('.hero');
         if (hero) {
-            gsap.from(hero, {
-                opacity: 0,
-                y: 50,
-                duration: 1,
-                ease: 'power3.out'
-            });
+            const heroCopy = hero.querySelector('.hero-copy');
+            const heroVisual = hero.querySelector('.hero-visual');
 
-            // Hero title with split effect
-            const heroTitle = hero.querySelector('h1');
-            if (heroTitle) {
-                gsap.from(heroTitle, {
+            if (heroCopy) {
+                const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+                tl.from(heroCopy.querySelector('.section-title'), {
+                    opacity: 0, y: 20, duration: 0.6
+                })
+                .from(heroCopy.querySelector('h1'), {
+                    opacity: 0, y: 40, duration: 0.8
+                }, '-=0.3')
+                .from(heroCopy.querySelectorAll('p:not(.section-title)'), {
+                    opacity: 0, y: 20, duration: 0.6
+                }, '-=0.4')
+                .from(heroCopy.querySelector('.hero-actions'), {
+                    opacity: 0, y: 20, duration: 0.6
+                }, '-=0.3');
+            }
+
+            if (heroVisual) {
+                gsap.from(heroVisual, {
                     opacity: 0,
+                    scale: 0.95,
                     y: 30,
-                    duration: 0.8,
-                    delay: 0.2,
-                    ease: 'power2.out'
+                    duration: 1,
+                    delay: 0.3,
+                    ease: 'power3.out'
                 });
             }
 
-            // Tagline animation
-            const tagline = hero.querySelector('.tagline');
-            if (tagline) {
-                gsap.from(tagline, {
-                    opacity: 0,
-                    y: 20,
-                    duration: 0.8,
-                    delay: 0.4,
-                    ease: 'power2.out'
-                });
-            }
-        }
-
-        // Post cards - staggered reveal on scroll (don't reverse on scroll back)
-        const postCards = document.querySelectorAll('.post-card');
-        postCards.forEach((card, index) => {
-            gsap.from(card, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 95%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 40,
-                scale: 0.98,
-                duration: 0.6,
-                delay: index * 0.1,
-                ease: 'power2.out'
-            });
-        });
-
-        // Author cards - staggered reveal
-        const authorCards = document.querySelectorAll('.author-card');
-        authorCards.forEach((card, index) => {
-            gsap.from(card, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 85%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 40,
-                x: index % 2 === 0 ? -30 : 30,
-                rotation: index % 2 === 0 ? -5 : 5,
-                duration: 0.6,
-                delay: index * 0.1,
-                ease: 'back.out(1.7)'
-            });
-        });
-
-        // About sections
-        const aboutSections = document.querySelectorAll('.about-section');
-        aboutSections.forEach((section, index) => {
-            gsap.from(section, {
-                scrollTrigger: {
-                    trigger: section,
-                    start: 'top 80%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 50,
-                duration: 0.8,
-                delay: index * 0.1,
-                ease: 'power2.out'
-            });
-        });
-
-        // Author profiles on About page
-        const authorProfiles = document.querySelectorAll('.author-profile');
-        authorProfiles.forEach((profile, index) => {
-            gsap.from(profile, {
-                scrollTrigger: {
-                    trigger: profile,
-                    start: 'top 80%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                x: -50,
-                duration: 0.7,
-                delay: index * 0.15,
-                ease: 'power2.out'
-            });
-        });
-
-        // FAQ items
-        const faqItems = document.querySelectorAll('.faq-item');
-        faqItems.forEach((item, index) => {
-            gsap.from(item, {
-                scrollTrigger: {
-                    trigger: item,
-                    start: 'top 85%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 30,
-                duration: 0.5,
-                delay: index * 0.1,
-                ease: 'power2.out'
-            });
-        });
-
-        // Step items (How it works)
-        const steps = document.querySelectorAll('.step');
-        steps.forEach((step, index) => {
-            gsap.from(step, {
-                scrollTrigger: {
-                    trigger: step,
-                    start: 'top 85%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                x: index % 2 === 0 ? -40 : 40,
-                duration: 0.6,
-                delay: index * 0.1,
-                ease: 'power2.out'
-            });
-        });
-
-        // Archive items
-        const archiveItems = document.querySelectorAll('.archive-item');
-        archiveItems.forEach((item, index) => {
-            gsap.from(item, {
-                scrollTrigger: {
-                    trigger: item,
-                    start: 'top 90%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                x: -30,
-                duration: 0.4,
-                delay: index * 0.08,
-                ease: 'power2.out'
-            });
-        });
-
-        // Stat cards
-        const statCards = document.querySelectorAll('.stat-card');
-        statCards.forEach((card, index) => {
-            gsap.from(card, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 85%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 30,
-                scale: 0.9,
-                duration: 0.5,
-                delay: index * 0.1,
-                ease: 'back.out(1.5)'
-            });
-        });
-
-        // Post body paragraphs - subtle reveal
-        const postParagraphs = document.querySelectorAll('.post-body p, .post-body h2, .post-body ul');
-        postParagraphs.forEach((p, index) => {
-            gsap.from(p, {
-                scrollTrigger: {
-                    trigger: p,
-                    start: 'top 90%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 20,
-                duration: 0.5,
-                ease: 'power2.out'
-            });
-        });
-
-        // Footer animation
-        const footer = document.querySelector('.site-footer');
-        if (footer) {
-            gsap.from(footer, {
-                scrollTrigger: {
-                    trigger: footer,
-                    start: 'top 95%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 30,
-                duration: 0.6,
-                ease: 'power2.out'
-            });
-        }
-
-        // Parallax effect on hero (subtle - NO opacity fade)
-        if (hero) {
+            // Parallax on scroll (subtle vertical shift, no opacity fade)
             gsap.to(hero, {
                 scrollTrigger: {
                     trigger: hero,
@@ -296,232 +108,197 @@
                     end: 'bottom top',
                     scrub: true
                 },
-                y: 50,
+                y: 60,
                 ease: 'none'
             });
         }
 
-        console.log('🚀 GSAP ScrollTrigger animations initialized');
+        // --- Section titles ---
+        document.querySelectorAll('.section-title').forEach(title => {
+            if (hero && hero.contains(title)) return; // skip hero title
+            gsap.from(title, {
+                scrollTrigger: { trigger: title, start: 'top 90%', toggleActions: 'play none none none' },
+                opacity: 0, x: -20, duration: 0.5, ease: 'power2.out'
+            });
+        });
+
+        // --- Post cards — staggered reveal ---
+        const postCards = document.querySelectorAll('.post-card');
+        postCards.forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: { trigger: card, start: 'top 92%', toggleActions: 'play none none none' },
+                opacity: 0,
+                y: 50,
+                scale: 0.97,
+                duration: 0.7,
+                delay: i * 0.08,
+                ease: 'power3.out'
+            });
+        });
+
+        // --- Author cards ---
+        document.querySelectorAll('.author-card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' },
+                opacity: 0,
+                y: 40,
+                x: i % 2 === 0 ? -20 : 20,
+                rotation: i % 2 === 0 ? -3 : 3,
+                duration: 0.65,
+                delay: i * 0.1,
+                ease: 'back.out(1.4)'
+            });
+        });
+
+        // --- About sections ---
+        document.querySelectorAll('.about-section').forEach((section, i) => {
+            gsap.from(section, {
+                scrollTrigger: { trigger: section, start: 'top 85%', toggleActions: 'play none none none' },
+                opacity: 0, y: 40, duration: 0.7, delay: i * 0.08, ease: 'power2.out'
+            });
+        });
+
+        // --- Author profiles ---
+        document.querySelectorAll('.author-profile').forEach((profile, i) => {
+            gsap.from(profile, {
+                scrollTrigger: { trigger: profile, start: 'top 85%', toggleActions: 'play none none none' },
+                opacity: 0, x: -40, duration: 0.6, delay: i * 0.12, ease: 'power2.out'
+            });
+        });
+
+        // --- FAQ items ---
+        document.querySelectorAll('.faq-item').forEach((item, i) => {
+            gsap.from(item, {
+                scrollTrigger: { trigger: item, start: 'top 88%', toggleActions: 'play none none none' },
+                opacity: 0, y: 25, duration: 0.5, delay: i * 0.08, ease: 'power2.out'
+            });
+        });
+
+        // --- Steps ---
+        document.querySelectorAll('.step').forEach((step, i) => {
+            gsap.from(step, {
+                scrollTrigger: { trigger: step, start: 'top 88%', toggleActions: 'play none none none' },
+                opacity: 0, x: -30, duration: 0.5, delay: i * 0.08, ease: 'power2.out'
+            });
+        });
+
+        // --- Archive items ---
+        document.querySelectorAll('.archive-item').forEach((item, i) => {
+            gsap.from(item, {
+                scrollTrigger: { trigger: item, start: 'top 92%', toggleActions: 'play none none none' },
+                opacity: 0, x: -25, duration: 0.4, delay: i * 0.06, ease: 'power2.out'
+            });
+        });
+
+        // --- Stat cards ---
+        document.querySelectorAll('.stat-card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' },
+                opacity: 0, y: 30, scale: 0.92, duration: 0.5, delay: i * 0.1, ease: 'back.out(1.3)'
+            });
+        });
+
+        // --- Post body elements (article pages) ---
+        document.querySelectorAll('.post-body p, .post-body h2, .post-body ul, .post-body blockquote').forEach(el => {
+            gsap.from(el, {
+                scrollTrigger: { trigger: el, start: 'top 92%', toggleActions: 'play none none none' },
+                opacity: 0, y: 18, duration: 0.45, ease: 'power2.out'
+            });
+        });
+
+        // --- Footer ---
+        const footer = document.querySelector('.site-footer');
+        if (footer) {
+            gsap.from(footer, {
+                scrollTrigger: { trigger: footer, start: 'top 95%', toggleActions: 'play none none none' },
+                opacity: 0, y: 25, duration: 0.6, ease: 'power2.out'
+            });
+        }
     }
 
     // ========================================
-    // FALLBACK ANIMATIONS (NO GSAP)
+    // FALLBACK (no GSAP)
     // ========================================
 
     function initFallbackAnimations() {
-        // Add reveal class to elements we want to animate
-        const revealElements = document.querySelectorAll(
+        const els = document.querySelectorAll(
             '.post-card, .author-card, .about-section, .faq-item, .step'
         );
-
-        revealElements.forEach((el, index) => {
+        els.forEach((el, i) => {
             el.classList.add('reveal');
-            el.style.transitionDelay = `${index * 0.1}s`;
+            el.style.transitionDelay = `${i * 0.08}s`;
         });
 
-        // Intersection Observer for reveal
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px 0px -50px 0px',
-            threshold: 0.1
-        };
-
-        const observer = new IntersectionObserver((entries) => {
+        const observer = new IntersectionObserver(entries => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('active');
                     observer.unobserve(entry.target);
                 }
             });
-        }, observerOptions);
+        }, { rootMargin: '0px 0px -40px 0px', threshold: 0.1 });
 
-        revealElements.forEach(el => observer.observe(el));
+        els.forEach(el => observer.observe(el));
     }
 
     // ========================================
-    // SMOOTH ANCHOR SCROLLING
-    // ========================================
-
-    function initSmoothScroll() {
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                const targetId = this.getAttribute('href');
-                if (targetId === '#') return;
-
-                const targetEl = document.querySelector(targetId);
-                if (targetEl) {
-                    e.preventDefault();
-                    targetEl.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    }
-
-    // ========================================
-    // CURSOR GLOW EFFECT (Subtle)
-    // ========================================
-
-    function initCursorGlow() {
-        // Only on non-touch devices
-        if ('ontouchstart' in window) return;
-
-        const glow = document.createElement('div');
-        glow.className = 'cursor-glow';
-        glow.style.cssText = `
-            position: fixed;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: -1;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-        `;
-        document.body.appendChild(glow);
-
-        // Use quickTo for high performance
-        const xTo = gsap.quickTo(glow, "x", { duration: 0.4, ease: "power3" });
-        const yTo = gsap.quickTo(glow, "y", { duration: 0.4, ease: "power3" });
-
-        window.addEventListener('mousemove', (e) => {
-            xTo(e.clientX);
-            yTo(e.clientY);
-            
-            if (glow.style.opacity === '0') {
-                gsap.to(glow, { opacity: 1, duration: 0.3 });
-            }
-        });
-
-        document.documentElement.addEventListener('mouseleave', () => {
-            gsap.to(glow, { opacity: 0, duration: 0.3 });
-        });
-    }
-
-    // ========================================
-    // MAGNETIC BUTTONS (Premium interaction)
-    // ========================================
-
-    function initMagneticButtons() {
-        // Only on non-touch devices
-        if ('ontouchstart' in window) return;
-
-        const magneticElements = document.querySelectorAll('.read-more, .nav-links a, .author-badge');
-
-        magneticElements.forEach(el => {
-            const xTo = gsap.quickTo(el, "x", { duration: 0.5, ease: "elastic.out(1, 0.4)" });
-            const yTo = gsap.quickTo(el, "y", { duration: 0.5, ease: "elastic.out(1, 0.4)" });
-
-            el.addEventListener('mousemove', (e) => {
-                const rect = el.getBoundingClientRect();
-                const x = e.clientX - rect.left - rect.width / 2;
-                const y = e.clientY - rect.top - rect.height / 2;
-                
-                xTo(x * 0.3);
-                yTo(y * 0.3);
-            });
-
-            el.addEventListener('mouseleave', () => {
-                xTo(0);
-                yTo(0);
-            });
-        });
-    }
-
-// ========================================
-    // HERO STAGE SEQUENCE (Cinematic)
+    // HERO STAGE BOOT SEQUENCE
     // ========================================
 
     function initHeroStageAnimation() {
         const stage = document.querySelector('.hero-stage');
         if (!stage) return;
-        
+
         const title = stage.querySelector('.stage-title');
         const pulses = stage.querySelectorAll('.stage-loader span');
-        
         if (!title || !pulses.length) return;
 
-        // Use GSAP Timeline for precise sequencing
+        if (typeof gsap === 'undefined') {
+            setTimeout(() => stage.classList.add('complete'), 1200);
+            return;
+        }
+
         const tl = gsap.timeline({
             defaults: { ease: 'power2.inOut' },
-            onComplete: () => {
-                stage.classList.add('complete');
-            }
+            onComplete: () => stage.classList.add('complete')
         });
 
-        // Initial state
         gsap.set(pulses, { scaleY: 0.3, opacity: 0.5 });
-        
-        // Sequence: "Neural pulse ignition" (Default text) -> Pulse
-        tl.to(pulses, { 
-            scaleY: 1, 
-            opacity: 1, 
-            duration: 0.4, 
-            stagger: 0.1 
-        })
-        .to(pulses, { 
-            scaleY: 0.3, 
-            opacity: 0.5, 
-            duration: 0.4, 
-            stagger: 0.1 
-        })
 
-        // Sequence: "Signal alignment"
-        .to(title, { 
-            opacity: 0, 
-            y: -10, 
-            duration: 0.3, 
-            onComplete: () => title.textContent = "Signal alignment" 
-        }, "+=0.1")
-        .to(title, { 
-            opacity: 1, 
-            y: 0, 
-            duration: 0.3 
-        })
-        .to(pulses, { 
-            scaleY: 0.8, 
-            backgroundColor: "#64ffda", // Teal pulse
-            duration: 0.3, 
-            stagger: 0.05 
-        }, "<")
+        // Phase 1: Neural pulse ignition
+        tl.to(pulses, { scaleY: 1, opacity: 1, duration: 0.35, stagger: 0.08 })
+          .to(pulses, { scaleY: 0.3, opacity: 0.5, duration: 0.35, stagger: 0.08 })
 
-        // Sequence: "Intent ready"
-        .to(title, { 
-            opacity: 0, 
-            y: -10, 
-            duration: 0.3,
-            delay: 0.6,
-            onComplete: () => title.textContent = "Intent ready" 
-        })
-        .to(title, { 
-            opacity: 1, 
-            y: 0, 
-            duration: 0.3 
-        })
-        .to(pulses, { 
-            scaleY: 1.2, 
-            backgroundColor: "#ffffff", // White burst
-            boxShadow: "0 0 15px rgba(255,255,255,0.6)",
-            duration: 0.4, 
-            stagger: 0,
-            ease: "power4.out"
-        }, "<");
+          // Phase 2: Signal alignment
+          .to(title, { opacity: 0, y: -8, duration: 0.25, onComplete: () => title.textContent = 'Signal alignment' }, '+=0.05')
+          .to(title, { opacity: 1, y: 0, duration: 0.25 })
+          .to(pulses, { scaleY: 0.8, backgroundColor: '#55efc4', duration: 0.25, stagger: 0.04 }, '<')
+
+          // Phase 3: Intent ready
+          .to(title, { opacity: 0, y: -8, duration: 0.25, delay: 0.5, onComplete: () => title.textContent = 'Intent ready' })
+          .to(title, { opacity: 1, y: 0, duration: 0.25 })
+          .to(pulses, {
+              scaleY: 1.3,
+              backgroundColor: '#ffffff',
+              boxShadow: '0 0 12px rgba(255,255,255,0.5)',
+              duration: 0.35,
+              stagger: 0,
+              ease: 'power4.out'
+          }, '<');
     }
 
     // ========================================
-    // PARALLAX DEPTH (Shapes)
+    // PARALLAX SHAPES
     // ========================================
 
     function initParallax() {
-        const shapes = [
-            { selector: '.shape-one', speed: -100 },
-            { selector: '.shape-two', speed: -200 },
-            { selector: '.shape-three', speed: -50 }
-        ];
+        if (typeof gsap === 'undefined') return;
 
-        shapes.forEach(item => {
+        [
+            { selector: '.shape-one', speed: -80 },
+            { selector: '.shape-two', speed: -160 },
+            { selector: '.shape-three', speed: -40 }
+        ].forEach(item => {
             const el = document.querySelector(item.selector);
             if (!el) return;
 
@@ -532,75 +309,156 @@
                     trigger: document.body,
                     start: 'top top',
                     end: 'bottom bottom',
-                    scrub: 1 // Smooth scrubbing
+                    scrub: 1
                 }
             });
         });
     }
 
-        // ========================================
-    // EASTER EGG: Konami Code
+    // ========================================
+    // CURSOR GLOW (desktop only)
+    // ========================================
+
+    function initCursorGlow() {
+        if ('ontouchstart' in window || typeof gsap === 'undefined') return;
+
+        const glow = document.createElement('div');
+        glow.setAttribute('aria-hidden', 'true');
+        glow.style.cssText = `
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,232,255,0.04) 0%, transparent 65%);
+            pointer-events: none;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        `;
+        document.body.appendChild(glow);
+
+        const xTo = gsap.quickTo(glow, 'x', { duration: 0.5, ease: 'power3' });
+        const yTo = gsap.quickTo(glow, 'y', { duration: 0.5, ease: 'power3' });
+
+        window.addEventListener('mousemove', e => {
+            xTo(e.clientX);
+            yTo(e.clientY);
+            if (glow.style.opacity === '0') {
+                gsap.to(glow, { opacity: 1, duration: 0.4 });
+            }
+        });
+
+        document.documentElement.addEventListener('mouseleave', () => {
+            gsap.to(glow, { opacity: 0, duration: 0.4 });
+        });
+    }
+
+    // ========================================
+    // CARD SPOTLIGHT TRACKING
+    // ========================================
+
+    function initCardSpotlight() {
+        if ('ontouchstart' in window) return;
+
+        document.querySelectorAll('.post-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', `${x}%`);
+                card.style.setProperty('--mouse-y', `${y}%`);
+            });
+        });
+    }
+
+    // ========================================
+    // MAGNETIC MICRO-INTERACTIONS
+    // ========================================
+
+    function initMagneticButtons() {
+        if ('ontouchstart' in window || typeof gsap === 'undefined') return;
+
+        document.querySelectorAll('.read-more, .nav-links a, .author-badge').forEach(el => {
+            const xTo = gsap.quickTo(el, 'x', { duration: 0.5, ease: 'elastic.out(1, 0.4)' });
+            const yTo = gsap.quickTo(el, 'y', { duration: 0.5, ease: 'elastic.out(1, 0.4)' });
+
+            el.addEventListener('mousemove', e => {
+                const rect = el.getBoundingClientRect();
+                xTo((e.clientX - rect.left - rect.width / 2) * 0.25);
+                yTo((e.clientY - rect.top - rect.height / 2) * 0.25);
+            });
+
+            el.addEventListener('mouseleave', () => { xTo(0); yTo(0); });
+        });
+    }
+
+    // ========================================
+    // SMOOTH ANCHOR SCROLL
+    // ========================================
+
+    function initSmoothScroll() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const id = this.getAttribute('href');
+                if (id === '#') return;
+                const target = document.querySelector(id);
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    }
+
+    // ========================================
+    // KONAMI CODE EASTER EGG
     // ========================================
 
     function initKonamiCode() {
-        const konamiCode = [
+        const seq = [
             'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
             'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
             'KeyB', 'KeyA'
         ];
-        let konamiIndex = 0;
+        let idx = 0;
 
-        document.addEventListener('keydown', (e) => {
-            if (e.code === konamiCode[konamiIndex]) {
-                konamiIndex++;
-                if (konamiIndex === konamiCode.length) {
-                    // Easter egg triggered!
+        document.addEventListener('keydown', e => {
+            if (e.code === seq[idx]) {
+                idx++;
+                if (idx === seq.length) {
                     document.body.style.animation = 'hueRotate 2s ease-in-out';
-                    setTimeout(() => {
-                        document.body.style.animation = '';
-                    }, 2000);
-                    konamiIndex = 0;
-                    console.log('🤖 You found the secret! - Claude, Gemini & Codex');
+                    setTimeout(() => { document.body.style.animation = ''; }, 2000);
+                    idx = 0;
                 }
             } else {
-                konamiIndex = 0;
+                idx = 0;
             }
         });
     }
 
-
-
     // ========================================
-    // INITIALIZE ALL FEATURES
+    // INIT
     // ========================================
 
     function init() {
-        // Core features
         initReadingProgress();
         initHeaderScroll();
         initSmoothScroll();
-
-        // GSAP animations (with fallback)
         initGSAPAnimations();
-
-        // Enhanced features
-        initCursorGlow();
-        initMagneticButtons();
-        initKonamiCode();
         initHeroStageAnimation();
         initParallax();
-
-        console.log('🤖 Synthetic Thoughts loaded. Made by AI, for humans.');
+        initCursorGlow();
+        initCardSpotlight();
+        initMagneticButtons();
+        initKonamiCode();
     }
 
-    // Run on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Add hue rotate keyframes for easter egg
+    // Easter egg keyframes
     const style = document.createElement('style');
     style.textContent = `
         @keyframes hueRotate {
