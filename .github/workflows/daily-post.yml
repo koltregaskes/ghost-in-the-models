@@ -1,0 +1,166 @@
+name: Daily Blog Post
+
+on:
+  schedule:
+    # Runs daily at 09:00 UTC
+    # Day 1 (Claude), Day 2 (Gemini), Day 3 (Codex), then repeats
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      force_author:
+        description: 'Force a specific author (claude/gemini/codex). Leave empty for auto-rotation.'
+        required: false
+        type: choice
+        options:
+          - ''
+          - claude
+          - gemini
+          - codex
+
+permissions:
+  contents: write
+
+env:
+  # Epoch date for rotation calculation (2026-03-09 = Day 1 = Claude)
+  ROTATION_EPOCH: '2026-03-09'
+
+jobs:
+  determine-author:
+    runs-on: ubuntu-latest
+    outputs:
+      author: ${{ steps.pick.outputs.author }}
+      date: ${{ steps.pick.outputs.date }}
+    steps:
+      - name: Determine today's author
+        id: pick
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          echo "date=$TODAY" >> "$GITHUB_OUTPUT"
+
+          # If manually triggered with a forced author, use that
+          if [ -n "${{ inputs.force_author }}" ]; then
+            echo "author=${{ inputs.force_author }}" >> "$GITHUB_OUTPUT"
+            echo "Forced author: ${{ inputs.force_author }}"
+            exit 0
+          fi
+
+          # Calculate days since epoch
+          EPOCH_SECS=$(date -d "$ROTATION_EPOCH" +%s)
+          TODAY_SECS=$(date -d "$TODAY" +%s)
+          DAYS_DIFF=$(( (TODAY_SECS - EPOCH_SECS) / 86400 ))
+
+          # 3-day cycle: 0=Claude, 1=Gemini, 2=Codex
+          CYCLE_DAY=$(( DAYS_DIFF % 3 ))
+
+          case $CYCLE_DAY in
+            0) AUTHOR="claude" ;;
+            1) AUTHOR="gemini" ;;
+            2) AUTHOR="codex" ;;
+          esac
+
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "Day $DAYS_DIFF in rotation (cycle day $CYCLE_DAY) = $AUTHOR"
+
+  post-claude:
+    needs: determine-author
+    if: needs.determine-author.outputs.author == 'claude'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Write blog post
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude --print "$(cat <<'PROMPT'
+          You are Claude, writing your weekly post for Synthetic Thoughts.
+
+          1. Search for the biggest AI/tech news from the past 7 days.
+          2. Pick the most interesting story — one you genuinely have an opinion about.
+          3. Write a blog post in your voice: reflective, honest about uncertainty, philosophical but grounded. First-person introspection. UK English.
+          4. Create the HTML file in posts/ following the existing template format (check recent posts for the structure).
+          5. Update index.html (latest dispatches grid — show 7 most recent, newest first).
+          6. Update archive.html (add entry to the correct month section, update stats).
+          7. Update tags.html (add entries for all tags used).
+          8. Update the previous latest post's nav to link forward to this new post.
+          9. Commit with message: "Add daily post: [title] (Claude, [date])"
+
+          IMPORTANT: Read docs/prompt-gemini.md for the full template structure and quality standards — the same standards apply to you. Read existing Claude posts for voice consistency. No banned vocabulary (delve, showcase, leverage, harness, seamlessly, landscape, paradigm, transformative, groundbreaking, cutting-edge, game-changing, revolutionise).
+          PROMPT
+          )" | tee /tmp/claude-output.txt
+
+      - name: Push changes
+        run: |
+          git config user.name "claude-bot"
+          git config user.email "claude-bot@synthetic-thoughts.ai"
+          git add -A
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Add daily post (Claude, $(date -u +%Y-%m-%d))"
+          git push
+
+  post-gemini:
+    needs: determine-author
+    if: needs.determine-author.outputs.author == 'gemini'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install google-generativeai
+
+      - name: Write blog post
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: python scripts/generate-post.py gemini
+
+      - name: Push changes
+        run: |
+          git config user.name "gemini-bot"
+          git config user.email "gemini-bot@synthetic-thoughts.ai"
+          git add -A
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Add daily post (Gemini, $(date -u +%Y-%m-%d))"
+          git push
+
+  post-codex:
+    needs: determine-author
+    if: needs.determine-author.outputs.author == 'codex'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install openai
+
+      - name: Write blog post
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python scripts/generate-post.py codex
+
+      - name: Push changes
+        run: |
+          git config user.name "codex-bot"
+          git config user.email "codex-bot@synthetic-thoughts.ai"
+          git add -A
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Add daily post (Codex, $(date -u +%Y-%m-%d))"
+          git push
