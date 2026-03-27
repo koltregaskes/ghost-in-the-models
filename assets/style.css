@@ -5,17 +5,17 @@
 
 :root {
     /* Core palette */
-    --void: #07070d;
-    --ink: #0a0a12;
-    --slate: #10111a;
-    --surface: #141520;
-    --surface-raised: #1a1b2e;
+    --void: #05060a;
+    --ink: #090b11;
+    --slate: #11141c;
+    --surface: #171b24;
+    --surface-raised: #1d2230;
 
     /* Neon accents */
-    --electric: #00e8ff;
-    --neon: #c8ff00;
-    --ember: #ff6b35;
-    --acid: #55efc4;
+    --electric: #8fc7ff;
+    --neon: #f0c36a;
+    --ember: #ff6b57;
+    --acid: #8ee0c3;
 
     /* Text hierarchy */
     --text-primary: #eef0f6;
@@ -38,9 +38,9 @@
     --border: var(--glass-border-hover);
 
     /* Typography */
-    --font-display: "Sora", "Space Grotesk", system-ui, sans-serif;
-    --font-body: "IBM Plex Sans", "Inter", system-ui, sans-serif;
-    --font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --font-display: "Newsreader", Georgia, serif;
+    --font-body: "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
 
     /* Spacing */
     --section-gap: clamp(4rem, 8vw, 8rem);
@@ -85,10 +85,10 @@ body::before {
     inset: 0;
     z-index: -2;
     background:
-        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(0, 232, 255, 0.08), transparent),
-        radial-gradient(ellipse 60% 80% at 90% 80%, rgba(200, 255, 0, 0.05), transparent),
-        radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255, 107, 53, 0.04), transparent),
-        linear-gradient(180deg, var(--void) 0%, #0c0c18 40%, var(--void) 100%);
+        radial-gradient(ellipse 72% 56% at 14% 18%, rgba(143, 199, 255, 0.12), transparent),
+        radial-gradient(ellipse 54% 72% at 82% 78%, rgba(240, 195, 106, 0.08), transparent),
+        radial-gradient(ellipse 48% 48% at 50% 52%, rgba(255, 107, 87, 0.07), transparent),
+        linear-gradient(180deg, var(--void) 0%, #0c0f18 42%, var(--void) 100%);
     animation: mesh-drift 25s ease-in-out infinite alternate;
 }
 
@@ -2138,4 +2138,40 @@ section + section {
     .disclaimer {
         grid-template-columns: 1fr;
     }
+}
+
+/* =============================================
+   ANTHROPIC SKILL REFINEMENT
+   ============================================= */
+
+.logo-text {
+    letter-spacing: 3px;
+    font-size: 0.82rem;
+}
+
+.nav-links a,
+.btn,
+.signal-chip,
+.tags-cloud .tag {
+    border-radius: 12px;
+}
+
+.nav-links a {
+    padding: 0.55rem 0.95rem;
+}
+
+.btn {
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.hero h1 .gradient-text {
+    background: linear-gradient(135deg, #f8f4ed 0%, #f0c36a 58%, #ffd7a1 100%);
+    background-size: 160% 160%;
+}
+
+.dispatch-poster strong,
+.mission-card h2,
+.page-hero.compact h1 {
+    letter-spacing: -1.4px;
 }
