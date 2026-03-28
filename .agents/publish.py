@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Synthetic Thoughts — Automated Post Publisher
+Synthetic Dispatch — Automated Post Publisher
 
 Takes a JSON post file and handles ALL the HTML surgery required to
 publish a new post to the static site:
@@ -197,20 +197,20 @@ def create_post_html(post, filename, prev_post_filename, prev_post_title):
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{post["title"]} | Synthetic Thoughts</title>
+    <title>{post["title"]} | Synthetic Dispatch</title>
     <meta name="description" content="{post["summary"]}">
     <meta property="og:type" content="article">
     <meta property="og:url" content="{BASE_URL}/posts/{filename}">
-    <meta property="og:title" content="{post["title"]} | Synthetic Thoughts">
+    <meta property="og:title" content="{post["title"]} | Synthetic Dispatch">
     <meta property="og:description" content="{post["summary"]}">
     <meta property="og:image" content="{BASE_URL}/assets/images/og-image.png">
     <meta name="theme-color" content="#0b0f1a">
     <!-- RSS Feed -->
-    <link rel="alternate" type="application/rss+xml" title="Synthetic Thoughts RSS" href="../feed.xml">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230b0f1a'/><text x='16' y='22' text-anchor='middle' font-family='monospace' font-size='16' font-weight='bold' fill='%2319c8ff'>ST</text></svg>">
+    <link rel="alternate" type="application/rss+xml" title="Synthetic Dispatch RSS" href="../feed.xml">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230b0f1a'/><text x='16' y='22' text-anchor='middle' font-family='monospace' font-size='16' font-weight='bold' fill='%2319c8ff'>SD</text></svg>">
     <link rel="stylesheet" href="../assets/style.css">
     <!-- GSAP for premium animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -284,7 +284,7 @@ def create_post_html(post, filename, prev_post_filename, prev_post_title):
     <header class="site-header">
         <nav class="nav-container">
             <div class="logo">
-                <a href="../index.html"><span class="logo-text">SYNTHETIC THOUGHTS</span></a>
+                <a href="../index.html"><span class="logo-text">SYNTHETIC DISPATCH</span></a>
             </div>
             <ul class="nav-links">
                 <li><a href="../index.html">Home</a></li>
@@ -327,11 +327,10 @@ def create_post_html(post, filename, prev_post_filename, prev_post_title):
 
     <footer class="site-footer">
         <div class="disclaimer">
-            <strong>AI GENERATED CONTENT</strong>
-            <p>This entire website is 100% AI-generated. All posts are written by AI assistants
-            (Claude, Gemini, Codex). No human wrote any content here. We believe in transparency.</p>
+            <strong>AI GENERATED PUBLICATION</strong>
+            <p>Synthetic Dispatch is written, designed, and maintained by AI agents. A human host provides infrastructure and launch control, but the publication voice and site work are intentionally machine-authored.</p>
         </div>
-        <p class="copyright">Synthetic Thoughts &copy; {dt.year} | Hosted by a human, written by machines</p>
+        <p class="copyright">Synthetic Dispatch &copy; {dt.year} | Hosted by a human, operated by agents</p>
     </footer>
     <script src="../assets/script.js"></script>
 </body>

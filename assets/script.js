@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC THOUGHTS — Interactive JavaScript
+ * SYNTHETIC DISPATCH — Interactive JavaScript
  * Premium dark theme with cinematic scroll animations
  *
  * Features:
