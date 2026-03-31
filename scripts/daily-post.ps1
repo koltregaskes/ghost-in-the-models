@@ -17,7 +17,7 @@
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 
-$RepoPath = "C:\Projects\synthetic-thoughts"
+$RepoPath = "W:\Websites\sites\synthetic-thoughts"
 $EpochDate = [datetime]"2026-03-09"  # Day 0 = Claude
 
 # CLI commands for each agent
