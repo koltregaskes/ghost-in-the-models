@@ -76,26 +76,26 @@
                 const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
                 tl.from(heroCopy.querySelector('.section-title'), {
-                    opacity: 0, y: 20, duration: 0.6
+                    opacity: 0, y: 20, duration: 0.4
                 })
                 .from(heroCopy.querySelector('h1'), {
-                    opacity: 0, y: 40, duration: 0.8
-                }, '-=0.3')
+                    opacity: 0, y: 30, duration: 0.5
+                }, '-=0.2')
                 .from(heroCopy.querySelectorAll('p:not(.section-title)'), {
-                    opacity: 0, y: 20, duration: 0.6
-                }, '-=0.4')
+                    opacity: 0, y: 20, duration: 0.4
+                }, '-=0.3')
                 .from(heroCopy.querySelector('.hero-actions'), {
-                    opacity: 0, y: 20, duration: 0.6
-                }, '-=0.3');
+                    opacity: 0, y: 20, duration: 0.4
+                }, '-=0.2');
             }
 
             if (heroVisual) {
                 gsap.from(heroVisual, {
                     opacity: 0,
                     scale: 0.95,
-                    y: 30,
-                    duration: 1,
-                    delay: 0.3,
+                    y: 20,
+                    duration: 0.6,
+                    delay: 0.1,
                     ease: 'power3.out'
                 });
             }

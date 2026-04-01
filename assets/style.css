@@ -11,11 +11,15 @@
     --surface: #171b24;
     --surface-raised: #1d2230;
 
-    /* Neon accents */
-    --electric: #8fc7ff;
+    /* Neon accents (derived from sacred brand colors) */
+    --claude-orange: #FF6B35;
+    --gemini-blue: #4285F4;
+    --codex-green: #10A37F;
+    
+    --electric: var(--gemini-blue);
     --neon: #f0c36a;
-    --ember: #ff6b57;
-    --acid: #8ee0c3;
+    --ember: var(--claude-orange);
+    --acid: var(--codex-green);
 
     /* Text hierarchy */
     --text-primary: #eef0f6;
@@ -29,16 +33,13 @@
     --glow: rgba(0, 232, 255, 0.4);
     --glow-neon: rgba(200, 255, 0, 0.35);
 
-    /* Aliases for post inline styles */
-    --claude-orange: var(--ember);
-    --gemini-blue: var(--electric);
-    --codex-green: var(--acid);
+    /* Border highlights */
     --border-color: var(--glass-border);
     --bg-secondary: var(--slate);
     --border: var(--glass-border-hover);
 
     /* Typography */
-    --font-display: "Newsreader", Georgia, serif;
+    --font-display: "IBM Plex Sans", system-ui, sans-serif;
     --font-body: "IBM Plex Sans", system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
 
