@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://koltregaskes.github.io/synthetic-thoughts/sitemap.xml
+Sitemap: https://syntheticdispatch.com/sitemap.xml
