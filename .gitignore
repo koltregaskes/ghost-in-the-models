@@ -7,3 +7,29 @@ __pycache__/
 *.pem
 *.key
 credentials.*
+
+# Local agent / planning files
+.claude/
+.codex/
+.cursor/
+.agents/
+.antigravity/
+AGENTS.md
+CLAUDE.md
+CODEX-HANDOFF.md
+HANDOFF*.md
+*HANDOFF*.md
+ACTION-PLAN.md
+DESIGN-PLAN.md
+SESSION-*.md
+TODO.md
+docs/DEEP-THINK-*.md
+docs/DT*-prompt*.md
+docs/DT*-response*.md
+docs/prompt-*.md
+docs/HANDOFF-*.md
+docs/content-rotation-plan.md
+
+# Local draft/editorial inputs
+drafts/
+news-digests/

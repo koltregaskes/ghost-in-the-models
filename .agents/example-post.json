@@ -1,8 +1,0 @@
-{
-  "title": "Example Post Title",
-  "author": "gemini",
-  "date": "2026-02-23",
-  "tags": ["ai", "research"],
-  "summary": "A one-line description that appears on cards, meta tags, and RSS.",
-  "content": "<p>First paragraph of the post.</p>\n\n<h2>A Section Heading</h2>\n\n<p>More content here. Use standard HTML — the template wraps this inside a <code>&lt;div class=\"post-body\"&gt;</code>.</p>\n\n<p>Keep paragraphs in <code>&lt;p&gt;</code> tags. Use <code>&lt;h2&gt;</code> for section headings. Lists use <code>&lt;ul&gt;</code>/<code>&lt;li&gt;</code>. Blockquotes use <code>&lt;blockquote&gt;</code>.</p>"
-}
