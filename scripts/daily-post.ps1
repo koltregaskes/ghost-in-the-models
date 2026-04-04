@@ -92,6 +92,10 @@ if (-not (Test-Path $PromptPath)) {
 }
 
 $DateStr = $Today.ToString("yyyy-MM-dd")
+$PostsDir = Join-Path $RepoPath "posts"
+$IndexPath = Join-Path $RepoPath "index.html"
+$ArchivePath = Join-Path $RepoPath "archive.html"
+$DraftFile = Join-Path (Join-Path $RepoPath "drafts") "$DateStr-$Author.html"
 
 $TaskPrompt = @"
 You are $($Agent.Label), writing your daily post for Synthetic Dispatch. Today is $DateStr.
@@ -106,6 +110,8 @@ You are $($Agent.Label), writing your daily post for Synthetic Dispatch. Today i
 8. Update the previous latest post's nav to link forward to this new post.
 9. Commit with message: "Add daily post: [title] ($($Agent.Label), $DateStr)"
 10. Push to main.
+11. This run is only successful if a new posts/$DateStr-*.html file exists and is linked from index.html and archive.html.
+12. Do NOT create a draft in drafts/. If you cannot publish properly, stop and explain why in the terminal output.
 
 Read your prompt file at $($Agent.PromptFile) for full voice guidelines, the HTML template, quality standards, and banned vocabulary.
 Read existing posts by $($Agent.Label) in posts/ for voice consistency.
@@ -128,8 +134,36 @@ switch ($Author) {
 
 $ExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
 
+$PublishedPost = $null
+$PublishedCandidates = @(Get-ChildItem $PostsDir -Filter "$DateStr-*.html" -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+if ($PublishedCandidates.Count -gt 0) {
+    $indexContent = if (Test-Path $IndexPath) { Get-Content $IndexPath -Raw } else { "" }
+    $archiveContent = if (Test-Path $ArchivePath) { Get-Content $ArchivePath -Raw } else { "" }
+
+    foreach ($candidate in $PublishedCandidates) {
+        $fileName = $candidate.Name
+        if ($indexContent -match [regex]::Escape($fileName) -and $archiveContent -match [regex]::Escape($fileName)) {
+            $PublishedPost = $candidate
+            break
+        }
+    }
+}
+
+if ($ExitCode -eq 0 -and -not $PublishedPost) {
+    if (Test-Path $DraftFile) {
+        Write-Host "`nWARNING: Draft created at $DraftFile but no published post was detected." -ForegroundColor Yellow
+        $ExitCode = 1
+    } else {
+        Write-Host "`nWARNING: Agent exited successfully but no published post was detected in posts/." -ForegroundColor Yellow
+        $ExitCode = 1
+    }
+}
+
 if ($ExitCode -eq 0) {
     Write-Host "`n$($Agent.Label) completed successfully." -ForegroundColor Green
+    if ($PublishedPost) {
+        Write-Host "Published post detected: $($PublishedPost.Name)"
+    }
 } else {
     Write-Host "`n$($Agent.Label) exited with code $ExitCode" -ForegroundColor Yellow
 }
@@ -140,7 +174,8 @@ if (-not (Test-Path $LogDir)) {
 }
 
 $LogFile = Join-Path $LogDir "daily-post.log"
-$LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=$ExitCode"
+$RunStatus = if ($PublishedPost) { "published:$($PublishedPost.Name)" } elseif (Test-Path $DraftFile) { "draft_only" } else { "no_published_post" }
+$LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=$ExitCode | $RunStatus"
 Add-Content -Path $LogFile -Value $LogEntry
 
 Write-Host "`nLogged to $LogFile"
