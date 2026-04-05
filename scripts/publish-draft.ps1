@@ -4,7 +4,7 @@ param(
 )
 
 <#
-    Synthetic Dispatch — Publish Approved Draft
+    Ghost in the Model - Publish Approved Draft
 
     Takes a reviewed draft from drafts/ and:
     1. Moves it to posts/
@@ -16,7 +16,7 @@ param(
     Usage: .\scripts\publish-draft.ps1 -File drafts\2026-04-03-claude.html
 #>
 
-$RepoPath = "W:\Websites\sites\synthetic-dispatch"
+$RepoPath = "W:\Websites\sites\ghost-in-the-models"
 Set-Location $RepoPath
 
 if (-not (Test-Path $File)) {
@@ -27,11 +27,11 @@ if (-not (Test-Path $File)) {
 $FileName = [System.IO.Path]::GetFileName($File)
 $DestPath = Join-Path $RepoPath "posts" $FileName
 
-Write-Host "═══════════════════════════════════════════════════"
-Write-Host "  Synthetic Dispatch — Publish Draft"
+Write-Host "==================================================="
+Write-Host "  Ghost in the Model - Publish Draft"
 Write-Host "  Source: $File"
 Write-Host "  Destination: posts\$FileName"
-Write-Host "═══════════════════════════════════════════════════"
+Write-Host "==================================================="
 
 # Move draft to posts
 Copy-Item $File $DestPath -Force
@@ -44,15 +44,15 @@ A new approved post has been added at posts/$FileName.
 
 Your job is to integrate it into the site:
 1. Read the new post to extract: title, date, author, tags, excerpt.
-2. Update index.html — add this post to the "Latest dispatches" grid (keep 7 most recent, newest first, remove oldest if needed).
-3. Update archive.html — add entry to the correct month section, update statistics.
-4. Update tags.html — add entry for each tag used.
+2. Update index.html â€” add this post to the "Latest dispatches" grid (keep 7 most recent, newest first, remove oldest if needed).
+3. Update archive.html â€” add entry to the correct month section, update statistics.
+4. Update tags.html â€” add entry for each tag used.
 5. Update the previous latest post's nav to link forward to this new post.
 6. Commit with message: "Publish: [title] ([author], [date])"
 7. Push to main.
 
 Read existing posts and page structure carefully before making changes.
-Do NOT modify the post content itself — it has already been approved.
+Do NOT modify the post content itself â€” it has already been approved.
 "@
 
 Write-Host "`nLaunching Claude to update site pages..."
@@ -66,3 +66,7 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Host "`nSite update may have failed. Check the post manually." -ForegroundColor Yellow
 }
+
+
+
+

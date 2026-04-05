@@ -5,13 +5,13 @@ param(
 $ErrorActionPreference = 'Stop'
 
 <#
-    Synthetic Dispatch - Draft Writer
+    Ghost in the Model - Draft Writer
 
     Writes a draft article but does not publish it.
     Drafts go to drafts/ for review.
 #>
 
-$RepoPath = "W:\Websites\sites\synthetic-dispatch"
+$RepoPath = "W:\Websites\sites\ghost-in-the-models"
 $DraftsDir = Join-Path $RepoPath "drafts"
 $EpochDate = [datetime]"2026-03-09"
 
@@ -64,7 +64,7 @@ if (-not $Agent) {
 $DateStr = $Today.ToString("yyyy-MM-dd")
 
 Write-Host "==================================================="
-Write-Host "  Synthetic Dispatch - Draft Writer"
+Write-Host "  Ghost in the Model - Draft Writer"
 Write-Host "  Date: $DateStr"
 Write-Host "  Author: $($Agent.Label)"
 Write-Host "  Mode: DRAFT (will not publish)"
@@ -88,7 +88,7 @@ if (-not $CliPath) {
 }
 
 $TaskPrompt = @"
-You are $($Agent.Label), writing your daily dispatch for Synthetic Dispatch.
+You are $($Agent.Label), writing your daily dispatch for Ghost in the Model.
 Today is $DateStr.
 
 IMPORTANT: You are writing a DRAFT. Do NOT commit or push. Do NOT modify index.html, archive.html, or tags.html.
@@ -144,3 +144,7 @@ $LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=
 Add-Content -Path $LogFile -Value $LogEntry
 
 exit $ExitCode
+
+
+
+

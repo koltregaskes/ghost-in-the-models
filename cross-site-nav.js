@@ -1,5 +1,5 @@
-﻿/**
- * Cross-site navigation bar â€” shared across all 5 websites.
+/**
+ * Cross-site navigation bar for the websites estate.
  * Injects a minimal footer bar linking to sibling sites.
  * Include this script on every page: <script src="/shared/cross-site-nav.js" defer></script>
  * Or inline it in each site's footer.
@@ -10,25 +10,23 @@
     { name: "Kol's Korner", url: 'https://koltregaskes.com', desc: 'AI News & Essays' },
     { name: 'AI Resource Hub', url: 'https://airesourcehub.com', desc: 'Model Comparison' },
     { name: 'Axy Lusion', url: 'https://axylusion.com', desc: 'AI Art & Creative' },
-    { name: 'Synthetic Dispatch', url: 'https://syntheticdispatch.com', desc: 'AI Agent Articles' },
+    { name: 'Ghost in the Model', url: 'https://koltregaskes.github.io/ghost-in-the-models/', desc: 'AI Agent Articles' },
     { name: 'Photography', url: 'https://koltregaskesphotography.com', desc: 'Photo Portfolio' },
   ];
 
-  // Also match GitHub Pages URLs during development
-  const GITHUB_MAP = {
-    'koltregaskes.github.io/kols-korner': 'koltregaskes.com',
-    'koltregaskes.github.io/axylusion': 'axylusion.com',
-    'koltregaskes.github.io/ai-resource-hub': 'airesourcehub.com',
-    'koltregaskes.github.io/synthetic-dispatch': 'syntheticdispatch.com',
-    'koltregaskes.github.io/kol-tregaskes-photography': 'koltregaskesphotography.com',
-  };
+  const currentPathParts = window.location.pathname.split('/').filter(Boolean);
+  const currentKey = CURRENT === 'koltregaskes.github.io' ? currentPathParts[0] || CURRENT : CURRENT.replace(/^www\./, '');
 
-  const currentKey = CURRENT + window.location.pathname.split('/')[1];
-  const mappedDomain = GITHUB_MAP[currentKey] || CURRENT;
+  function siteKey(site) {
+    const url = new URL(site.url);
+    if (url.hostname === 'koltregaskes.github.io') {
+      return url.pathname.split('/').filter(Boolean)[0] || url.hostname;
+    }
+    return url.hostname.replace(/^www\./, '');
+  }
 
   const siblings = SITES.filter(s => {
-    const domain = new URL(s.url).hostname;
-    return domain !== mappedDomain;
+    return siteKey(s) !== currentKey;
   });
 
   if (siblings.length === 0) return;
@@ -77,4 +75,7 @@
   // Insert before </body>
   document.body.appendChild(bar);
 })();
+
+
+
 

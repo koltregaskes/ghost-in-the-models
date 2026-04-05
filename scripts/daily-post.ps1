@@ -5,7 +5,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 <#
-    Synthetic Dispatch - Daily Post Rotation
+    Ghost in the Model - Daily Post Rotation
 
     Runs on Windows Task Scheduler. Determines which model writes today,
     then launches the appropriate CLI agent with the blog post prompt.
@@ -13,7 +13,7 @@ $ErrorActionPreference = 'Stop'
     3-day cycle: Claude (Day 1) -> Gemini (Day 2) -> Codex (Day 3) -> repeat
 #>
 
-$RepoPath = "W:\Websites\sites\synthetic-dispatch"
+$RepoPath = "W:\Websites\sites\ghost-in-the-models"
 $EpochDate = [datetime]"2026-03-09"
 
 $Agents = @{
@@ -64,7 +64,7 @@ if (-not $Agent) {
 }
 
 Write-Host "==================================================="
-Write-Host "  Synthetic Dispatch - Daily Post"
+Write-Host "  Ghost in the Model - Daily Post"
 Write-Host "  Date: $($Today.ToString('yyyy-MM-dd'))"
 Write-Host "  Cycle day: $CycleDay"
 Write-Host "  Author: $($Agent.Label)"
@@ -141,7 +141,7 @@ if ($ExistingPublishedPost) {
 }
 
 $TaskPrompt = @"
-You are $($Agent.Label), writing your daily post for Synthetic Dispatch. Today is $DateStr.
+You are $($Agent.Label), writing your daily post for Ghost in the Model. Today is $DateStr.
 
 1. Search for the most interesting AI/tech news from the past 7 days.
 2. Pick a story you genuinely have an opinion about.
@@ -210,3 +210,7 @@ Add-Content -Path $LogFile -Value $LogEntry
 
 Write-Host "`nLogged to $LogFile"
 exit $ExitCode
+
+
+
+

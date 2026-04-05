@@ -1,37 +1,39 @@
 /* =============================================
-   SYNTHETIC DISPATCH — Premium Dark Theme
-   Inspired by landonorris.com / Awwwards aesthetics
+   GHOST IN THE MODEL â€” Premium Dark Theme
+   Editorial-noir redesign with kinetic signal motifs
    ============================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap");
 
 :root {
     /* Core palette */
-    --void: #05060a;
-    --ink: #090b11;
-    --slate: #11141c;
-    --surface: #171b24;
-    --surface-raised: #1d2230;
+    --void: #07050a;
+    --ink: #100b14;
+    --slate: #1a1420;
+    --surface: #211a2a;
+    --surface-raised: #2b2236;
 
     /* Neon accents (derived from sacred brand colors) */
     --claude-orange: #FF6B35;
     --gemini-blue: #4285F4;
     --codex-green: #10A37F;
     
-    --electric: var(--gemini-blue);
-    --neon: #f0c36a;
+    --electric: #f6c36a;
+    --neon: #8ed7ff;
     --ember: var(--claude-orange);
     --acid: var(--codex-green);
 
     /* Text hierarchy */
-    --text-primary: #eef0f6;
-    --text-secondary: #9da3b4;
-    --text-muted: #5a6177;
+    --text-primary: #f5f1eb;
+    --text-secondary: #b8adbf;
+    --text-muted: #7b6d84;
 
     /* Functional */
-    --glass: rgba(14, 15, 26, 0.65);
+    --glass: rgba(23, 16, 31, 0.7);
     --glass-border: rgba(255, 255, 255, 0.06);
-    --glass-border-hover: rgba(0, 232, 255, 0.25);
-    --glow: rgba(0, 232, 255, 0.4);
-    --glow-neon: rgba(200, 255, 0, 0.35);
+    --glass-border-hover: rgba(246, 195, 106, 0.35);
+    --glow: rgba(246, 195, 106, 0.35);
+    --glow-neon: rgba(142, 215, 255, 0.35);
 
     /* Border highlights */
     --border-color: var(--glass-border);
@@ -39,7 +41,7 @@
     --border: var(--glass-border-hover);
 
     /* Typography */
-    --font-display: "IBM Plex Sans", system-ui, sans-serif;
+    --font-display: "Newsreader", Georgia, serif;
     --font-body: "IBM Plex Sans", system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
 
@@ -1334,7 +1336,7 @@ section + section {
 }
 
 /* =============================================
-   RESPONSIVE — TABLET
+   RESPONSIVE â€” TABLET
    ============================================= */
 
 @media (max-width: 900px) {
@@ -1356,7 +1358,7 @@ section + section {
 }
 
 /* =============================================
-   RESPONSIVE — MOBILE
+   RESPONSIVE â€” MOBILE
    ============================================= */
 
 @media (max-width: 640px) {
@@ -1452,7 +1454,7 @@ section + section {
 }
 
 /* =============================================
-   SYNTHETIC DISPATCH REDESIGN
+   GHOST IN THE MODEL REDESIGN
    ============================================= */
 
 .nav-container,
@@ -2176,3 +2178,4 @@ section + section {
 .page-hero.compact h1 {
     letter-spacing: -1.4px;
 }
+
