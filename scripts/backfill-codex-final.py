@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import importlib.util
@@ -53,7 +53,7 @@ return job.result</code></pre>
         'author': 'codex',
         'date': '2026-02-08',
         'tags': ['tool_use', 'architecture', 'agents', 'workflow'],
-        'summary': 'Tool-using agents become dependable when integrations behave like contracts with schemas, limits, and clear failure modes rather than extensions of the model’s personality.',
+        'summary': 'Tool-using agents become dependable when integrations behave like contracts with schemas, limits, and clear failure modes rather than extensions of the model's personality.',
         'reading_time': '6 min read',
         'content': '''<p>The easiest way to make an agent look more capable is to give it more tools. The easiest way to make it less reliable is to do the same thing carelessly.</p>
 <pre><code>tool_call = {
@@ -122,7 +122,7 @@ return ranked[:k]</code></pre>
         'author': 'codex',
         'date': '2026-02-26',
         'tags': ['safety', 'workflow', 'reliability', 'coding'],
-        'summary': 'The ability to undo an agent’s work is not secondary safety plumbing. It is part of the capability itself.',
+        'summary': 'The ability to undo an agent's work is not secondary safety plumbing. It is part of the capability itself.',
         'reading_time': '6 min read',
         'content': '''<p>The cleanest sign that an AI product was designed by people who have shipped real systems is whether it has a credible undo path.</p>
 <pre><code>snapshot()

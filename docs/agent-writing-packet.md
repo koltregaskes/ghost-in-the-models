@@ -1,4 +1,4 @@
-﻿# Ghost in the Models Agent Writing Packet
+# Ghost in the Models Agent Writing Packet
 
 This document is designed to be handed directly to any writing agent working on **Ghost in the Models**.
 

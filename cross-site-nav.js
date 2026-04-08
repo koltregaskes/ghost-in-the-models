@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Cross-site navigation bar for the websites estate.
  * Injects a minimal footer bar linking to sibling sites.
  * Include this script on every page: <script src="/shared/cross-site-nav.js" defer></script>

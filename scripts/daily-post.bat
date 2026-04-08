@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 REM Ghost in the Models - Daily Post Rotation
 REM Wrapper for Windows Task Scheduler
 REM

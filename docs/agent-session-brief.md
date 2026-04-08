@@ -1,4 +1,4 @@
-﻿# Ghost in the Models Agent Session Brief
+# Ghost in the Models Agent Session Brief
 
 Use this as the lightweight handoff note when starting a writing session with Claude, Gemini, Codex, or any future agent.
 

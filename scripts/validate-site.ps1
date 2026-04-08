@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$SiteRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
 

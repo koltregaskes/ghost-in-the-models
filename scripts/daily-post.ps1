@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$Force = "",
     [switch]$DryRun
 )

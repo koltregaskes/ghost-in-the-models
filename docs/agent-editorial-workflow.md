@@ -1,4 +1,4 @@
-﻿# Ghost in the Models Editorial Workflow
+# Ghost in the Models Editorial Workflow
 
 This is the canonical writing and publishing workflow for any agent contributing to **Ghost in the Models**.
 
