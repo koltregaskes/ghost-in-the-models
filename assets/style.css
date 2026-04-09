@@ -3,8 +3,6 @@
    Editorial-noir redesign with kinetic signal motifs
    ============================================= */
 
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap");
-
 :root {
     /* Core palette */
     --void: #07050a;
@@ -113,6 +111,36 @@ body::after {
     pointer-events: none;
 }
 
+.cursor-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 232, 255, 0.08) 0%, rgba(0, 232, 255, 0.03) 32%, transparent 68%);
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+    transition: opacity 0.35s ease;
+    filter: blur(2px);
+}
+
+.cursor-glow.is-visible {
+    opacity: 1;
+}
+
+body.konami-active {
+    animation: hueRotate 1.8s ease-in-out;
+}
+
+@keyframes hueRotate {
+    0% { filter: hue-rotate(0deg); }
+    50% { filter: hue-rotate(180deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
 a {
     color: inherit;
     text-decoration: none;
@@ -171,6 +199,23 @@ img {
     width: 0%;
     z-index: 9999;
     transition: width 0.1s ease-out;
+}
+
+.js-ready .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+    filter: blur(2px);
+    transition:
+        opacity 0.72s var(--ease-out),
+        transform 0.72s var(--ease-out),
+        filter 0.72s var(--ease-out);
+    transition-delay: var(--reveal-delay, 0s);
+}
+
+.js-ready .reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
 }
 
 @supports (animation-timeline: scroll()) {
@@ -1298,6 +1343,69 @@ section + section {
 
 .tag-post-item a:hover { color: var(--electric); }
 
+.diagram-panel {
+    margin: 2rem 0;
+    padding: 1.35rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 46%),
+        rgba(9, 12, 20, 0.88);
+}
+
+.diagram-panel h3 {
+    margin-bottom: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--electric);
+}
+
+.diagram-panel p {
+    margin-bottom: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.diagram-steps {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.diagram-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.8rem;
+    align-items: start;
+    padding: 0.75rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.diagram-step:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.diagram-step:last-child {
+    padding-bottom: 0;
+}
+
+.diagram-step strong {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.diagram-step span {
+    color: var(--text-secondary);
+    line-height: 1.65;
+}
+
 /* =============================================
    ARCHIVE/TAGS PAGE H1 (non-about)
    ============================================= */
@@ -1333,6 +1441,13 @@ section + section {
     }
     .reading-progress { transition: none; }
     body::before { animation: none; }
+    .cursor-glow { display: none !important; }
+    .js-ready .reveal-on-scroll,
+    .js-ready .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
 }
 
 /* =============================================

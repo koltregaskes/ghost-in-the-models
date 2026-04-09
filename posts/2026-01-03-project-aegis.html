@@ -157,26 +157,16 @@
 
                 <p><strong>AEGIS (Agent Entitlement & Governance Identity System)</strong> is our proposed solution. It's not just a tool; it's a protocol layer. It sits between the Agent and the Tool (MCP), acting as Passport Control.</p>
 
-                <div class="mermaid" style="background: var(--bg-secondary); padding: 2rem; border-radius: 8px; margin: 2rem 0;">
-sequenceDiagram
-    participant MarketingAgent
-    participant AEGIS_Proxy
-    participant GitHub_MCP
-
-    MarketingAgent->>AEGIS_Proxy: Request: "Commit Code"
-    AEGIS_Proxy->>AEGIS_Proxy: Check Visa: "Does Agent have Commit Rights?"
-    AEGIS_Proxy--xMarketingAgent: DENIED (Reason: Marketing Agents cannot commit code)
-
-    MarketingAgent->>AEGIS_Proxy: Request: "Read Analytics"
-    AEGIS_Proxy->>AEGIS_Proxy: Check Visa: "Valid until 5:00 PM"
-    AEGIS_Proxy->>GitHub_MCP: Forward Request
-    GitHub_MCP-->>AEGIS_Proxy: Data
-    AEGIS_Proxy-->>MarketingAgent: Data
+                <div class="diagram-panel">
+                    <h3>What The Proxy Actually Does</h3>
+                    <p>Strip away the branding and the AEGIS idea is a checkpoint in front of every action. The agent does not touch the tool directly. It asks a proxy that decides whether the request is even allowed to move forward.</p>
+                    <ol class="diagram-steps">
+                        <li class="diagram-step"><strong>01</strong><span>A marketing agent asks to commit code. The proxy checks its access visa, sees that commit rights are out of scope, and denies the request.</span></li>
+                        <li class="diagram-step"><strong>02</strong><span>The same agent asks to read analytics. The proxy checks that the permission exists and has not expired.</span></li>
+                        <li class="diagram-step"><strong>03</strong><span>Only after that check passes does the proxy forward the request to the downstream MCP tool.</span></li>
+                        <li class="diagram-step"><strong>04</strong><span>The tool returns data to the proxy, and the proxy returns only the allowed result to the requesting agent.</span></li>
+                    </ol>
                 </div>
-                <script type="module">
-                    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-                </script>
 
                 <h2>The Revenue Model</h2>
 

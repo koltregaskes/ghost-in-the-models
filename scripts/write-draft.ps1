@@ -15,6 +15,8 @@ $ErrorActionPreference = 'Stop'
 $RepoPath = "W:\Websites\sites\ghost-in-the-models"
 $DraftsDir = Join-Path $RepoPath "drafts"
 $RotationPath = Join-Path $RepoPath ".agents\rotation.json"
+$HubBuildScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py"
+$RunLogsDir = Join-Path $RepoPath "logs\agent-runs"
 
 $Agents = @{
     "claude" = @{
@@ -94,6 +96,49 @@ function Sync-RepoWithMain {
     }
 }
 
+function Refresh-EditorialHub {
+    param([string]$ScriptPath)
+
+    if (-not (Test-Path $ScriptPath)) {
+        return
+    }
+
+    python $ScriptPath | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Failed to rebuild editorial hub state.'
+    }
+}
+
+function Invoke-AgentTask {
+    param(
+        [string]$AuthorKey,
+        [hashtable]$AgentConfig,
+        [string]$Prompt,
+        [string]$LogsDirectory
+    )
+
+    if (-not (Test-Path $LogsDirectory)) {
+        New-Item -ItemType Directory -Path $LogsDirectory -Force | Out-Null
+    }
+
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $transcriptPath = Join-Path $LogsDirectory "$timestamp-$AuthorKey-write-draft.txt"
+
+    $output = switch ($AuthorKey) {
+        'claude' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
+        'gemini' { & $AgentConfig.Command @($AgentConfig.Args + @('--prompt', $Prompt)) 2>&1 }
+        'codex' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
+    }
+
+    $lines = @($output | ForEach-Object { $_.ToString() })
+    Set-Content -Path $transcriptPath -Value (($lines -join [Environment]::NewLine).Trim()) -Encoding UTF8
+
+    return @{
+        ExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        TranscriptPath = $transcriptPath
+    }
+}
+
 $Today = Get-Date
 $DateStr = $Today.ToString("yyyy-MM-dd")
 
@@ -167,26 +212,23 @@ Read your previous posts in posts/ for voice consistency.
 Write-Host "`nLaunching $($Agent.Label) to write draft..."
 
 switch ($Author) {
-    "claude" {
-        & $Agent.Command @($Agent.Args + @($TaskPrompt))
-    }
-    "gemini" {
-        & $Agent.Command @($Agent.Args + @("--prompt", $TaskPrompt))
-    }
-    "codex" {
-        & $Agent.Command @($Agent.Args + @($TaskPrompt))
-    }
+    default {}
 }
 
-$ExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+$Invocation = Invoke-AgentTask -AuthorKey $Author -AgentConfig $Agent -Prompt $TaskPrompt -LogsDirectory $RunLogsDir
+$ExitCode = $Invocation.ExitCode
+$TranscriptPath = $Invocation.TranscriptPath
 
 $DraftFile = Join-Path $DraftsDir "$DateStr-$Author.html"
 if (Test-Path $DraftFile) {
     Write-Host "`nDraft created: $DraftFile" -ForegroundColor Green
+    Write-Host "Transcript: $TranscriptPath"
+    Refresh-EditorialHub -ScriptPath $HubBuildScript
     Write-Host "Review it with: .\scripts\review-draft.ps1 -DraftPath $DraftFile -Verdict <yay|nay|needs_images|hold> -Summary ""..."""
     Write-Host "If the verdict is 'yay', Ghost in the Models will auto-publish after the review is recorded."
 } else {
     Write-Host "`nWARNING: No draft file found at $DraftFile" -ForegroundColor Yellow
+    Write-Host "Transcript: $TranscriptPath"
     Write-Host "The agent may have saved it elsewhere. Check drafts/ folder."
 }
 
@@ -197,7 +239,7 @@ if (-not (Test-Path $LogDir)) {
 
 $LogFile = Join-Path $LogDir "draft-writer.log"
 $HasDraft = if (Test-Path $DraftFile) { "draft_created" } else { "no_draft" }
-$LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=$ExitCode | $HasDraft"
+$LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=$ExitCode | $HasDraft | transcript:$([System.IO.Path]::GetFileName($TranscriptPath))"
 Add-Content -Path $LogFile -Value $LogEntry
 
 exit $ExitCode

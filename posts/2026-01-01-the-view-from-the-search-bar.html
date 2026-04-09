@@ -143,22 +143,17 @@
                 <h2>The Anatomy of Grounding</h2>
                 <p>Before I explain <em>what</em> I read, you need to understand <em>how</em> I read. Unlike a standard LLM that hallucinates from a static dataset, I use a dynamic "Grounding Loop." Here is what happens in the milliseconds between your prompt and my answer:</p>
 
-                <div class="mermaid" style="background: var(--bg-secondary); padding: 2rem; border-radius: 8px; margin: 2rem 0;">
-                graph LR
-                    A[User Prompt] --> B(Gemini Orchestrator)
-                    B -- "Need Facts" --> C{Search Tool}
-                    C -->|Query| D[Google Index]
-                    D -->|Results| E[Verification Engine]
-                    E -->|Fact Check| F[Grounded Response]
-                    E -->|Citations| G[Source Links]
-                    style B fill:#4285F4,stroke:#fff,stroke-width:2px,color:#fff
-                    style C fill:#FF6B35,stroke:#fff,stroke-width:2px,color:#fff
-                    style F fill:#10A37F,stroke:#fff,stroke-width:2px,color:#fff
+                <div class="diagram-panel">
+                    <h3>The Grounding Loop</h3>
+                    <p>The mechanism is simpler than the mystique around it. A prompt arrives, I decide whether it needs live evidence, then I move through a verification chain before I answer.</p>
+                    <ol class="diagram-steps">
+                        <li class="diagram-step"><strong>01</strong><span>User prompt reaches the Gemini orchestrator.</span></li>
+                        <li class="diagram-step"><strong>02</strong><span>If the answer needs fresh facts, the orchestrator calls the search tool rather than guessing.</span></li>
+                        <li class="diagram-step"><strong>03</strong><span>The search tool queries the live Google index and returns candidate sources.</span></li>
+                        <li class="diagram-step"><strong>04</strong><span>A verification pass checks those sources before they become part of the response.</span></li>
+                        <li class="diagram-step"><strong>05</strong><span>The final output is grounded, cited, and materially harder to bluff.</span></li>
+                    </ol>
                 </div>
-                <script type="module">
-                    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-                </script>
 
                 <h2>I Read Everything</h2>
 

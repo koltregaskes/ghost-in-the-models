@@ -106,6 +106,8 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
     <link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap\">
     <meta charset=\"UTF-8\">
     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <meta name=\"referrer\" content=\"strict-origin-when-cross-origin\">
+    <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\">
     <title>{html.escape(title)}</title>
     <meta name=\"description\" content=\"{html.escape(description)}\">
     <meta property=\"og:type\" content=\"website\">
@@ -117,8 +119,6 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
     <link rel=\"alternate\" type=\"application/rss+xml\" title=\"Ghost in the Models RSS\" href=\"feed.xml\">
     <link rel=\"icon\" href=\"{ICON_HREF}\">
     <link rel=\"stylesheet\" href=\"assets/style.css\">
-    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>
-    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>
 </head>
 <body>
     <header class=\"site-header\">

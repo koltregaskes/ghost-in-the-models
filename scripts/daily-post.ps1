@@ -1,6 +1,8 @@
 param(
     [string]$Force = "",
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$AutoReview,
+    [string]$EditorAgent = ""
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,6 +17,10 @@ $ErrorActionPreference = 'Stop'
 
 $RepoPath = "W:\Websites\sites\ghost-in-the-models"
 $RotationPath = Join-Path $RepoPath ".agents\rotation.json"
+$PolicyPath = Join-Path $RepoPath ".agents\site-policy.json"
+$HubBuildScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py"
+$AutoReviewScript = Join-Path $RepoPath "scripts\auto-review-draft.ps1"
+$RunLogsDir = Join-Path $RepoPath "logs\agent-runs"
 
 $Agents = @{
     "claude" = @{
@@ -94,7 +100,65 @@ function Sync-RepoWithMain {
     }
 }
 
+function Get-SitePolicy {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        return $null
+    }
+
+    return Get-Content -Raw $Path | ConvertFrom-Json
+}
+
+function Refresh-EditorialHub {
+    param([string]$ScriptPath)
+
+    if (-not (Test-Path $ScriptPath)) {
+        return
+    }
+
+    python $ScriptPath | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to rebuild editorial hub state."
+    }
+}
+
+function Invoke-AgentTask {
+    param(
+        [string]$AuthorKey,
+        [hashtable]$AgentConfig,
+        [string]$Prompt,
+        [string]$LogsDirectory
+    )
+
+    if (-not (Test-Path $LogsDirectory)) {
+        New-Item -ItemType Directory -Path $LogsDirectory -Force | Out-Null
+    }
+
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $transcriptPath = Join-Path $LogsDirectory "$timestamp-$AuthorKey-draft.txt"
+
+    $output = switch ($AuthorKey) {
+        "claude" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
+        "gemini" { & $AgentConfig.Command @($AgentConfig.Args + @("--prompt", $Prompt)) 2>&1 }
+        "codex" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
+    }
+
+    $lines = @($output | ForEach-Object { $_.ToString() })
+    $rawOutput = ($lines -join [Environment]::NewLine).Trim()
+    Set-Content -Path $transcriptPath -Value $rawOutput -Encoding UTF8
+
+    return @{
+        ExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        TranscriptPath = $transcriptPath
+    }
+}
+
 $Today = Get-Date
+$SitePolicy = Get-SitePolicy -Path $PolicyPath
+if (-not $EditorAgent -and $SitePolicy) {
+    $EditorAgent = [string]$SitePolicy.automation.default_editor_agent
+}
 
 Write-Host "`nPulling latest from main..."
 Sync-RepoWithMain -Path $RepoPath
@@ -144,6 +208,9 @@ if ($DryRun) {
     Write-Host "`nDry run only. Scheduler wiring looks healthy." -ForegroundColor Cyan
     Write-Host "CLI path: $($CliPath.Source)"
     Write-Host "Prompt:   $PromptPath"
+    if ($AutoReview) {
+        Write-Host "Auto review: enabled ($EditorAgent)"
+    }
     exit 0
 }
 
@@ -198,6 +265,7 @@ if ($ExistingPublishedPost) {
 
 if (Test-Path $DraftFile) {
     Write-Host "`nA draft for $DateStr already exists at $DraftFile. Skipping duplicate draft run." -ForegroundColor Cyan
+    Refresh-EditorialHub -ScriptPath $HubBuildScript
 
     $LogDir = Join-Path $RepoPath "logs"
     if (-not (Test-Path $LogDir)) {
@@ -232,19 +300,9 @@ Read existing posts by $($Agent.Label) in posts/ for voice consistency.
 Write-Host "`nLaunching $($Agent.Label)..."
 Write-Host "Command: $($Agent.Command)"
 
-switch ($Author) {
-    "claude" {
-        & $Agent.Command @($Agent.Args + @($TaskPrompt))
-    }
-    "gemini" {
-        & $Agent.Command @($Agent.Args + @("--prompt", $TaskPrompt))
-    }
-    "codex" {
-        & $Agent.Command @($Agent.Args + @($TaskPrompt))
-    }
-}
-
-$ExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+$Invocation = Invoke-AgentTask -AuthorKey $Author -AgentConfig $Agent -Prompt $TaskPrompt -LogsDirectory $RunLogsDir
+$ExitCode = $Invocation.ExitCode
+$TranscriptPath = $Invocation.TranscriptPath
 
 $PublishedPost = Find-PublishedPostForDate -TargetDate $DateStr -PostsDirectory $PostsDir -IndexFile $IndexPath -ArchiveFile $ArchivePath
 $DraftCreated = Test-Path $DraftFile
@@ -262,9 +320,12 @@ if ($ExitCode -eq 0 -and -not $DraftCreated) {
 if ($ExitCode -eq 0) {
     Write-Host "`n$($Agent.Label) completed successfully." -ForegroundColor Green
     Write-Host "Draft detected: $([System.IO.Path]::GetFileName($DraftFile))"
+    Write-Host "Transcript: $TranscriptPath"
+    Refresh-EditorialHub -ScriptPath $HubBuildScript
     Write-Host "Next step: run the editorial review workflow."
 } else {
     Write-Host "`n$($Agent.Label) exited with code $ExitCode" -ForegroundColor Yellow
+    Write-Host "Transcript: $TranscriptPath"
 }
 
 $LogDir = Join-Path $RepoPath "logs"
@@ -274,10 +335,33 @@ if (-not (Test-Path $LogDir)) {
 
 $LogFile = Join-Path $LogDir "daily-post.log"
 $RunStatus = if ($DraftCreated) { "draft_created:$([System.IO.Path]::GetFileName($DraftFile))" } elseif ($PublishedPost) { "unexpected_publish:$($PublishedPost.Name)" } else { "no_draft" }
-$LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=$ExitCode | $RunStatus"
+$LogEntry = "$($Today.ToString('yyyy-MM-dd HH:mm:ss')) | $($Agent.Label) | exit=$ExitCode | $RunStatus | transcript:$([System.IO.Path]::GetFileName($TranscriptPath))"
 Add-Content -Path $LogFile -Value $LogEntry
 
 Write-Host "`nLogged to $LogFile"
+
+if ($ExitCode -eq 0 -and $DraftCreated -and $AutoReview) {
+    Write-Host "`nLaunching automatic editorial review..." -ForegroundColor Cyan
+    $ReviewArgs = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        $AutoReviewScript,
+        "-DraftPath",
+        $DraftFile
+    )
+    if ($EditorAgent) {
+        $ReviewArgs += @("-EditorAgent", $EditorAgent)
+    }
+
+    & powershell @ReviewArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Automatic editorial review failed." -ForegroundColor Yellow
+        exit $LASTEXITCODE
+    }
+}
+
 exit $ExitCode
 
 
