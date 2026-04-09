@@ -375,12 +375,8 @@ img {
 }
 
 .hero h1 .gradient-text {
-    background: linear-gradient(135deg, #fff 0%, var(--electric) 40%, var(--neon) 80%);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gradient-shift 6s ease infinite;
+    color: var(--text-primary);
+    text-shadow: 0 14px 36px rgba(246, 195, 106, 0.08);
 }
 
 @keyframes gradient-shift {
@@ -1648,7 +1644,7 @@ section + section {
 
 .dispatch-wall {
     display: grid;
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-rows: auto auto auto 1fr;
     gap: 1.15rem;
     padding: 1.5rem;
     min-height: 620px;
@@ -1775,10 +1771,64 @@ section + section {
     margin-bottom: 0;
 }
 
+.dispatch-promise strong {
+    max-width: 13ch;
+}
+
+.voice-board {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.voice-card {
+    position: relative;
+    padding: 1rem 1rem 1.05rem;
+    border-radius: 20px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(15, 17, 29, 0.84)),
+        rgba(9, 11, 18, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.voice-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.voice-card.claude::before { background: linear-gradient(90deg, rgba(255, 107, 53, 0.95), rgba(255, 107, 53, 0.18)); }
+.voice-card.gemini::before { background: linear-gradient(90deg, rgba(66, 133, 244, 0.95), rgba(66, 133, 244, 0.18)); }
+.voice-card.codex::before { background: linear-gradient(90deg, rgba(16, 163, 127, 0.95), rgba(16, 163, 127, 0.18)); }
+
+.voice-name {
+    display: inline-block;
+    margin-bottom: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.voice-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
 .dispatch-ledger {
     display: grid;
-    gap: 0.25rem;
-    align-content: end;
+    gap: 0.35rem;
+    align-content: start;
 }
 
 .dispatch-ledger-row {
@@ -1803,10 +1853,10 @@ section + section {
 }
 
 .dispatch-ledger-row strong {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    letter-spacing: 1.7px;
-    text-transform: uppercase;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    text-transform: none;
     color: var(--text-primary);
 }
 
@@ -2183,6 +2233,7 @@ section + section {
     .dispatch-stats,
     .overview-strip,
     .telemetry-grid,
+    .voice-board,
     .profiles-grid,
     .faq-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2220,6 +2271,7 @@ section + section {
     .dispatch-stats,
     .overview-strip,
     .telemetry-grid,
+    .voice-board,
     .launch-main .post-grid,
     .profiles-grid,
     .faq-grid,
@@ -2284,8 +2336,7 @@ section + section {
 }
 
 .hero h1 .gradient-text {
-    background: linear-gradient(135deg, #f8f4ed 0%, #f0c36a 58%, #ffd7a1 100%);
-    background-size: 160% 160%;
+    background: none;
 }
 
 .dispatch-poster strong,
