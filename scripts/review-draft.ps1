@@ -34,6 +34,16 @@ $ErrorActionPreference = 'Stop'
 
 $RepoPath = "W:\Websites\sites\ghost-in-the-models"
 $RecorderScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\record-editorial-review.py"
+$Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+function Write-Utf8NoBom {
+    param(
+        [string]$Path,
+        [string]$Content
+    )
+
+    [System.IO.File]::WriteAllText($Path, $Content, $Utf8NoBom)
+}
 
 function Get-NormalizedRelativePath {
     param(
@@ -62,35 +72,44 @@ function Get-NormalizedRelativePath {
 
 $RelativePath = Get-NormalizedRelativePath -InputPath $DraftPath -Root $RepoPath
 
-$Args = @(
-    $RecorderScript,
-    '--site', 'ghost-in-the-models',
-    '--relative-path', $RelativePath,
-    '--verdict', $Verdict,
-    '--summary', $Summary,
-    '--editor', $Editor,
-    '--check', "security_sensitive_data=$SecurityStatus",
-    '--check', "context_and_controversy=$ContextStatus",
-    '--check', "facts_and_sourcing=$FactsStatus",
-    '--check', "dates_and_chronology=$DatesStatus",
-    '--check', "writing_edit=$WritingStatus",
-    '--check', "images_and_media=$ImagesStatus"
-)
-
-if ($SecurityNotes) { $Args += @('--note', "security_sensitive_data=$SecurityNotes") }
-if ($ContextNotes) { $Args += @('--note', "context_and_controversy=$ContextNotes") }
-if ($FactsNotes) { $Args += @('--note', "facts_and_sourcing=$FactsNotes") }
-if ($DatesNotes) { $Args += @('--note', "dates_and_chronology=$DatesNotes") }
-if ($WritingNotes) { $Args += @('--note', "writing_edit=$WritingNotes") }
-if ($ImagesNotes) { $Args += @('--note', "images_and_media=$ImagesNotes") }
-
-foreach ($Item in $Feedback) {
-    $Args += @('--feedback', $Item)
+$Payload = @{
+    site = 'ghost-in-the-models'
+    relative_path = $RelativePath
+    verdict = $Verdict
+    summary = $Summary
+    editor = $Editor
+    feedback = @($Feedback)
+    no_auto_publish = [bool]$NoAutoPublish
+    checklist = @{
+        security_sensitive_data = @{
+            status = $SecurityStatus
+            notes = $SecurityNotes
+        }
+        context_and_controversy = @{
+            status = $ContextStatus
+            notes = $ContextNotes
+        }
+        facts_and_sourcing = @{
+            status = $FactsStatus
+            notes = $FactsNotes
+        }
+        dates_and_chronology = @{
+            status = $DatesStatus
+            notes = $DatesNotes
+        }
+        writing_edit = @{
+            status = $WritingStatus
+            notes = $WritingNotes
+        }
+        images_and_media = @{
+            status = $ImagesStatus
+            notes = $ImagesNotes
+        }
+    }
 }
 
-if ($NoAutoPublish) {
-    $Args += '--no-auto-publish'
-}
+$PayloadPath = [System.IO.Path]::GetTempFileName()
+Write-Utf8NoBom -Path $PayloadPath -Content (($Payload | ConvertTo-Json -Depth 10) + "`n")
 
 Write-Host "==================================================="
 Write-Host "  Ghost in the Models - Editorial Review"
@@ -98,9 +117,13 @@ Write-Host "  File: $RelativePath"
 Write-Host "  Verdict: $Verdict"
 Write-Host "==================================================="
 
-python @Args
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to record editorial review."
+try {
+    python $RecorderScript --payload-file $PayloadPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to record editorial review."
+    }
+} finally {
+    Remove-Item $PayloadPath -ErrorAction SilentlyContinue
 }
 
 if ($Verdict -eq 'yay' -and -not $NoAutoPublish) {

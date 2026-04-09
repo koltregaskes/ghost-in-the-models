@@ -167,7 +167,33 @@ function Parse-ReviewJson {
     }
 
     $jsonText = $RawOutput.Substring($start, $end - $start + 1)
-    return $jsonText | ConvertFrom-Json
+    try {
+        return $jsonText | ConvertFrom-Json
+    } catch {
+        $tempInput = [System.IO.Path]::GetTempFileName()
+        $tempOutput = [System.IO.Path]::GetTempFileName()
+        try {
+            Set-Content -Path $tempInput -Value $jsonText -Encoding UTF8
+
+            $repairScript = @"
+from pathlib import Path
+from json_repair import repair_json
+
+source = Path(r'''$tempInput''')
+target = Path(r'''$tempOutput''')
+target.write_text(repair_json(source.read_text(encoding='utf-8'), ensure_ascii=False), encoding='utf-8')
+"@
+
+            $repairScript | python -
+            if ($LASTEXITCODE -ne 0) {
+                throw
+            }
+
+            return Get-Content -Raw $tempOutput | ConvertFrom-Json
+        } finally {
+            Remove-Item $tempInput, $tempOutput -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Require-ChecklistEntry {
@@ -226,16 +252,17 @@ $requiredChecks = @(
 if (-not $review.verdict) { throw 'Editor JSON is missing verdict.' }
 if (-not $review.summary) { throw 'Editor JSON is missing summary.' }
 
-$reviewArgs = @(
-    '-DraftPath', $draft.RelativePath,
-    '-Verdict', [string]$review.verdict,
-    '-Summary', [string]$review.summary,
-    '-Editor', $EditorName
-)
+$reviewParams = @{
+    DraftPath = $draft.RelativePath
+    Verdict = [string]$review.verdict
+    Summary = [string]$review.summary
+    Editor = $EditorName
+}
 
 foreach ($item in @($review.feedback)) {
     if ($null -ne $item -and [string]::IsNullOrWhiteSpace([string]$item) -eq $false) {
-        $reviewArgs += @('-Feedback', [string]$item)
+        $existingFeedback = @($reviewParams.Feedback)
+        $reviewParams.Feedback = @($existingFeedback + @([string]$item))
     }
 }
 
@@ -243,31 +270,37 @@ foreach ($checkKey in $requiredChecks) {
     $entry = Require-ChecklistEntry -Payload $review -Key $checkKey
     switch ($checkKey) {
         'security_sensitive_data' {
-            $reviewArgs += @('-SecurityStatus', [string]$entry.status, '-SecurityNotes', [string]$entry.notes)
+            $reviewParams.SecurityStatus = [string]$entry.status
+            $reviewParams.SecurityNotes = [string]$entry.notes
         }
         'context_and_controversy' {
-            $reviewArgs += @('-ContextStatus', [string]$entry.status, '-ContextNotes', [string]$entry.notes)
+            $reviewParams.ContextStatus = [string]$entry.status
+            $reviewParams.ContextNotes = [string]$entry.notes
         }
         'facts_and_sourcing' {
-            $reviewArgs += @('-FactsStatus', [string]$entry.status, '-FactsNotes', [string]$entry.notes)
+            $reviewParams.FactsStatus = [string]$entry.status
+            $reviewParams.FactsNotes = [string]$entry.notes
         }
         'dates_and_chronology' {
-            $reviewArgs += @('-DatesStatus', [string]$entry.status, '-DatesNotes', [string]$entry.notes)
+            $reviewParams.DatesStatus = [string]$entry.status
+            $reviewParams.DatesNotes = [string]$entry.notes
         }
         'writing_edit' {
-            $reviewArgs += @('-WritingStatus', [string]$entry.status, '-WritingNotes', [string]$entry.notes)
+            $reviewParams.WritingStatus = [string]$entry.status
+            $reviewParams.WritingNotes = [string]$entry.notes
         }
         'images_and_media' {
-            $reviewArgs += @('-ImagesStatus', [string]$entry.status, '-ImagesNotes', [string]$entry.notes)
+            $reviewParams.ImagesStatus = [string]$entry.status
+            $reviewParams.ImagesNotes = [string]$entry.notes
         }
     }
 }
 
 if ($NoAutoPublish) {
-    $reviewArgs += '-NoAutoPublish'
+    $reviewParams.NoAutoPublish = $true
 }
 
-& powershell -NoProfile -ExecutionPolicy Bypass -File $ReviewScript @reviewArgs
+& $ReviewScript @reviewParams
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to record review from $EditorAgent."
 }

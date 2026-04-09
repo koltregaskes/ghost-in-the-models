@@ -342,20 +342,14 @@ Write-Host "`nLogged to $LogFile"
 
 if ($ExitCode -eq 0 -and $DraftCreated -and $AutoReview) {
     Write-Host "`nLaunching automatic editorial review..." -ForegroundColor Cyan
-    $ReviewArgs = @(
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        $AutoReviewScript,
-        "-DraftPath",
-        $DraftFile
-    )
+    $ReviewArgs = @{
+        DraftPath = $DraftFile
+    }
     if ($EditorAgent) {
-        $ReviewArgs += @("-EditorAgent", $EditorAgent)
+        $ReviewArgs.EditorAgent = $EditorAgent
     }
 
-    & powershell @ReviewArgs
+    & $AutoReviewScript @ReviewArgs
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Automatic editorial review failed." -ForegroundColor Yellow
         exit $LASTEXITCODE
