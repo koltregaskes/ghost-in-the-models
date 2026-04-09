@@ -286,6 +286,7 @@ try {
     if (Test-Path $destinationPath) {
         Remove-Item $destinationPath -Force
     }
+    git restore --source=HEAD --worktree --staged .
     if (Test-Path $stagedDraftPath -and -not (Test-Path $draft.FullPath)) {
         Move-Item $stagedDraftPath $draft.FullPath -Force
     }
