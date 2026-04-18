@@ -1,269 +1,143 @@
-/**
- * GHOST IN THE MODELS - Interactive JavaScript
- * Native motion system with no third-party runtime dependencies.
- */
+/* ============================================================
+   GHOST IN THE MODELS — 2026 Edition
+   Vanilla JS, zero dependencies, progressively enhanced.
+   ============================================================ */
+
 (function () {
-    'use strict';
+  "use strict";
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
-    function initReadingProgress() {
-        const bar = document.createElement('div');
-        bar.className = 'reading-progress';
-        bar.setAttribute('aria-hidden', 'true');
-        document.body.prepend(bar);
+  /* ── 1. STICKY HEADER scroll-state ─────────────────────── */
 
-        function update() {
-            const scrollTop = window.scrollY;
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
-            bar.style.width = `${progress}%`;
-        }
+  const header = document.querySelector(".site-header");
+  if (header) {
+    let ticking = false;
+    const update = () => {
+      if (window.scrollY > 24) {
+        header.classList.add("is-scrolled");
+      } else {
+        header.classList.remove("is-scrolled");
+      }
+      ticking = false;
+    };
+    window.addEventListener("scroll", () => {
+      if (!ticking) {
+        requestAnimationFrame(update);
+        ticking = true;
+      }
+    }, { passive: true });
+  }
 
-        window.addEventListener('scroll', update, { passive: true });
-        window.addEventListener('resize', update);
-        update();
-    }
+  /* ── 2. CARD CURSOR GLOW (hover-capable devices only) ──── */
 
-    function initHeaderScroll() {
-        const header = document.querySelector('.site-header');
-        if (!header) {
-            return;
-        }
+  if (!coarsePointer && !reduceMotion) {
+    const cards = document.querySelectorAll(".post-card, .telemetry-card, .voice-card, .author-profile");
+    cards.forEach((card) => {
+      card.addEventListener("pointermove", (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty("--mx", `${x}%`);
+        card.style.setProperty("--my", `${y}%`);
+      });
+      card.addEventListener("pointerleave", () => {
+        card.style.setProperty("--mx", "50%");
+        card.style.setProperty("--my", "50%");
+      });
+    });
+  }
 
-        function handleScroll() {
-            header.classList.toggle('scrolled', window.scrollY > 40);
-        }
+  /* ── 3. REVEAL-ON-SCROLL FALLBACK ─────────────────────── */
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-    }
+  // For browsers without animation-timeline support, use IntersectionObserver
+  const supportsScrollTimeline = typeof CSS !== "undefined" && CSS.supports("animation-timeline", "view()");
 
-    function initRevealAnimations() {
-        const groups = [
-            ['.hero-copy > *', 0.08],
-            ['.hero-visual', 0.12],
-            ['.telemetry-card', 0.06],
-            ['.post-card', 0.08],
-            ['.author-card', 0.08],
-            ['.about-section', 0.08],
-            ['.author-profile', 0.1],
-            ['.faq-item', 0.08],
-            ['.step', 0.08],
-            ['.archive-item', 0.04],
-            ['.tag-section', 0.06],
-            ['.stat-card', 0.08],
-            ['.dispatch-ledger-row', 0.06],
-            ['.overview-strip > div', 0.04],
-            ['.post-body p, .post-body h2, .post-body ul, .post-body blockquote, .post-body table, .post-body pre', 0.02],
-            ['.site-footer .disclaimer, .site-footer .copyright', 0.04]
-        ];
-
-        const seen = new Set();
-        const targets = [];
-
-        groups.forEach(([selector, step]) => {
-            document.querySelectorAll(selector).forEach((element, index) => {
-                if (seen.has(element)) {
-                    return;
-                }
-                seen.add(element);
-                element.classList.add('reveal-on-scroll');
-                element.style.setProperty('--reveal-delay', `${index * step}s`);
-                targets.push(element);
-            });
-        });
-
-        if (prefersReducedMotion || !('IntersectionObserver' in window)) {
-            targets.forEach((element) => element.classList.add('is-visible'));
-            return;
-        }
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (!entry.isIntersecting) {
-                    return;
-                }
-                entry.target.classList.add('is-visible');
-                observer.unobserve(entry.target);
-            });
-        }, {
-            rootMargin: '0px 0px -10% 0px',
-            threshold: 0.12
-        });
-
-        targets.forEach((element) => observer.observe(element));
-    }
-
-    function initHeroStageAnimation() {
-        const stage = document.querySelector('.hero-stage');
-        if (!stage) {
-            return;
-        }
-
-        const title = stage.querySelector('.stage-title');
-        const pulses = stage.querySelectorAll('.stage-loader span');
-        if (!title || pulses.length === 0) {
-            return;
-        }
-
-        if (prefersReducedMotion) {
-            stage.classList.add('complete');
-            return;
-        }
-
-        const phases = [
-            { delay: 450, label: 'Signal alignment' },
-            { delay: 1100, label: 'Intent ready' }
-        ];
-
-        phases.forEach((phase, index) => {
-            window.setTimeout(() => {
-                title.textContent = phase.label;
-                stage.dataset.phase = String(index + 2);
-            }, phase.delay);
-        });
-
-        window.setTimeout(() => {
-            stage.classList.add('complete');
-            stage.dataset.phase = 'done';
-        }, 1750);
-    }
-
-    function initCursorGlow() {
-        if (!supportsHover || prefersReducedMotion) {
-            return;
-        }
-
-        const glow = document.createElement('div');
-        glow.className = 'cursor-glow';
-        glow.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(glow);
-
-        let currentX = window.innerWidth / 2;
-        let currentY = window.innerHeight / 2;
-        let targetX = currentX;
-        let targetY = currentY;
-        let isVisible = false;
-
-        function render() {
-            currentX += (targetX - currentX) * 0.12;
-            currentY += (targetY - currentY) * 0.12;
-            glow.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-            requestAnimationFrame(render);
-        }
-
-        window.addEventListener('mousemove', (event) => {
-            targetX = event.clientX;
-            targetY = event.clientY;
-            if (!isVisible) {
-                glow.classList.add('is-visible');
-                isVisible = true;
+  if (!supportsScrollTimeline && !reduceMotion) {
+    const reveals = document.querySelectorAll("[data-reveal]");
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
             }
-        }, { passive: true });
-
-        document.documentElement.addEventListener('mouseleave', () => {
-            glow.classList.remove('is-visible');
-            isVisible = false;
-        });
-
-        render();
-    }
-
-    function initCardSpotlight() {
-        if (!supportsHover) {
-            return;
-        }
-
-        document.querySelectorAll('.post-card').forEach((card) => {
-            card.addEventListener('mousemove', (event) => {
-                const rect = card.getBoundingClientRect();
-                const x = ((event.clientX - rect.left) / rect.width) * 100;
-                const y = ((event.clientY - rect.top) / rect.height) * 100;
-                card.style.setProperty('--mouse-x', `${x}%`);
-                card.style.setProperty('--mouse-y', `${y}%`);
-            });
-        });
-    }
-
-    function initMagneticButtons() {
-        if (!supportsHover || prefersReducedMotion) {
-            return;
-        }
-
-        document.querySelectorAll('.read-more, .nav-links a, .author-badge, .btn, .section-link').forEach((element) => {
-            element.addEventListener('mousemove', (event) => {
-                const rect = element.getBoundingClientRect();
-                const x = ((event.clientX - rect.left) - (rect.width / 2)) * 0.18;
-                const y = ((event.clientY - rect.top) - (rect.height / 2)) * 0.18;
-                element.style.transform = `translate(${x}px, ${y}px)`;
-            });
-
-            element.addEventListener('mouseleave', () => {
-                element.style.transform = '';
-            });
-        });
-    }
-
-    function initSmoothScroll() {
-        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-            anchor.addEventListener('click', function (event) {
-                const id = this.getAttribute('href');
-                if (!id || id === '#') {
-                    return;
-                }
-                const target = document.querySelector(id);
-                if (!target) {
-                    return;
-                }
-                event.preventDefault();
-                target.scrollIntoView({
-                    behavior: prefersReducedMotion ? 'auto' : 'smooth',
-                    block: 'start'
-                });
-            });
-        });
-    }
-
-    function initKonamiCode() {
-        const sequence = [
-            'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
-            'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
-            'KeyB', 'KeyA'
-        ];
-        let index = 0;
-
-        document.addEventListener('keydown', (event) => {
-            if (event.code === sequence[index]) {
-                index += 1;
-                if (index === sequence.length) {
-                    document.body.classList.add('konami-active');
-                    window.setTimeout(() => document.body.classList.remove('konami-active'), 1800);
-                    index = 0;
-                }
-                return;
-            }
-            index = 0;
-        });
-    }
-
-    function init() {
-        document.documentElement.classList.add('js-ready');
-        initReadingProgress();
-        initHeaderScroll();
-        initSmoothScroll();
-        initRevealAnimations();
-        initHeroStageAnimation();
-        initCursorGlow();
-        initCardSpotlight();
-        initMagneticButtons();
-        initKonamiCode();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
+          });
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -80px 0px" }
+      );
+      reveals.forEach((el) => observer.observe(el));
     } else {
-        init();
+      // Very old browser — show all immediately
+      reveals.forEach((el) => el.classList.add("is-visible"));
     }
+  }
+
+  /* ── 4. KINETIC HEADLINE FALLBACK ─────────────────────── */
+
+  // For browsers without animation-timeline, animate headline on load
+  if (!supportsScrollTimeline && !reduceMotion) {
+    const heroH1 = document.querySelector(".hero h1");
+    if (heroH1) {
+      heroH1.style.fontVariationSettings = '"opsz" 18, "wght" 500';
+      heroH1.style.transition = "font-variation-settings 800ms cubic-bezier(0.22, 1, 0.36, 1), opacity 800ms ease";
+      heroH1.style.opacity = "0.6";
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          heroH1.style.fontVariationSettings = '"opsz" 72, "wght" 700';
+          heroH1.style.opacity = "1";
+        });
+      });
+    }
+  }
+
+  /* ── 5. SPECULATION RULES (progressive enhancement) ───── */
+
+  // Inject prerender hints for likely-next navigation
+  if (typeof HTMLScriptElement !== "undefined" && HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules")) {
+    const specScript = document.createElement("script");
+    specScript.type = "speculationrules";
+    specScript.textContent = JSON.stringify({
+      prerender: [
+        {
+          where: { href_matches: "/posts/*" },
+          eagerness: "moderate",
+        },
+      ],
+    });
+    document.head.appendChild(specScript);
+  }
+
+  /* ── 6. KONAMI EASTER EGG (legacy carry-over) ─────────── */
+
+  const konami = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+  let konamiIndex = 0;
+  document.addEventListener("keydown", (e) => {
+    const expected = konami[konamiIndex];
+    if (e.key === expected || e.key.toLowerCase() === expected.toLowerCase()) {
+      konamiIndex++;
+      if (konamiIndex === konami.length) {
+        document.documentElement.style.transition = "filter 600ms ease";
+        document.documentElement.style.filter = "hue-rotate(180deg) saturate(1.4)";
+        setTimeout(() => {
+          document.documentElement.style.filter = "";
+        }, 4000);
+        konamiIndex = 0;
+      }
+    } else {
+      konamiIndex = 0;
+    }
+  });
+
+  /* ── 7. VIEW TRANSITIONS (already declarative in CSS) ──── */
+
+  // The browser handles cross-document View Transitions automatically when
+  // @view-transition { navigation: auto; } is present in CSS.
+  // No JS needed.
+
+  /* ── 8. GLOBAL HOOK: mark body once JS runs ───────────── */
+
+  document.body.classList.add("js-ready");
 })();

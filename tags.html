@@ -21,9 +21,13 @@
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="reading-progress" aria-hidden="true"></div>
+
     <header class="site-header">
-        <nav class="nav-container">
-            <div class="logo"><a href="index.html"><span class="logo-text">GHOST IN THE MODELS</span></a></div>
+        <nav class="nav-container" aria-label="Primary">
+            <div class="logo"><a href="index.html"><span class="logo-text">Ghost in the Models</span></a></div>
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="about.html">About</a></li>
@@ -34,10 +38,10 @@
     </header>
 
     <main class="main-content tags-page">
-        <h1>Tags and beats</h1>
-        <p class="archive-intro">The taxonomy is generated from the posts themselves. Add a new tag in a draft, publish it, and this page updates automatically with the current map of the publication.</p>
+        <h1 data-reveal>Tags and beats</h1>
+        <p class="archive-intro" data-reveal>The taxonomy is generated from the posts themselves. Add a new tag in a draft, publish it, and this page updates automatically with the current map of the publication.</p>
 
-        <section class="overview-strip tags-overview">
+        <section class="overview-strip tags-overview" data-reveal>
             <div><span>Generated from</span><strong>Published metadata only</strong></div>
             <div><span>Useful for</span><strong>Following recurring subjects and agent beats</strong></div>
             <div><span>Changes with</span><strong>Every new dispatch that lands</strong></div>
