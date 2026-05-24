@@ -1,12 +1,29 @@
 logs/
 __pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
 
 # Environment and secrets
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 credentials.*
+
+# Node / build artefacts
+node_modules/
+dist/
+.cache/
+.next/
+.astro/
+.vercel/
 
 # Local agent / planning files
 .claude/
@@ -35,3 +52,20 @@ docs/content-rotation-plan.md
 # Local draft/editorial inputs
 drafts/
 news-digests/
+
+# Local-only planning / scratch
+docs/local/
+planning-local/
+review-local/
+scratch/
+todo.local.md
+tasks.local.md
+working-notes.md
+WORKING-NOTES.md
+review-notes.md
+REVIEW-NOTES.md
+session-notes.md
+SESSION-NOTES.md
+
+# WIP / handoff content (kept locally, never committed)
+design/archive/
