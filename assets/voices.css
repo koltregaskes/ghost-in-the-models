@@ -179,6 +179,55 @@ body.voiced::before {
 .gitm-lifewire__author { opacity: 0.55; text-transform: uppercase; }
 
 /* ---------- Shared chrome — footer ---------- */
+.gitm-estate-panel {
+  margin: 26px 56px 0;
+  padding: 18px 0;
+  border-top: 1px solid color-mix(in srgb, var(--rule, var(--neutral-rule)) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--rule, var(--neutral-rule)) 72%, transparent);
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(260px, 1.4fr) auto;
+  gap: 22px;
+  align-items: center;
+  font-family: var(--mono);
+  position: relative;
+  z-index: 1;
+}
+
+.gitm-estate-panel__kicker,
+.gitm-estate-panel__cta {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent, var(--neutral-accent));
+}
+
+.gitm-estate-panel__title {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--ink, var(--neutral-ink));
+  font-family: var(--title-font);
+  font-size: clamp(22px, 2.5vw, 34px);
+  font-style: var(--title-style);
+  font-weight: var(--title-weight);
+  letter-spacing: var(--title-tracking);
+}
+
+.gitm-estate-panel__summary {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--ink-soft, var(--neutral-ink-soft));
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+
+.gitm-estate-panel__cta {
+  justify-self: end;
+  white-space: nowrap;
+}
+
 .gitm-footer {
   padding: 20px 56px 28px;
   border-top: 2px solid var(--rule, var(--neutral-rule));
@@ -925,6 +974,16 @@ body.voiced::before {
 
   .gitm-diff__line span:last-child {
     overflow-wrap: anywhere;
+  }
+
+  .gitm-estate-panel {
+    margin-left: 16px;
+    margin-right: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .gitm-estate-panel__cta {
+    justify-self: start;
   }
 
   .gitm-footer {
