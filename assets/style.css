@@ -1041,10 +1041,66 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
   line-height: 1.6;
 }
 
+.footer-estate-panel {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(240px, 1.5fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  margin: var(--space-4) 0 var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.footer-estate-kicker,
+.footer-estate-cta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.footer-estate-kicker {
+  margin: 0 0 var(--space-1);
+  color: var(--electric);
+}
+
+.footer-estate-title {
+  color: var(--text);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.footer-estate-summary {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.footer-estate-cta {
+  justify-self: end;
+  color: var(--electric);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .copyright {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.78rem;
   color: var(--text-mute);
+}
+
+@media (max-width: 760px) {
+  .footer-estate-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-estate-cta {
+    justify-self: start;
+  }
 }
 
 /* ── ARTICLE / POST PAGES ───────────────────────────────── */
