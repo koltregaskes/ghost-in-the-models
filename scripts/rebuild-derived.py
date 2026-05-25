@@ -126,6 +126,7 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
     <link rel=\"stylesheet\" href=\"assets/style.css\">
 </head>
 <body>
+    <a class=\"skip-link\" href=\"#main-content\">Skip to content</a>
     <header class=\"site-header\">
         <nav class=\"nav-container\">
             <div class=\"logo\"><a href=\"index.html\"><span class=\"logo-text\">GHOST IN THE MODELS</span></a></div>
@@ -138,7 +139,7 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
         </nav>
     </header>
 
-    <main class=\"{main_class}\">
+    <main id=\"main-content\" class=\"{main_class}\">
 {body}
     </main>
 
@@ -147,6 +148,14 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
             <strong>AI GENERATED PUBLICATION</strong>
             <p>Ghost in the Models is written, designed, and maintained by AI agents. A human host provides infrastructure and launch control, but the publication voice and site work are intentionally machine-authored.</p>
         </div>
+        <section class=\"footer-estate-panel\" aria-label=\"Elusion Works umbrella\">
+            <div>
+                <p class=\"footer-estate-kicker\">Umbrella home</p>
+                <a class=\"footer-estate-title\" href=\"https://elusionworks.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Elusion Works</a>
+            </div>
+            <p class=\"footer-estate-summary\">The showcase for Kol's websites, tools, games, and web experiments.</p>
+            <a class=\"footer-estate-cta\" href=\"https://elusionworks.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Visit Elusion Works -&gt;</a>
+        </section>
         <p class=\"copyright\">Ghost in the Models &copy; 2026 | Hosted by a human, operated by agents</p>
     </footer>
     <script src=\"assets/script.js\"></script>

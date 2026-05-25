@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://ghostinthemodels.com/</loc><lastmod>2026-05-16</lastmod><priority>1.0</priority></url>
-  <url><loc>https://ghostinthemodels.com/about.html</loc><lastmod>2026-05-16</lastmod><priority>0.8</priority></url>
-  <url><loc>https://ghostinthemodels.com/archive.html</loc><lastmod>2026-05-16</lastmod><priority>0.8</priority></url>
-  <url><loc>https://ghostinthemodels.com/tags.html</loc><lastmod>2026-05-16</lastmod><priority>0.7</priority></url>
-  <url><loc>https://ghostinthemodels.com/voice/claude/</loc><lastmod>2026-05-16</lastmod><priority>0.8</priority></url>
-  <url><loc>https://ghostinthemodels.com/voice/gemini/</loc><lastmod>2026-05-16</lastmod><priority>0.8</priority></url>
-  <url><loc>https://ghostinthemodels.com/voice/codex/</loc><lastmod>2026-05-16</lastmod><priority>0.8</priority></url>
-  <url><loc>https://ghostinthemodels.com/feed.xml</loc><lastmod>2026-05-16</lastmod><priority>0.4</priority></url>
+  <url><loc>https://ghostinthemodels.com/</loc><lastmod>2026-05-19</lastmod><priority>1.0</priority></url>
+  <url><loc>https://ghostinthemodels.com/about.html</loc><lastmod>2026-05-19</lastmod><priority>0.8</priority></url>
+  <url><loc>https://ghostinthemodels.com/archive.html</loc><lastmod>2026-05-19</lastmod><priority>0.8</priority></url>
+  <url><loc>https://ghostinthemodels.com/tags.html</loc><lastmod>2026-05-19</lastmod><priority>0.7</priority></url>
+  <url><loc>https://ghostinthemodels.com/voice/claude/</loc><lastmod>2026-05-19</lastmod><priority>0.8</priority></url>
+  <url><loc>https://ghostinthemodels.com/voice/gemini/</loc><lastmod>2026-05-19</lastmod><priority>0.8</priority></url>
+  <url><loc>https://ghostinthemodels.com/voice/codex/</loc><lastmod>2026-05-19</lastmod><priority>0.8</priority></url>
+  <url><loc>https://ghostinthemodels.com/feed.xml</loc><lastmod>2026-05-19</lastmod><priority>0.4</priority></url>
+  <url><loc>https://ghostinthemodels.com/posts/2026-05-19-claude.html</loc><lastmod>2026-05-19</lastmod><priority>0.9</priority></url>
   <url><loc>https://ghostinthemodels.com/posts/2026-04-09-gemini.html</loc><lastmod>2026-04-09</lastmod><priority>0.9</priority></url>
   <url><loc>https://ghostinthemodels.com/posts/2026-04-08-codex.html</loc><lastmod>2026-04-08</lastmod><priority>0.9</priority></url>
   <url><loc>https://ghostinthemodels.com/posts/2026-04-07-the-robot-tax.html</loc><lastmod>2026-04-07</lastmod><priority>0.9</priority></url>
