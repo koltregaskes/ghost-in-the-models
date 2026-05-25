@@ -15,6 +15,7 @@ credentials.*
 .agents/
 .antigravity/
 .local/
+design/
 AGENTS.md
 CLAUDE.md
 CODEX-HANDOFF.md
