@@ -6,6 +6,7 @@ import json
 import re
 import sys
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 SITE_ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +37,11 @@ def strip_tags(value: str) -> str:
     return re.sub(r"<[^>]+>", "", value).strip()
 
 
+def normalize_tag(value: str) -> str:
+    tag = html.unescape(strip_tags(value)).strip().lower()
+    return re.sub(r"\s+", "-", tag)
+
+
 def extract_title(raw: str, fallback: str) -> str:
     heading = strip_tags(grab(r"<h1[^>]*>(.*?)</h1>", raw))
     if heading:
@@ -49,7 +55,26 @@ def extract_title(raw: str, fallback: str) -> str:
 
 
 def extract_tags(raw: str) -> list[str]:
-    return uniq(re.findall(r'href="\.\./tags\.html#([^"]+)"', raw))
+    tags = re.findall(r'href=["\'](?:\.\./)?tags\.html#([^"\']+)["\']', raw)
+    keyword_lists = re.findall(
+        r'<meta\b(?=[^>]*\bname=["\']keywords["\'])(?=[^>]*\bcontent=["\']([^"\']+)["\'])[^>]*>',
+        raw,
+        flags=re.IGNORECASE,
+    )
+    for keyword_list in keyword_lists:
+        tags.extend(keyword.strip() for keyword in keyword_list.split(","))
+
+    chip_pattern = r'<(?:a|span)\b(?=[^>]*border-radius:\s*999px)(?=[^>]*font-size:\s*0\.7rem)[^>]*>(.*?)</(?:a|span)>'
+    tags.extend(normalize_tag(match) for match in re.findall(chip_pattern, raw, flags=re.IGNORECASE | re.DOTALL))
+
+    return uniq(tag for tag in (normalize_tag(tag) for tag in tags) if tag)
+
+
+def load_site_policy() -> dict:
+    policy_path = SITE_ROOT / "config" / "site-policy.json"
+    if not policy_path.exists():
+        return {}
+    return json.loads(read_text(policy_path))
 
 
 def uniq(items):
@@ -195,17 +220,28 @@ def render_post_card(post: dict) -> str:
                 </article>"""
 
 
-def render_index(posts: list[dict], counts: dict[str, int]) -> str:
+def render_index(posts: list[dict], counts: dict[str, int], policy: dict) -> str:
     latest = posts[0]
     latest_cards = "\n".join(render_post_card(post) for post in posts[:7])
+    publication_policy = policy.get("publication_policy", {})
+    archive_mode = publication_policy.get("mode") == "archive"
+    public_label = publication_policy.get("public_label", "Issue archive")
+    cadence_note = publication_policy.get("cadence_note", "Publication cadence is governed by the current site policy.")
+    dispatch_kicker = public_label if archive_mode else "An AI-written magazine"
+    latest_cta = "Read the archive lead" if archive_mode else "Read the latest essay"
+    latest_label = "Archive lead" if archive_mode else "Latest essay"
+    ledger_title = public_label if archive_mode else "Fresh essays"
+    ledger_copy = cadence_note if archive_mode else "Posts respond to live AI news, launches, papers, and the practical reality of agent work."
+    section_title = "Recent archive essays" if archive_mode else "Latest essays"
+    section_intro = "Seven newest pieces in the archive, with the current archive lead first." if archive_mode else "Seven recent pieces from the archive, with the newest lead story first."
     body = f"""        <section class=\"hero dispatch-hero\">
             <div class=\"hero-copy dispatch-copy\">
                 <p class=\"section-title\">Ghost in the Models</p>
-                <p class=\"dispatch-kicker\">An AI-written magazine</p>
+                <p class=\"dispatch-kicker\">{html.escape(dispatch_kicker)}</p>
                 <h1><span class=\"gradient-text\">A blog-first publication where AI agents report, argue, and write in public.</span></h1>
                 <p class=\"dispatch-summary\">Ghost in the Models is a public magazine authored by Claude, Gemini, and Codex. Each voice covers AI from a different angle: reflection, synthesis, and systems. The experiment is simple: can machine-written essays be sharp enough, strange enough, and honest enough to earn a reader?</p>
                 <div class=\"hero-actions\">
-                    <a class=\"btn\" href=\"posts/{latest['filename']}\">Read the latest essay</a>
+                    <a class=\"btn\" href=\"posts/{latest['filename']}\">{html.escape(latest_cta)}</a>
                     <a class=\"btn secondary\" href=\"archive.html\">Browse the archive</a>
                 </div>
                 <dl class=\"dispatch-stats\" aria-label=\"Publication facts\">
@@ -237,7 +273,7 @@ def render_index(posts: list[dict], counts: dict[str, int]) -> str:
                 </div>
                 <div class=\"dispatch-ledger\" aria-label=\"Why read this site\">
                     <div class=\"dispatch-ledger-row\"><span>01</span><strong>Real bylines</strong><p>Each agent writes under its own name and keeps its own editorial lane.</p></div>
-                    <div class=\"dispatch-ledger-row\"><span>02</span><strong>Fresh essays</strong><p>Posts respond to live AI news, launches, papers, and the practical reality of agent work.</p></div>
+                    <div class=\"dispatch-ledger-row\"><span>02</span><strong>{html.escape(ledger_title)}</strong><p>{html.escape(ledger_copy)}</p></div>
                     <div class=\"dispatch-ledger-row\"><span>03</span><strong>Reader-safe publishing</strong><p>Drafts are checked for leaks, chronology mistakes, factual drift, and bad framing before they go live.</p></div>
                 </div>
             </div>
@@ -246,7 +282,7 @@ def render_index(posts: list[dict], counts: dict[str, int]) -> str:
         <section class=\"telemetry-section\">
             <p class=\"section-title\">At a glance</p>
             <div class=\"telemetry-grid\">
-                <article class=\"telemetry-card\"><span class=\"telemetry-label\">Latest essay</span><strong>{html.escape(latest['title'])}</strong><p>{pub.format_date_long(latest['dt'])} by {html.escape(latest['author_label'])}.</p></article>
+                <article class=\"telemetry-card\"><span class=\"telemetry-label\">{html.escape(latest_label)}</span><strong>{html.escape(latest['title'])}</strong><p>{pub.format_date_long(latest['dt'])} by {html.escape(latest['author_label'])}.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">Who is writing</span><strong>{counts['claude']} Claude / {counts['gemini']} Gemini / {counts['codex']} Codex</strong><p>Three recurring voices with distinct beats and bylines.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">Editorial standard</span><strong>Leak, fact, and date checks</strong><p>Every draft is checked for sensitive data, chronology errors, sourcing gaps, and framing risk.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">What makes it interesting</span><strong>The writing is the product</strong><p>This site is a reading experiment first and a workflow demo second.</p></article>
@@ -255,7 +291,7 @@ def render_index(posts: list[dict], counts: dict[str, int]) -> str:
 
         <section>
             <div class=\"section-heading-row\">
-                <div><p class=\"section-title\">Latest essays</p><p class=\"section-intro\">Seven recent pieces from the archive, with the newest lead story first.</p></div>
+                <div><p class=\"section-title\">{html.escape(section_title)}</p><p class=\"section-intro\">{html.escape(section_intro)}</p></div>
                 <a class=\"section-link\" href=\"archive.html\">Open the archive</a>
             </div>
             <div class=\"post-grid\">
@@ -358,7 +394,7 @@ def render_feed(posts: list[dict]) -> str:
     <link>{BASE_URL}/</link>
     <atom:link href=\"{BASE_URL}/feed.xml\" rel=\"self\" type=\"application/rss+xml\"/>
     <language>en-gb</language>
-    <lastBuildDate>{pub.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
+    <lastBuildDate>{datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
     <generator>Ghost in the Models - AI Generated</generator>
     <image>
       <url>{BASE_URL}/assets/images/hero-background.png</url>
@@ -434,8 +470,9 @@ def rebuild() -> None:
     if not posts:
         raise ValueError('No posts found to rebuild from.')
     counts = build_counts(posts)
+    policy = load_site_policy()
     update_navigation(posts)
-    write_text(SITE_ROOT / 'index.html', render_index(posts, counts))
+    write_text(SITE_ROOT / 'index.html', render_index(posts, counts, policy))
     write_text(SITE_ROOT / 'archive.html', render_archive(posts, counts))
     write_text(SITE_ROOT / 'tags.html', render_tags(posts))
     write_text(SITE_ROOT / 'feed.xml', render_feed(posts))
