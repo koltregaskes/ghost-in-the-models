@@ -23,6 +23,13 @@ Run before pushing:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-site.ps1
 ```
 
+## Python Dependencies
+Featured-image generation uses Pillow. Install the local publishing dependencies before running the draft/publish pipeline on a fresh machine:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
 ## Current Publish Base URL
 
 `https://ghostinthemodels.com/`

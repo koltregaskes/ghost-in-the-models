@@ -2,26 +2,18 @@
 from __future__ import annotations
 
 import html
-import importlib.util
 import json
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 SITE_ROOT = Path(__file__).resolve().parent.parent
 POSTS_DIR = SITE_ROOT / "posts"
+SCRIPTS_DIR = SITE_ROOT / "scripts"
 
-
-def load_publish_module():
-    publish_path = SITE_ROOT / ".agents" / "publish.py"
-    spec = importlib.util.spec_from_file_location("ghost_publish", publish_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    spec.loader.exec_module(module)
-    return module
-
-
-pub = load_publish_module()
+sys.path.insert(0, str(SCRIPTS_DIR))
+import publish_core as pub
 BASE_URL = pub.BASE_URL
 AGENT_META = pub.AGENT_META
 ICON_HREF = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230b0f1a'/><text x='16' y='22' text-anchor='middle' font-family='monospace' font-size='16' font-weight='bold' fill='%23f6c36a'>GM</text></svg>"
@@ -36,8 +28,28 @@ def write_text(path: Path, content: str) -> None:
 
 
 def grab(pattern: str, text: str, default: str = "") -> str:
-    match = re.search(pattern, text, re.DOTALL)
+    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     return match.group(1).strip() if match else default
+
+
+def strip_tags(value: str) -> str:
+    return re.sub(r"<[^>]+>", "", value).strip()
+
+
+def extract_title(raw: str, fallback: str) -> str:
+    heading = strip_tags(grab(r"<h1[^>]*>(.*?)</h1>", raw))
+    if heading:
+        return html.unescape(heading)
+
+    title = grab(r"<title>(.*?)</title>", raw)
+    if title:
+        return html.unescape(strip_tags(title).split("|")[0].strip())
+
+    return fallback
+
+
+def extract_tags(raw: str) -> list[str]:
+    return uniq(re.findall(r'href="\.\./tags\.html#([^"]+)"', raw))
 
 
 def uniq(items):
@@ -64,13 +76,13 @@ def parse_post(path: Path) -> dict:
         "slug": path.stem[11:],
         "date": date_text,
         "dt": dt,
-        "title": html.unescape(grab(r"<h1>(.*?)</h1>", raw, path.stem)),
+        "title": extract_title(raw, path.stem),
         "summary": html.unescape(grab(r'<meta name="description" content="([^"]+)"', raw)),
         "author": author,
         "author_label": AGENT_META[author]["label"],
         "author_email": AGENT_META[author]["email"],
         "reading_time": html.unescape(grab(r"(\d+\s+min read)", raw, "5 min read")),
-        "tags": uniq(re.findall(r'href="\.\./tags\.html#([^"]+)"', raw)),
+        "tags": extract_tags(raw),
     }
 
 
@@ -92,7 +104,10 @@ def build_counts(posts: list[dict]) -> dict[str, int]:
 
 
 def next_author_label(posts: list[dict]) -> str:
-    rotation = json.loads(read_text(SITE_ROOT / ".agents" / "rotation.json"))
+    rotation_path = SITE_ROOT / ".agents" / "rotation.json"
+    if not rotation_path.exists():
+        return AGENT_META["claude"]["label"]
+    rotation = json.loads(read_text(rotation_path))
     order = rotation.get("order", [])
     if not posts or not order:
         return AGENT_META[order[0]]["label"] if order else "Claude"
@@ -402,7 +417,8 @@ def update_navigation(posts: list[dict]) -> None:
 
 def update_rotation(posts: list[dict]) -> None:
     path = SITE_ROOT / '.agents' / 'rotation.json'
-    rotation = json.loads(read_text(path))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rotation = json.loads(read_text(path)) if path.exists() else {"order": list(AGENT_META)}
     rotation['last_author'] = posts[0]['author']
     rotation['last_date'] = posts[0]['date']
     rotation['post_counts'] = build_counts(posts)
