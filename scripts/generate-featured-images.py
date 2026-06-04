@@ -238,43 +238,80 @@ def render_featured_image(path: Path, *, title: str, summary: str, author: str, 
 
 def update_html_references(raw: str, image_name: str) -> str:
     image_url = featured_absolute_url(image_name)
+    meta_tag = f'    <meta property="og:image" content="{image_url}">'
+    og_line_pattern = r'^[ \t]*<meta\s+property="og:image"\s+content="[^"]+">\s*$'
     og_pattern = r'(<meta\s+property="og:image"\s+content=")[^"]+(")'
-    if re.search(og_pattern, raw, re.IGNORECASE):
-        updated = re.sub(og_pattern, rf"\1{image_url}\2", raw, count=1, flags=re.IGNORECASE)
+    if re.search(og_line_pattern, raw, re.IGNORECASE | re.MULTILINE):
+        updated = re.sub(
+            og_line_pattern,
+            meta_tag,
+            raw,
+            count=1,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+    elif re.search(og_pattern, raw, re.IGNORECASE):
+        updated = re.sub(
+            og_pattern,
+            lambda match: f"{match.group(1)}{image_url}{match.group(2)}",
+            raw,
+            count=1,
+            flags=re.IGNORECASE,
+        )
     else:
-        meta_tag = f'    <meta property="og:image" content="{image_url}">'
         insert_patterns = [
-            r'(\s*<meta\s+property="og:description"\s+content="[^"]+">)',
-            r'(\s*<meta\s+name="description"\s+content="[^"]+">)',
-            r'(\s*<link\s+rel="canonical"\s+href="[^"]+">)',
+            r'(^[ \t]*<meta\s+property="og:description"\s+content="[^"]+">)',
+            r'(^[ \t]*<meta\s+name="description"\s+content="[^"]+">)',
+            r'(^[ \t]*<link\s+rel="canonical"\s+href="[^"]+">)',
         ]
         updated = raw
         for pattern in insert_patterns:
-            if re.search(pattern, updated, re.IGNORECASE):
-                updated = re.sub(pattern, rf"\1\n{meta_tag}", updated, count=1, flags=re.IGNORECASE)
+            if re.search(pattern, updated, re.IGNORECASE | re.MULTILINE):
+                updated = re.sub(
+                    pattern,
+                    lambda match: f"{match.group(1)}\n{meta_tag}",
+                    updated,
+                    count=1,
+                    flags=re.IGNORECASE | re.MULTILINE,
+                )
                 break
         else:
             updated = updated.replace("</head>", f"{meta_tag}\n</head>", 1)
 
     json_image_pattern = r'("image"\s*:\s*")[^"]+(")'
     if re.search(json_image_pattern, updated, re.IGNORECASE):
-        updated = re.sub(json_image_pattern, rf"\1{image_url}\2", updated, count=1, flags=re.IGNORECASE)
+        updated = re.sub(
+            json_image_pattern,
+            lambda match: f"{match.group(1)}{image_url}{match.group(2)}",
+            updated,
+            count=1,
+            flags=re.IGNORECASE,
+        )
     elif re.search(r'(<script\s+type="application/ld\+json"[^>]*>.*?)(\n\s*"inLanguage"\s*:)', updated, re.IGNORECASE | re.DOTALL):
         updated = re.sub(
             r'(<script\s+type="application/ld\+json"[^>]*>.*?)(\n\s*"inLanguage"\s*:)',
-            rf'\1\n          "image": "{image_url}",\2',
+            lambda match: f'{match.group(1)}\n          "image": "{image_url}",{match.group(2)}',
             updated,
             count=1,
             flags=re.IGNORECASE | re.DOTALL,
         )
+    for head_line in ("link", "meta"):
+        updated = re.sub(
+            rf'^<{head_line}\b',
+            f'    <{head_line}',
+            updated,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
     return updated
 
 
-def process_file(path: Path) -> tuple[bool, Path]:
+def process_file(path: Path) -> tuple[bool, Path | None]:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
     raw = read_text(path)
+    if 'http-equiv="refresh"' in raw.lower():
+        return False, None
+
     title = strip_tags(grab(r"<h1[^>]*>(.*?)</h1>", raw, path.stem))
     summary = grab(r'<meta\s+name="description"\s+content="([^"]+)"', raw)
     if not summary:
@@ -307,6 +344,9 @@ def main() -> None:
     updated_files = 0
     for target in targets:
         changed, image_path = process_file(target)
+        if image_path is None:
+            print(f"skipped redirect: {target.relative_to(SITE_ROOT)}")
+            continue
         if changed:
             updated_files += 1
         print(f"{'updated' if changed else 'verified'}: {target.relative_to(SITE_ROOT)} -> {image_path.relative_to(SITE_ROOT)}")
