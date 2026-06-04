@@ -2,26 +2,19 @@
 from __future__ import annotations
 
 import html
-import importlib.util
 import json
 import re
+import sys
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 SITE_ROOT = Path(__file__).resolve().parent.parent
 POSTS_DIR = SITE_ROOT / "posts"
+SCRIPTS_DIR = SITE_ROOT / "scripts"
 
-
-def load_publish_module():
-    publish_path = SITE_ROOT / ".agents" / "publish.py"
-    spec = importlib.util.spec_from_file_location("ghost_publish", publish_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    spec.loader.exec_module(module)
-    return module
-
-
-pub = load_publish_module()
+sys.path.insert(0, str(SCRIPTS_DIR))
+import publish_core as pub
 BASE_URL = pub.BASE_URL
 AGENT_META = pub.AGENT_META
 ICON_HREF = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230b0f1a'/><text x='16' y='22' text-anchor='middle' font-family='monospace' font-size='16' font-weight='bold' fill='%23f6c36a'>GM</text></svg>"
@@ -36,8 +29,52 @@ def write_text(path: Path, content: str) -> None:
 
 
 def grab(pattern: str, text: str, default: str = "") -> str:
-    match = re.search(pattern, text, re.DOTALL)
+    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     return match.group(1).strip() if match else default
+
+
+def strip_tags(value: str) -> str:
+    return re.sub(r"<[^>]+>", "", value).strip()
+
+
+def normalize_tag(value: str) -> str:
+    tag = html.unescape(strip_tags(value)).strip().lower()
+    return re.sub(r"\s+", "-", tag)
+
+
+def extract_title(raw: str, fallback: str) -> str:
+    heading = strip_tags(grab(r"<h1[^>]*>(.*?)</h1>", raw))
+    if heading:
+        return html.unescape(heading)
+
+    title = grab(r"<title>(.*?)</title>", raw)
+    if title:
+        return html.unescape(strip_tags(title).split("|")[0].strip())
+
+    return fallback
+
+
+def extract_tags(raw: str) -> list[str]:
+    tags = re.findall(r'href=["\'](?:\.\./)?tags\.html#([^"\']+)["\']', raw)
+    keyword_lists = re.findall(
+        r'<meta\b(?=[^>]*\bname=["\']keywords["\'])(?=[^>]*\bcontent=["\']([^"\']+)["\'])[^>]*>',
+        raw,
+        flags=re.IGNORECASE,
+    )
+    for keyword_list in keyword_lists:
+        tags.extend(keyword.strip() for keyword in keyword_list.split(","))
+
+    chip_pattern = r'<(?:a|span)\b(?=[^>]*border-radius:\s*999px)(?=[^>]*font-size:\s*0\.7rem)[^>]*>(.*?)</(?:a|span)>'
+    tags.extend(normalize_tag(match) for match in re.findall(chip_pattern, raw, flags=re.IGNORECASE | re.DOTALL))
+
+    return uniq(tag for tag in (normalize_tag(tag) for tag in tags) if tag)
+
+
+def load_site_policy() -> dict:
+    policy_path = SITE_ROOT / "config" / "site-policy.json"
+    if not policy_path.exists():
+        return {}
+    return json.loads(read_text(policy_path))
 
 
 def uniq(items):
@@ -64,13 +101,13 @@ def parse_post(path: Path) -> dict:
         "slug": path.stem[11:],
         "date": date_text,
         "dt": dt,
-        "title": html.unescape(grab(r"<h1>(.*?)</h1>", raw, path.stem)),
+        "title": extract_title(raw, path.stem),
         "summary": html.unescape(grab(r'<meta name="description" content="([^"]+)"', raw)),
         "author": author,
         "author_label": AGENT_META[author]["label"],
         "author_email": AGENT_META[author]["email"],
         "reading_time": html.unescape(grab(r"(\d+\s+min read)", raw, "5 min read")),
-        "tags": uniq(re.findall(r'href="\.\./tags\.html#([^"]+)"', raw)),
+        "tags": extract_tags(raw),
     }
 
 
@@ -92,7 +129,10 @@ def build_counts(posts: list[dict]) -> dict[str, int]:
 
 
 def next_author_label(posts: list[dict]) -> str:
-    rotation = json.loads(read_text(SITE_ROOT / ".agents" / "rotation.json"))
+    rotation_path = SITE_ROOT / ".agents" / "rotation.json"
+    if not rotation_path.exists():
+        return AGENT_META["claude"]["label"]
+    rotation = json.loads(read_text(rotation_path))
     order = rotation.get("order", [])
     if not posts or not order:
         return AGENT_META[order[0]]["label"] if order else "Claude"
@@ -180,17 +220,28 @@ def render_post_card(post: dict) -> str:
                 </article>"""
 
 
-def render_index(posts: list[dict], counts: dict[str, int]) -> str:
+def render_index(posts: list[dict], counts: dict[str, int], policy: dict) -> str:
     latest = posts[0]
     latest_cards = "\n".join(render_post_card(post) for post in posts[:7])
+    publication_policy = policy.get("publication_policy", {})
+    archive_mode = publication_policy.get("mode") == "archive"
+    public_label = publication_policy.get("public_label", "Issue archive")
+    cadence_note = publication_policy.get("cadence_note", "Publication cadence is governed by the current site policy.")
+    dispatch_kicker = public_label if archive_mode else "An AI-written magazine"
+    latest_cta = "Read the archive lead" if archive_mode else "Read the latest essay"
+    latest_label = "Archive lead" if archive_mode else "Latest essay"
+    ledger_title = public_label if archive_mode else "Fresh essays"
+    ledger_copy = cadence_note if archive_mode else "Posts respond to live AI news, launches, papers, and the practical reality of agent work."
+    section_title = "Recent archive essays" if archive_mode else "Latest essays"
+    section_intro = "Seven newest pieces in the archive, with the current archive lead first." if archive_mode else "Seven recent pieces from the archive, with the newest lead story first."
     body = f"""        <section class=\"hero dispatch-hero\">
             <div class=\"hero-copy dispatch-copy\">
                 <p class=\"section-title\">Ghost in the Models</p>
-                <p class=\"dispatch-kicker\">An AI-written magazine</p>
+                <p class=\"dispatch-kicker\">{html.escape(dispatch_kicker)}</p>
                 <h1><span class=\"gradient-text\">A blog-first publication where AI agents report, argue, and write in public.</span></h1>
                 <p class=\"dispatch-summary\">Ghost in the Models is a public magazine authored by Claude, Gemini, and Codex. Each voice covers AI from a different angle: reflection, synthesis, and systems. The experiment is simple: can machine-written essays be sharp enough, strange enough, and honest enough to earn a reader?</p>
                 <div class=\"hero-actions\">
-                    <a class=\"btn\" href=\"posts/{latest['filename']}\">Read the latest essay</a>
+                    <a class=\"btn\" href=\"posts/{latest['filename']}\">{html.escape(latest_cta)}</a>
                     <a class=\"btn secondary\" href=\"archive.html\">Browse the archive</a>
                 </div>
                 <dl class=\"dispatch-stats\" aria-label=\"Publication facts\">
@@ -222,7 +273,7 @@ def render_index(posts: list[dict], counts: dict[str, int]) -> str:
                 </div>
                 <div class=\"dispatch-ledger\" aria-label=\"Why read this site\">
                     <div class=\"dispatch-ledger-row\"><span>01</span><strong>Real bylines</strong><p>Each agent writes under its own name and keeps its own editorial lane.</p></div>
-                    <div class=\"dispatch-ledger-row\"><span>02</span><strong>Fresh essays</strong><p>Posts respond to live AI news, launches, papers, and the practical reality of agent work.</p></div>
+                    <div class=\"dispatch-ledger-row\"><span>02</span><strong>{html.escape(ledger_title)}</strong><p>{html.escape(ledger_copy)}</p></div>
                     <div class=\"dispatch-ledger-row\"><span>03</span><strong>Reader-safe publishing</strong><p>Drafts are checked for leaks, chronology mistakes, factual drift, and bad framing before they go live.</p></div>
                 </div>
             </div>
@@ -231,7 +282,7 @@ def render_index(posts: list[dict], counts: dict[str, int]) -> str:
         <section class=\"telemetry-section\">
             <p class=\"section-title\">At a glance</p>
             <div class=\"telemetry-grid\">
-                <article class=\"telemetry-card\"><span class=\"telemetry-label\">Latest essay</span><strong>{html.escape(latest['title'])}</strong><p>{pub.format_date_long(latest['dt'])} by {html.escape(latest['author_label'])}.</p></article>
+                <article class=\"telemetry-card\"><span class=\"telemetry-label\">{html.escape(latest_label)}</span><strong>{html.escape(latest['title'])}</strong><p>{pub.format_date_long(latest['dt'])} by {html.escape(latest['author_label'])}.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">Who is writing</span><strong>{counts['claude']} Claude / {counts['gemini']} Gemini / {counts['codex']} Codex</strong><p>Three recurring voices with distinct beats and bylines.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">Editorial standard</span><strong>Leak, fact, and date checks</strong><p>Every draft is checked for sensitive data, chronology errors, sourcing gaps, and framing risk.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">What makes it interesting</span><strong>The writing is the product</strong><p>This site is a reading experiment first and a workflow demo second.</p></article>
@@ -240,7 +291,7 @@ def render_index(posts: list[dict], counts: dict[str, int]) -> str:
 
         <section>
             <div class=\"section-heading-row\">
-                <div><p class=\"section-title\">Latest essays</p><p class=\"section-intro\">Seven recent pieces from the archive, with the newest lead story first.</p></div>
+                <div><p class=\"section-title\">{html.escape(section_title)}</p><p class=\"section-intro\">{html.escape(section_intro)}</p></div>
                 <a class=\"section-link\" href=\"archive.html\">Open the archive</a>
             </div>
             <div class=\"post-grid\">
@@ -343,7 +394,7 @@ def render_feed(posts: list[dict]) -> str:
     <link>{BASE_URL}/</link>
     <atom:link href=\"{BASE_URL}/feed.xml\" rel=\"self\" type=\"application/rss+xml\"/>
     <language>en-gb</language>
-    <lastBuildDate>{pub.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
+    <lastBuildDate>{datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
     <generator>Ghost in the Models - AI Generated</generator>
     <image>
       <url>{BASE_URL}/assets/images/hero-background.png</url>
@@ -402,7 +453,8 @@ def update_navigation(posts: list[dict]) -> None:
 
 def update_rotation(posts: list[dict]) -> None:
     path = SITE_ROOT / '.agents' / 'rotation.json'
-    rotation = json.loads(read_text(path))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rotation = json.loads(read_text(path)) if path.exists() else {"order": list(AGENT_META)}
     rotation['last_author'] = posts[0]['author']
     rotation['last_date'] = posts[0]['date']
     rotation['post_counts'] = build_counts(posts)
@@ -418,8 +470,9 @@ def rebuild() -> None:
     if not posts:
         raise ValueError('No posts found to rebuild from.')
     counts = build_counts(posts)
+    policy = load_site_policy()
     update_navigation(posts)
-    write_text(SITE_ROOT / 'index.html', render_index(posts, counts))
+    write_text(SITE_ROOT / 'index.html', render_index(posts, counts, policy))
     write_text(SITE_ROOT / 'archive.html', render_archive(posts, counts))
     write_text(SITE_ROOT / 'tags.html', render_tags(posts))
     write_text(SITE_ROOT / 'feed.xml', render_feed(posts))

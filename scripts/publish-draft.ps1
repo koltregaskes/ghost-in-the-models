@@ -56,6 +56,8 @@ $RepoPath = 'W:\Websites\sites\ghost-in-the-models'
 $SiteId = 'ghost-in-the-models'
 $ManifestPath = 'W:\Websites\shared\website-tools\registry\sites\ghost-in-the-models.json'
 $HubBuildScript = 'W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py'
+$FeaturedImageScript = Join-Path $RepoPath 'scripts\generate-featured-images.py'
+$RequirementsPath = Join-Path $RepoPath 'requirements.txt'
 $BlockingChecks = @(
     'security_sensitive_data',
     'context_and_controversy',
@@ -180,6 +182,25 @@ function Refresh-EditorialHub {
     }
 }
 
+function Ensure-FeaturedImageDependencies {
+    param([string]$RequirementsFile)
+
+    python -c "import PIL" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return
+    }
+
+    if (-not (Test-Path $RequirementsFile)) {
+        throw "Missing Python requirements file: $RequirementsFile"
+    }
+
+    Write-Host 'Installing Python publishing dependencies...'
+    python -m pip install -r $RequirementsFile
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Failed to install Python publishing dependencies.'
+    }
+}
+
 function Get-PostTitle {
     param([string]$Path)
 
@@ -270,7 +291,17 @@ if (Test-Path $stagedDraftPath) {
 Move-Item $draft.FullPath $stagedDraftPath -Force
 Write-Host "`nDraft copied to posts/" -ForegroundColor Green
 
+$GeneratedFeaturedImage = Join-Path $RepoPath ("assets\images\featured\{0}.webp" -f [System.IO.Path]::GetFileNameWithoutExtension($destinationPath))
+$GeneratedFeaturedImagePreexisting = Test-Path $GeneratedFeaturedImage
+
 try {
+    Write-Host "`nGenerating featured image..."
+    Ensure-FeaturedImageDependencies -RequirementsFile $RequirementsPath
+    python "$FeaturedImageScript" --path "$destinationPath"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Featured image generation failed.'
+    }
+
     Write-Host "`nRebuilding derived site files..."
     python "$RepoPath\scripts\rebuild-derived.py"
     if ($LASTEXITCODE -ne 0) {
@@ -285,6 +316,9 @@ try {
 } catch {
     if (Test-Path $destinationPath) {
         Remove-Item $destinationPath -Force
+    }
+    if ((Test-Path $GeneratedFeaturedImage) -and -not $GeneratedFeaturedImagePreexisting) {
+        Remove-Item $GeneratedFeaturedImage -Force
     }
     git restore --source=HEAD --worktree --staged .
     if (Test-Path $stagedDraftPath -and -not (Test-Path $draft.FullPath)) {
