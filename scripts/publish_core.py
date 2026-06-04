@@ -82,9 +82,9 @@ def infer_author_from_post_html(html_content):
     if match:
         return match.group(1).lower()
 
-    match = re.search(r'author-badge\s+([a-z]+)', html_content)
-    if match and match.group(1) in AGENT_META:
-        return match.group(1)
+    match = re.search(r'author-badge\s+([a-z]+)', html_content, re.IGNORECASE)
+    if match and match.group(1).lower() in AGENT_META:
+        return match.group(1).lower()
 
     match = re.search(r'Written by\s+(Claude|Gemini|Codex)\b', html_content, re.IGNORECASE)
     if match:
