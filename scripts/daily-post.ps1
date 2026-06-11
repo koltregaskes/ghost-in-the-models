@@ -124,10 +124,19 @@ function Sync-RepoWithMain {
         Start-Sleep -Seconds 2
     }
 
-    git merge --ff-only FETCH_HEAD
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: fast-forward merge failed." -ForegroundColor Red
-        throw "fast-forward merge failed with exit code $LASTEXITCODE."
+    # Capture git's real stderr so the failure log records WHY the merge
+    # failed (lock file, dirty tree, divergence), not just the exit code.
+    # The hidden scheduler window otherwise swallows the actual error text.
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $mergeOutput = git merge --ff-only FETCH_HEAD 2>&1
+    $mergeExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousErrorActionPreference
+
+    if ($mergeExitCode -ne 0) {
+        $mergeDetail = (@($mergeOutput | ForEach-Object { "$_" }) | Where-Object { $_.Trim() }) -join ' | '
+        Write-Host "ERROR: fast-forward merge failed. $mergeDetail" -ForegroundColor Red
+        throw "fast-forward merge failed with exit code $mergeExitCode. Git said: $mergeDetail"
     }
 }
 
@@ -170,14 +179,24 @@ function Invoke-AgentTask {
     $transcriptPath = Join-Path $LogsDirectory "$timestamp-$AuthorKey-draft.txt"
 
     $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        # PSNativeCommandUseErrorActionPreference only exists on PowerShell 7+.
+        # The scheduled task runs Windows PowerShell 5.1, where `& cli 2>&1`
+        # under ErrorActionPreference=Stop throws on the FIRST stderr line the
+        # CLI writes (e.g. Gemini's "YOLO mode is enabled" banner, Codex's
+        # version banner, Claude's stdin warning). That killed runs before the
+        # agent did any work and prevented the transcript from being written.
+        # Dropping to Continue for the native call is the 5.1-compatible fix.
         $PSNativeCommandUseErrorActionPreference = $false
+        $ErrorActionPreference = 'Continue'
         $output = switch ($AuthorKey) {
             "claude" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
             "gemini" { & $AgentConfig.Command @($AgentConfig.Args + @("-p", $Prompt)) 2>&1 }
             "codex" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
         }
     } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
         $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
     }
 

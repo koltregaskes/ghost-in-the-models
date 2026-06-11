@@ -142,14 +142,21 @@ function Invoke-EditorAgent {
     Set-Location $RepoPath
 
     $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        # PSNativeCommandUseErrorActionPreference is PowerShell 7+ only. The
+        # scheduler runs Windows PowerShell 5.1, where `& cli 2>&1` under
+        # ErrorActionPreference=Stop throws on the first stderr line (agent
+        # CLI banners). Continue is the 5.1-compatible fix.
         $PSNativeCommandUseErrorActionPreference = $false
+        $ErrorActionPreference = 'Continue'
         $output = switch ($AgentKey) {
             'claude' { & $agent.Command @($agent.Args + @($Prompt)) 2>&1 }
             'gemini' { & $agent.Command @($agent.Args + @('-p', $Prompt)) 2>&1 }
             'codex' { & $agent.Command @($agent.Args + @($Prompt)) 2>&1 }
         }
     } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
         $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
     }
 

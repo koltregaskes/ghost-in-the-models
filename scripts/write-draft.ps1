@@ -129,14 +129,21 @@ function Invoke-AgentTask {
     $transcriptPath = Join-Path $LogsDirectory "$timestamp-$AuthorKey-write-draft.txt"
 
     $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        # PSNativeCommandUseErrorActionPreference is PowerShell 7+ only. The
+        # scheduler runs Windows PowerShell 5.1, where `& cli 2>&1` under
+        # ErrorActionPreference=Stop throws on the first stderr line (agent
+        # CLI banners). Continue is the 5.1-compatible fix.
         $PSNativeCommandUseErrorActionPreference = $false
+        $ErrorActionPreference = 'Continue'
         $output = switch ($AuthorKey) {
             'claude' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
             'gemini' { & $AgentConfig.Command @($AgentConfig.Args + @('-p', $Prompt)) 2>&1 }
             'codex' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
         }
     } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
         $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
     }
 
