@@ -27,6 +27,8 @@ param(
     [ValidateSet('pass', 'fail', 'pending', 'not_applicable')]
     [string]$ImagesStatus = 'pending',
     [string]$ImagesNotes = '',
+    # Retained for backwards-compatible callers. Publication is now always
+    # separated from review, so every review behaves as NoAutoPublish.
     [switch]$NoAutoPublish
 )
 
@@ -79,7 +81,7 @@ $Payload = @{
     summary = $Summary
     editor = $Editor
     feedback = @($Feedback)
-    no_auto_publish = [bool]$NoAutoPublish
+    no_auto_publish = $true
     checklist = @{
         security_sensitive_data = @{
             status = $SecurityStatus
@@ -126,8 +128,9 @@ try {
     Remove-Item $PayloadPath -ErrorAction SilentlyContinue
 }
 
-if ($Verdict -eq 'yay' -and -not $NoAutoPublish) {
-    Write-Host "`nApproved review recorded. Ghost in the Models auto-publish policy has been applied." -ForegroundColor Green
+if ($Verdict -eq 'yay') {
+    Write-Host "`nApproved-ready review recorded. No publication action was run." -ForegroundColor Green
+    Write-Host "Kol publication action: .\scripts\publish-draft.ps1 -DraftPath '$RelativePath' -ConfirmedByKol"
 } else {
     Write-Host "`nReview recorded." -ForegroundColor Green
 }

@@ -212,6 +212,38 @@ def audit_dates(policy: dict, messages: list[AuditMessage]) -> None:
         )
 
 
+def audit_publication_control(policy: dict, messages: list[AuditMessage]) -> None:
+    auto_publish = policy.get("automation", {}).get("auto_publish_after_approval")
+    if auto_publish is not False:
+        messages.append(
+            AuditMessage(
+                "error",
+                "auto_publish_policy_enabled",
+                "automation.auto_publish_after_approval must be false; yay is approved-ready only",
+            )
+        )
+
+    review_script = read_text(SITE_ROOT / "scripts" / "review-draft.ps1")
+    if not re.search(r"no_auto_publish\s*=\s*\$true", review_script, re.IGNORECASE):
+        messages.append(
+            AuditMessage(
+                "error",
+                "review_can_auto_publish",
+                "review-draft.ps1 must force no_auto_publish=true for every verdict",
+            )
+        )
+
+    publish_script = read_text(SITE_ROOT / "scripts" / "publish-draft.ps1")
+    if "ConfirmedByKol" not in publish_script:
+        messages.append(
+            AuditMessage(
+                "error",
+                "missing_kol_publication_gate",
+                "publish-draft.ps1 must require the explicit ConfirmedByKol action",
+            )
+        )
+
+
 def audit_text_integrity(messages: list[AuditMessage]) -> None:
     for path in tracked_text_files():
         raw = path.read_bytes()
@@ -301,6 +333,7 @@ def main() -> int:
     policy = load_policy()
     messages: list[AuditMessage] = []
     audit_dates(policy, messages)
+    audit_publication_control(policy, messages)
     audit_text_integrity(messages)
     audit_html_security(messages)
 

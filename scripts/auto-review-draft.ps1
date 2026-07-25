@@ -3,6 +3,7 @@ param(
     [string]$DraftPath,
     [string]$EditorAgent = '',
     [string]$EditorName = 'website-manager-ai',
+    # Retained for backwards-compatible callers. Auto review never publishes.
     [switch]$NoAutoPublish,
     [switch]$DryRun
 )
@@ -313,9 +314,7 @@ foreach ($checkKey in $requiredChecks) {
     }
 }
 
-if ($NoAutoPublish) {
-    $reviewParams.NoAutoPublish = $true
-}
+$reviewParams.NoAutoPublish = $true
 
 & $ReviewScript @reviewParams
 if ($LASTEXITCODE -ne 0) {
@@ -324,3 +323,6 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "`nAuto review completed." -ForegroundColor Green
 Write-Host "Transcript: $transcriptPath"
+if ([string]$review.verdict -eq 'yay') {
+    Write-Host 'Verdict is approved-ready. Publication still requires Kol to run the explicit publication action.' -ForegroundColor Cyan
+}

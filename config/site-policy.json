@@ -26,6 +26,6 @@
   "automation": {
     "auto_review_enabled": true,
     "default_editor_agent": "claude",
-    "auto_publish_after_approval": true
+    "auto_publish_after_approval": false
   }
 }

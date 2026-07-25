@@ -9,7 +9,7 @@
 - `index.html`, `about.html`, `archive.html`, `tags.html`: site entry pages
 - `posts/`: published articles
 - `assets/`: CSS, JS, images, video
-- `scripts/`: local automation for draft writing and daily publishing
+- `scripts/`: local automation for drafting, editorial review, and Kol-approved publication
 
 ## Pipelines
 - Local scheduler pipeline: `scripts/daily-post.bat` -> `scripts/daily-post.ps1`
@@ -39,6 +39,7 @@ Ship `Ghost in the Models` with:
 - consistent branding across site + metadata
 - passing validation checks
 - healthy deployment pipelines
-- daily publishing automation working from scheduler
+- daily drafting and editorial review automation working from scheduler
+- publication kept behind a separate explicit Kol approval action
 
 
