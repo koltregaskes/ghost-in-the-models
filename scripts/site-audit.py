@@ -233,27 +233,22 @@ def audit_publication_control(policy: dict, messages: list[AuditMessage]) -> Non
             )
         )
 
-    publish_script = SITE_ROOT / "scripts" / "publish-draft.ps1"
-    guard_probe = subprocess.run(
-        [
-            "powershell",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(publish_script),
-            "-DraftPath",
-            "drafts/__publication-guard-probe__.html",
-        ],
-        cwd=SITE_ROOT,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
+    publish_script = read_text(SITE_ROOT / "scripts" / "publish-draft.ps1")
+    executable_guard = re.search(
+        (
+            r"\$ConfirmedByKol\s*=\s*\$options\.ConfirmedByKol"
+            r"\s*if\s*\(\s*-not\s+\$ConfirmedByKol\s*\)\s*\{"
+            r"\s*throw\s+[\"']Publication requires Kol's explicit approval\."
+        ),
+        publish_script,
+        re.IGNORECASE | re.DOTALL,
     )
-    guard_output = f"{guard_probe.stdout}\n{guard_probe.stderr}"
-    expected_guard = "Publication requires Kol's explicit approval."
-    if guard_probe.returncode == 0 or expected_guard not in guard_output:
+    first_repo_operation = publish_script.find("Set-Location $RepoPath")
+    if (
+        executable_guard is None
+        or first_repo_operation < 0
+        or executable_guard.start() > first_repo_operation
+    ):
         messages.append(
             AuditMessage(
                 "error",
