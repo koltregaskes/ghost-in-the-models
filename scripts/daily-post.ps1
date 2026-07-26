@@ -2,7 +2,9 @@ param(
     [string]$Force = "",
     [switch]$DryRun,
     [switch]$AutoReview,
-    [string]$EditorAgent = ""
+    [string]$EditorAgent = "",
+    [string]$RepositoryPath = "W:\Websites\sites\ghost-in-the-models",
+    [string]$RotationPathOverride = ""
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,8 +17,13 @@ $ErrorActionPreference = 'Stop'
     to create a draft for editorial review.
 #>
 
-$RepoPath = "W:\Websites\sites\ghost-in-the-models"
-$RotationPath = Join-Path $RepoPath ".agents\rotation.json"
+$RepoPath = $RepositoryPath
+$RotationPath = if ($RotationPathOverride) {
+    $RotationPathOverride
+}
+else {
+    Join-Path $RepoPath ".agents\rotation.json"
+}
 $PolicyPath = Join-Path $RepoPath "config\site-policy.json"
 $HubBuildScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py"
 $AutoReviewScript = Join-Path $RepoPath "scripts\auto-review-draft.ps1"
@@ -25,12 +32,15 @@ $Today = Get-Date
 
 $Agents = @{
     "claude" = @{
+        Enabled = $true
         Command = "claude"
         Args = @("--print", "--dangerously-skip-permissions")
         PromptFile = "docs\prompt-claude.md"
         Label = "Claude"
     }
     "gemini" = @{
+        Enabled = $false
+        DisabledReason = "Gemini CLI 0.52 rejects the installed individual account as an unsupported client."
         Command = "gemini.cmd"
         Args = @(
             "--yolo",
@@ -41,6 +51,7 @@ $Agents = @{
         Label = "Gemini"
     }
     "codex" = @{
+        Enabled = $true
         Command = "codex.cmd"
         Args = @(
             "exec",
@@ -64,7 +75,14 @@ function Get-RotationOrder {
     }
 
     $rotation = Get-Content -Raw $Path | ConvertFrom-Json
-    $order = @($rotation.order | ForEach-Object { $_.ToString().ToLower() } | Where-Object { $ConfiguredAgents.ContainsKey($_) })
+    $order = @(
+        $rotation.order |
+            ForEach-Object { $_.ToString().ToLower() } |
+            Where-Object {
+                $ConfiguredAgents.ContainsKey($_) -and
+                $ConfiguredAgents[$_].Enabled -ne $false
+            }
+    )
 
     if ($order.Count -eq 0) {
         throw "Rotation order is empty or does not match configured agents."
@@ -180,6 +198,7 @@ function Invoke-AgentTask {
 
     $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
     $previousErrorActionPreference = $ErrorActionPreference
+    $exitCode = 1
     try {
         # PSNativeCommandUseErrorActionPreference only exists on PowerShell 7+.
         # The scheduled task runs Windows PowerShell 5.1, where `& cli 2>&1`
@@ -193,8 +212,20 @@ function Invoke-AgentTask {
         $output = switch ($AuthorKey) {
             "claude" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
             "gemini" { & $AgentConfig.Command @($AgentConfig.Args + @("-p", $Prompt)) 2>&1 }
-            "codex" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
+            "codex" {
+                # Windows PowerShell 5.1 truncates multiline native arguments.
+                # Stream the prompt and isolate this unattended run from stale
+                # user MCP/plugin configuration.
+                $codexArgs = @(
+                    $AgentConfig.Args
+                    "--ephemeral"
+                    "--ignore-user-config"
+                    "-"
+                )
+                $Prompt | & $AgentConfig.Command @codexArgs 2>&1
+            }
         }
+        $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousErrorActionPreference
         $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
@@ -205,7 +236,7 @@ function Invoke-AgentTask {
     Set-Content -Path $transcriptPath -Value $rawOutput -Encoding UTF8
 
     return @{
-        ExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        ExitCode = if ($null -eq $exitCode) { 0 } else { $exitCode }
         TranscriptPath = $transcriptPath
     }
 }
@@ -215,8 +246,12 @@ if (-not $EditorAgent -and $SitePolicy) {
     $EditorAgent = [string]$SitePolicy.automation.default_editor_agent
 }
 
-Write-Host "`nPulling latest from main..."
-Sync-RepoWithMain -Path $RepoPath
+Write-Host "`nRepository preflight..."
+if (-not $DryRun) {
+    Sync-RepoWithMain -Path $RepoPath
+} else {
+    Write-Host "Dry run: repository sync skipped."
+}
 
 $RotationState = Get-RotationOrder -Path $RotationPath -ConfiguredAgents $Agents
 $RotationOrder = $RotationState.Order
@@ -234,6 +269,9 @@ if ($Force -ne "") {
 $Agent = $Agents[$Author]
 if (-not $Agent) {
     throw "Unknown author '$Author'."
+}
+if ($Agent.Enabled -eq $false) {
+    throw "Author '$Author' is disabled: $($Agent.DisabledReason)"
 }
 
 $CycleIndex = [Array]::IndexOf($RotationOrder, $Author) + 1
