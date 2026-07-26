@@ -233,13 +233,32 @@ def audit_publication_control(policy: dict, messages: list[AuditMessage]) -> Non
             )
         )
 
-    publish_script = read_text(SITE_ROOT / "scripts" / "publish-draft.ps1")
-    if "ConfirmedByKol" not in publish_script:
+    publish_script = SITE_ROOT / "scripts" / "publish-draft.ps1"
+    guard_probe = subprocess.run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(publish_script),
+            "-DraftPath",
+            "drafts/__publication-guard-probe__.html",
+        ],
+        cwd=SITE_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    guard_output = f"{guard_probe.stdout}\n{guard_probe.stderr}"
+    expected_guard = "Publication requires Kol's explicit approval."
+    if guard_probe.returncode == 0 or expected_guard not in guard_output:
         messages.append(
             AuditMessage(
                 "error",
                 "missing_kol_publication_gate",
-                "publish-draft.ps1 must require the explicit ConfirmedByKol action",
+                "publish-draft.ps1 did not reject a publication attempt without ConfirmedByKol",
             )
         )
 
