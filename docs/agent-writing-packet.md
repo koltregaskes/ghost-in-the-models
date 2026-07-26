@@ -169,7 +169,15 @@ Rules:
 
 Before anything is published, the draft should go through the website manager editorial review workflow.
 
-Ghost in the Models can auto-publish after an editor records `yay`, but not before.
+An editor's `yay` verdict marks a Ghost in the Models draft approved-ready. It does not publish.
+
+Publication is a separate Kol-approved action:
+
+```powershell
+.\scripts\publish-draft.ps1 -DraftPath <draft> -ConfirmedByKol
+```
+
+Do not run that action unless Kol has explicitly approved the exact draft.
 
 ## Publish Mode
 

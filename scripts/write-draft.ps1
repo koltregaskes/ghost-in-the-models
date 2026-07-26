@@ -238,7 +238,8 @@ if (Test-Path $DraftFile) {
     Write-Host "Transcript: $TranscriptPath"
     Refresh-EditorialHub -ScriptPath $HubBuildScript
     Write-Host "Review it with: .\scripts\review-draft.ps1 -DraftPath $DraftFile -Verdict <yay|nay|needs_images|hold> -Summary ""..."""
-    Write-Host "If the verdict is 'yay', Ghost in the Models will auto-publish after the review is recorded."
+    Write-Host "A 'yay' verdict marks the draft approved-ready. It does not publish."
+    Write-Host "After Kol explicitly approves publication, run: .\scripts\publish-draft.ps1 -DraftPath $DraftFile -ConfirmedByKol"
 } else {
     Write-Host "`nWARNING: No draft file found at $DraftFile" -ForegroundColor Yellow
     Write-Host "Transcript: $TranscriptPath"

@@ -5,12 +5,17 @@ function Get-InvocationOptions {
 
     $draftPath = $null
     $force = $false
+    $confirmedByKol = $false
 
     for ($index = 0; $index -lt $Arguments.Count; $index++) {
         $current = $Arguments[$index]
         switch -Regex ($current) {
             '^(?i)-force$' {
                 $force = $true
+                continue
+            }
+            '^(?i)-confirmedbykol$' {
+                $confirmedByKol = $true
                 continue
             }
             '^(?i)-(draftpath|file)$' {
@@ -32,12 +37,13 @@ function Get-InvocationOptions {
     }
 
     if (-not $draftPath) {
-        throw 'Usage: publish-draft.ps1 -DraftPath <path> [-Force]'
+        throw 'Usage: publish-draft.ps1 -DraftPath <path> -ConfirmedByKol [-Force]'
     }
 
     return @{
         DraftPath = $draftPath
         Force = $force
+        ConfirmedByKol = $confirmedByKol
     }
 }
 
@@ -88,7 +94,7 @@ function Assert-CleanTrackedWorktree {
 
     if ($status.Count -gt 0) {
         $details = ($status | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
-        throw "Tracked git changes are already present. Refusing to auto-publish on a dirty worktree.`n$details"
+        throw "Tracked git changes are already present. Refusing publication on a dirty worktree.`n$details"
     }
 }
 
@@ -250,6 +256,11 @@ function Commit-And-PushPublication {
 $options = Get-InvocationOptions -Arguments $args
 $DraftPath = $options.DraftPath
 $Force = $options.Force
+$ConfirmedByKol = $options.ConfirmedByKol
+
+if (-not $ConfirmedByKol) {
+    throw "Publication requires Kol's explicit approval. Re-run with -ConfirmedByKol only after Kol has approved this exact draft."
+}
 
 Set-Location $RepoPath
 Assert-CleanTrackedWorktree -Path $RepoPath

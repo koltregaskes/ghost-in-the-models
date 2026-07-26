@@ -30,15 +30,18 @@ The editor records one of:
 
 ## Publication Behaviour
 
-Ghost in the Models is allowed to publish automatically after the editor records `yay`.
+Ghost in the Models does not publish automatically after the editor records `yay`.
 
 That means:
 
 1. the writer creates the draft
 2. the editor reviews it
-3. if the verdict is `yay`, the publish step may run automatically
-4. if the verdict is `nay`, the draft goes back for changes
-5. if the verdict is `hold`, do not publish
+3. if the verdict is `yay`, the draft becomes `approved-ready`
+4. `yay` does not create, move, commit, push, deploy, or publish content
+5. Kol must explicitly approve the exact draft before the separate publication action runs
+6. the explicit action is `scripts\publish-draft.ps1 -DraftPath <draft> -ConfirmedByKol`
+7. if the verdict is `nay`, the draft goes back for changes
+8. if the verdict is `hold`, do not publish
 
 ## Shared Documents
 
