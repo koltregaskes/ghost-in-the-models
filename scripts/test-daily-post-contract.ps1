@@ -35,6 +35,31 @@ if ($parseErrors.Count -gt 0) {
 
 $before = @(git -C $liveRepoRoot status --porcelain)
 $failureLogBefore = Get-OptionalFileState -Path $failureLogPath
+$disabledCursorRotationPath = [System.IO.Path]::GetTempFileName()
+
+try {
+    @{
+        order = @('claude', 'gemini', 'codex')
+        last_author = 'gemini'
+    } | ConvertTo-Json | Set-Content -LiteralPath $disabledCursorRotationPath -Encoding UTF8
+
+    $rotationOutput = & powershell.exe `
+        -NoProfile `
+        -ExecutionPolicy Bypass `
+        -File $dailyPost `
+        -DryRun `
+        -RepositoryPath $liveRepoRoot `
+        -RotationPathOverride $disabledCursorRotationPath 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Disabled-cursor rotation preflight failed with exit code $LASTEXITCODE."
+    }
+    if (($rotationOutput -join "`n") -notmatch 'Author:\s+Codex') {
+        throw "Disabled-cursor rotation did not advance to Codex: $($rotationOutput -join ' ')"
+    }
+}
+finally {
+    Remove-Item -LiteralPath $disabledCursorRotationPath -Force -ErrorAction SilentlyContinue
+}
 
 & powershell.exe `
     -NoProfile `
@@ -76,6 +101,7 @@ if ($failureLogAfter -ne $failureLogBefore) {
     parser = 'passed'
     codexDryRun = 'passed'
     disabledGemini = 'passed'
+    disabledCursorRotation = 'passed'
     repositoryUnchanged = 'passed'
     failureLogUnchanged = 'passed'
 } | ConvertTo-Json

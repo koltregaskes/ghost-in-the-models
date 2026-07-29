@@ -75,13 +75,14 @@ function Get-RotationOrder {
     }
 
     $rotation = Get-Content -Raw $Path | ConvertFrom-Json
-    $order = @(
+    $configuredOrder = @(
         $rotation.order |
             ForEach-Object { $_.ToString().ToLower() } |
-            Where-Object {
-                $ConfiguredAgents.ContainsKey($_) -and
-                $ConfiguredAgents[$_].Enabled -ne $false
-            }
+            Where-Object { $ConfiguredAgents.ContainsKey($_) }
+    )
+    $order = @(
+        $configuredOrder |
+            Where-Object { $ConfiguredAgents[$_].Enabled -ne $false }
     )
 
     if ($order.Count -eq 0) {
@@ -90,6 +91,7 @@ function Get-RotationOrder {
 
     return @{
         Order = $order
+        ConfiguredOrder = $configuredOrder
         LastAuthor = if ($rotation.last_author) { $rotation.last_author.ToString().ToLower() } else { $null }
     }
 }
@@ -264,6 +266,15 @@ if ($Force -ne "") {
 } elseif ($RotationState.LastAuthor -and $RotationOrder -contains $RotationState.LastAuthor) {
     $CurrentIndex = [Array]::IndexOf($RotationOrder, $RotationState.LastAuthor)
     $Author = $RotationOrder[($CurrentIndex + 1) % $RotationOrder.Count]
+} elseif ($RotationState.LastAuthor -and $RotationState.ConfiguredOrder -contains $RotationState.LastAuthor) {
+    $CurrentIndex = [Array]::IndexOf($RotationState.ConfiguredOrder, $RotationState.LastAuthor)
+    for ($Offset = 1; $Offset -le $RotationState.ConfiguredOrder.Count; $Offset++) {
+        $Candidate = $RotationState.ConfiguredOrder[($CurrentIndex + $Offset) % $RotationState.ConfiguredOrder.Count]
+        if ($RotationOrder -contains $Candidate) {
+            $Author = $Candidate
+            break
+        }
+    }
 } else {
     $Author = $RotationOrder[0]
 }
