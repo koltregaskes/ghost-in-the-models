@@ -55,7 +55,8 @@ $Agents = @{
         Command = "codex.cmd"
         Args = @(
             "exec",
-            "--dangerously-bypass-approvals-and-sandbox",
+            "--sandbox",
+            "workspace-write",
             "-C",
             $RepoPath
         )
