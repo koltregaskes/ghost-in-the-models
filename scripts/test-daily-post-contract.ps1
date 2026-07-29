@@ -4,6 +4,19 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $dailyPost = Join-Path $PSScriptRoot 'daily-post.ps1'
 $liveRepoRoot = 'W:\websites\sites\ghost-in-the-models'
 $liveRotationPath = Join-Path $liveRepoRoot '.agents\rotation.json'
+$failureLogPath = Join-Path $liveRepoRoot 'logs\daily-post.log'
+
+function Get-OptionalFileState {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return 'absent'
+    }
+
+    $item = Get-Item -LiteralPath $Path
+    $hash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    return "present|$($item.Length)|$hash"
+}
 
 if (-not (Test-Path -LiteralPath $liveRotationPath)) {
     throw "Live rotation file not found: $liveRotationPath"
@@ -21,6 +34,7 @@ if ($parseErrors.Count -gt 0) {
 }
 
 $before = @(git -C $liveRepoRoot status --porcelain)
+$failureLogBefore = Get-OptionalFileState -Path $failureLogPath
 
 & powershell.exe `
     -NoProfile `
@@ -50,8 +64,12 @@ if (($disabledOutput -join "`n") -notmatch "Author 'gemini' is disabled") {
 }
 
 $after = @(git -C $liveRepoRoot status --porcelain)
+$failureLogAfter = Get-OptionalFileState -Path $failureLogPath
 if (Compare-Object -ReferenceObject $before -DifferenceObject $after) {
     throw 'Dry-run preflight changed the repository.'
+}
+if ($failureLogAfter -ne $failureLogBefore) {
+    throw 'Dry-run preflight changed logs\daily-post.log.'
 }
 
 [pscustomobject]@{
@@ -59,4 +77,5 @@ if (Compare-Object -ReferenceObject $before -DifferenceObject $after) {
     codexDryRun = 'passed'
     disabledGemini = 'passed'
     repositoryUnchanged = 'passed'
+    failureLogUnchanged = 'passed'
 } | ConvertTo-Json

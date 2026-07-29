@@ -115,7 +115,9 @@ function Write-DailyPostFailureLog {
 }
 
 trap {
-    Write-DailyPostFailureLog -Message $_.Exception.Message
+    if (-not $DryRun) {
+        Write-DailyPostFailureLog -Message $_.Exception.Message
+    }
     Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
