@@ -33,6 +33,14 @@ if ($parseErrors.Count -gt 0) {
     throw "daily-post.ps1 has parser errors: $($parseErrors -join '; ')"
 }
 
+$dailyPostSource = Get-Content -LiteralPath $dailyPost -Raw -Encoding UTF8
+if ($dailyPostSource -match '--dangerously-bypass-approvals-and-sandbox') {
+    throw 'Daily draft writer must not bypass the Codex sandbox.'
+}
+if ($dailyPostSource -notmatch '(?s)"--sandbox"\s*,\s*"workspace-write"') {
+    throw 'Daily draft writer must contain Codex in the workspace-write sandbox.'
+}
+
 $before = @(git -C $liveRepoRoot status --porcelain)
 $failureLogBefore = Get-OptionalFileState -Path $failureLogPath
 $disabledCursorRotationPath = [System.IO.Path]::GetTempFileName()
@@ -99,6 +107,7 @@ if ($failureLogAfter -ne $failureLogBefore) {
 
 [pscustomobject]@{
     parser = 'passed'
+    codexWorkspaceSandbox = 'passed'
     codexDryRun = 'passed'
     disabledGemini = 'passed'
     disabledCursorRotation = 'passed'
