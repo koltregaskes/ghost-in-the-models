@@ -8,8 +8,11 @@ import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
+
+import publish_core as pub
 
 SITE_ROOT = Path(__file__).resolve().parent.parent
 POSTS_DIR = SITE_ROOT / "posts"
@@ -49,6 +52,29 @@ class AuditMessage:
     level: str
     code: str
     message: str
+
+
+class CanonicalLinkParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.canonicals: list[str] = []
+        self.noindex = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = {name.lower(): (value or "") for name, value in attrs}
+        if tag.lower() == "link":
+            rel_tokens = {token.lower() for token in attributes.get("rel", "").split()}
+            if "canonical" in rel_tokens:
+                self.canonicals.append(attributes.get("href", "").strip())
+        elif (
+            tag.lower() == "meta"
+            and attributes.get("name", "").lower() == "robots"
+        ):
+            directives = {
+                directive.strip().lower()
+                for directive in attributes.get("content", "").split(",")
+            }
+            self.noindex = "noindex" in directives
 
 
 def read_text(path: Path) -> str:
@@ -291,6 +317,52 @@ def audit_text_integrity(messages: list[AuditMessage]) -> None:
             )
 
 
+def expected_canonical_url(path: Path) -> str:
+    rel = normalize_rel(path)
+    if rel == "index.html":
+        return f"{pub.BASE_URL}/"
+    if rel.endswith("/index.html"):
+        return f"{pub.BASE_URL}/{rel[:-len('index.html')]}"
+    return f"{pub.BASE_URL}/{rel}"
+
+
+def audit_html_metadata(messages: list[AuditMessage]) -> None:
+    public_html_files = [
+        path
+        for path in tracked_text_files()
+        if (
+            path.suffix.lower() == ".html"
+            and normalize_rel(path) != "404.html"
+            and not normalize_rel(path).startswith("drafts/")
+        )
+    ]
+
+    for path in sorted(public_html_files):
+        rel = normalize_rel(path)
+        parser = CanonicalLinkParser()
+        parser.feed(read_text(path))
+
+        if len(parser.canonicals) != 1:
+            messages.append(
+                AuditMessage(
+                    "error",
+                    "canonical_count",
+                    f"{rel} has {len(parser.canonicals)} canonical links; expected exactly 1",
+                )
+            )
+            continue
+
+        expected = expected_canonical_url(path)
+        if not parser.noindex and parser.canonicals[0] != expected:
+            messages.append(
+                AuditMessage(
+                    "error",
+                    "canonical_url_mismatch",
+                    f"{rel} canonical is {parser.canonicals[0]!r}; expected {expected!r}",
+                )
+            )
+
+
 def audit_html_security(messages: list[AuditMessage]) -> None:
     html_files = sorted(SITE_ROOT.glob("*.html")) + sorted(POSTS_DIR.glob("*.html")) + sorted(DRAFTS_DIR.glob("*.html"))
 
@@ -349,6 +421,7 @@ def main() -> int:
     audit_dates(policy, messages)
     audit_publication_control(policy, messages)
     audit_text_integrity(messages)
+    audit_html_metadata(messages)
     audit_html_security(messages)
 
     warnings, errors = summarize(messages)
