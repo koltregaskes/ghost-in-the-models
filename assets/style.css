@@ -1792,6 +1792,22 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
     overflow-x: clip;
   }
 
+  .post-content {
+    width: 100%;
+    max-width: 100%;
+    padding: var(--space-6) 16px var(--space-8) !important;
+  }
+
+  .post-content article,
+  .post-header,
+  .post-body,
+  .post-footer,
+  .post-nav {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .nav-container {
     width: min(var(--max-width), calc(100% - 32px));
     flex-wrap: wrap;
@@ -1832,6 +1848,26 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 
   .post-body {
     font-size: 1.06rem;
+  }
+
+  .post-body > p:first-of-type::first-letter,
+  .post-body > p.lead-paragraph:first-letter {
+    initial-letter: normal;
+    -webkit-initial-letter: normal;
+    float: left;
+    font-size: 3.8em;
+    line-height: 0.8;
+    margin: 0.08em 0.14em 0 0;
+    padding-top: 0;
+  }
+
+  .post-header h1,
+  .post-header p,
+  .post-body p,
+  .post-body blockquote,
+  .post-footer,
+  .post-nav a {
+    overflow-wrap: anywhere;
   }
 
   .post-body code,
