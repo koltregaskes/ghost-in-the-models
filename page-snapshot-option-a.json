@@ -1,0 +1,57 @@
+- generic [active] [ref=e1] [box=0,0,1044,743]:
+  - banner [ref=e2] [box=0,0,1044,81]:
+    - heading [level=1] [ref=e3] [box=16,0,260,69]:
+      - link [ref=e4] [cursor=pointer] [box=16,27,260,37]:
+        - /url: /
+    - navigation [ref=e8] [box=667,22,362,58]:
+      - list [ref=e9] [box=675,27,346,48]:
+        - listitem [ref=e10] [box=684,27,61,48]:
+          - link "Status" [ref=e11] [cursor=pointer] [box=684,37,61,27]:
+            - /url: https://status.githack.com/?r=neoascetic/raw.githack.com-monitor
+        - listitem [ref=e12] [box=769,27,106,48]:
+          - link "Source code" [ref=e13] [cursor=pointer] [box=769,37,106,27]:
+            - /url: https://github.com/neoascetic/rawgithack
+        - listitem [ref=e14] [box=899,27,112,48]:
+          - link "Report abuse" [ref=e15] [cursor=pointer] [box=899,37,112,27]:
+            - /url: mailto:admin@githack.com?subject=Abuse
+  - generic [ref=e18] [box=684,840,360,200]:
+    - generic [ref=e19] [box=698,854,332,146]:
+      - 'link "Sponsored: Bruno" [box=931,868,0,0]':
+        - /url: https://server.ethicalads.io/proxy/click/10784/01a111c4-c19b-73a3-bdd5-07b9106d7fe7/
+        - 'img "Sponsored: Bruno" [ref=e20] [cursor=pointer] [box=712,868,120,90]'
+      - link [ref=e22] [cursor=pointer] [box=846,867,166,92]:
+        - /url: https://server.ethicalads.io/proxy/click/10784/01a111c4-c19b-73a3-bdd5-07b9106d7fe7/
+        - strong [ref=e23] [box=846,867,140,19]: Git-native API client
+        - text: Send requests to REST, GraphQL and gRPC. Collections live in git.
+        - strong [ref=e24] [box=846,922,166,38]: Get Bruno
+      - generic [ref=e25] [box=712,968,304,18]: usebruno.com
+    - link "Ads by EthicalAds" [ref=e27] [cursor=pointer] [box=931,1009,86,15]:
+      - /url: https://www.ethicalads.io/advertisers/?ref=ea-image
+  - main [ref=e28] [box=0,129,1044,301]:
+    - generic [ref=e29] [box=30,129,984,301]:
+      - paragraph [ref=e30] [box=30,129,984,120]:
+        - strong [ref=e31] [box=354,137,336,54]: One more step
+        - generic [ref=e32] [box=174,201,696,48]:
+          - text: This HTML page is hosted on
+          - link "raw.githubusercontent.com" [ref=e33] [cursor=pointer] [box=468,204,191,17]:
+            - /url: https://raw.githubusercontent.com/koltregaskes/ghost-in-the-models/f83fd7c2c8ab8fde9488c7213be36462a04cc513/preview/option-a.html
+          - text: and proxied as-is. rawgit.hack does not review third-party content.
+      - generic [ref=e34] [box=30,297,984,133]:
+        - text: "You're going to open:"
+        - textbox "You're going to open:" [ref=e35] [box=30,321,996,26]: https://rawcdn.githack.com/koltregaskes/ghost-in-the-models/f83fd7c2c8ab8fde9488c7213be36462a04cc513/preview/option-a.html
+        - generic [ref=e36] [box=30,363,984,26]:
+          - button "Open the page" [ref=e38] [cursor=pointer] [box=396,363,118,26]
+          - link "Go to homepage" [ref=e39] [cursor=pointer] [box=529,364,119,24]:
+            - /url: /
+        - paragraph [ref=e40] [box=30,409,984,20]: Not sure about the source? Avoid entering passwords, personal details, or payment information on the page.
+  - contentinfo [ref=e41] [box=0,468,1044,52]:
+    - paragraph [ref=e42] [box=30,482,984,38]:
+      - text: ©
+      - strong [ref=e43] [box=448,484,77,14]: 2013 — 2026
+      - text: Pavel Puchkin
+      - link "Sushi icon" [ref=e44] [cursor=pointer] [box=328,503,59,14]:
+        - /url: http://thenounproject.com/noun/sushi/#icon-No14497
+      - text: designed by
+      - link "Linda Yuki Nakanishi" [ref=e45] [cursor=pointer] [box=463,503,119,14]:
+        - /url: http://thenounproject.com/lnakanishi
+      - text: from The Noun Project.

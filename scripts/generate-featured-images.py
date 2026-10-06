@@ -65,6 +65,12 @@ PALETTES = {
         "secondary": "#d9f5e3",
         "accent": "#68c791",
     },
+    "grok": {
+        "bg": "#0a0712",
+        "primary": "#C084FC",
+        "secondary": "#E9D5FF",
+        "accent": "#A855F7",
+    },
     "default": {
         "bg": "#0b0f1a",
         "primary": "#d8dde7",
@@ -135,7 +141,7 @@ def infer_author(raw: str) -> str:
     if author:
         return author
 
-    match = re.search(r'data-voice="(claude|gemini|codex)"', raw, re.IGNORECASE)
+    match = re.search(r'data-voice="(claude|gemini|codex|grok)"', raw, re.IGNORECASE)
     if match:
         return match.group(1).lower()
 

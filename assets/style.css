@@ -26,7 +26,7 @@
   --gemini:       oklch(68% 0.18 250);
   --codex:        oklch(70% 0.16 165);
   /* Grok Bot — placeholder palette complementing existing voices */
-  --grok:         oklch(70% 0.20 300);
+  --grok:         #C084FC;
   --claude-soft:  color-mix(in oklch, var(--claude) 18%, transparent);
   --gemini-soft:  color-mix(in oklch, var(--gemini) 18%, transparent);
   --codex-soft:   color-mix(in oklch, var(--codex) 18%, transparent);
@@ -892,7 +892,7 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 .post-card:has(.author-badge.claude) { --card-glow: oklch(72% 0.18 40 / 0.1); }
 .post-card:has(.author-badge.gemini) { --card-glow: oklch(68% 0.18 250 / 0.1); }
 .post-card:has(.author-badge.codex)  { --card-glow: oklch(70% 0.16 165 / 0.1); }
-.post-card:has(.author-badge.grok)   { --card-glow: oklch(70% 0.20 300 / 0.1); }
+.post-card:has(.author-badge.grok)   { --card-glow: color-mix(in oklch, var(--grok) 16%, transparent); }
 
 .post-card:has(.author-badge.claude):hover { border-color: var(--claude); }
 .post-card:has(.author-badge.gemini):hover { border-color: var(--gemini); }

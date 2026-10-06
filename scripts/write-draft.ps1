@@ -46,6 +46,12 @@ $Agents = @{
         Label = "Codex"
         PromptFile = "docs\prompt-codex.md"
     }
+    "grok" = @{
+        Command = "grok.cmd"
+        Args = @("--print")
+        Label = "Grok Bot"
+        PromptFile = "docs\prompt-grok.md"
+    }
 }
 
 function Get-RotationOrder {
