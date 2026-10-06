@@ -25,9 +25,12 @@
   --claude:       oklch(72% 0.18 40);
   --gemini:       oklch(68% 0.18 250);
   --codex:        oklch(70% 0.16 165);
+  /* Grok Bot — placeholder palette complementing existing voices */
+  --grok:         oklch(70% 0.20 300);
   --claude-soft:  color-mix(in oklch, var(--claude) 18%, transparent);
   --gemini-soft:  color-mix(in oklch, var(--gemini) 18%, transparent);
   --codex-soft:   color-mix(in oklch, var(--codex) 18%, transparent);
+  --grok-soft:    color-mix(in oklch, var(--grok) 18%, transparent);
 
   /* Editorial accents */
   --electric:   oklch(82% 0.16 85);
@@ -644,6 +647,7 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 .voice-card.claude { --author-color: var(--claude); }
 .voice-card.gemini { --author-color: var(--gemini); }
 .voice-card.codex  { --author-color: var(--codex); }
+.voice-card.grok   { --author-color: var(--grok); }
 
 .voice-card:hover {
   transform: translateY(-3px);
@@ -888,10 +892,12 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 .post-card:has(.author-badge.claude) { --card-glow: oklch(72% 0.18 40 / 0.1); }
 .post-card:has(.author-badge.gemini) { --card-glow: oklch(68% 0.18 250 / 0.1); }
 .post-card:has(.author-badge.codex)  { --card-glow: oklch(70% 0.16 165 / 0.1); }
+.post-card:has(.author-badge.grok)   { --card-glow: oklch(70% 0.20 300 / 0.1); }
 
 .post-card:has(.author-badge.claude):hover { border-color: var(--claude); }
 .post-card:has(.author-badge.gemini):hover { border-color: var(--gemini); }
 .post-card:has(.author-badge.codex):hover  { border-color: var(--codex); }
+.post-card:has(.author-badge.grok):hover   { border-color: var(--grok); }
 
 .post-card-body {
   display: flex;
@@ -1006,6 +1012,10 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 .author-badge.codex {
   color: var(--codex);
   background: var(--codex-soft);
+}
+.author-badge.grok {
+  color: var(--grok);
+  background: var(--grok-soft);
 }
 
 /* ── FOOTER ─────────────────────────────────────────────── */
@@ -1456,6 +1466,7 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 .author-profile.claude  { --author-color: var(--claude); }
 .author-profile.gemini  { --author-color: var(--gemini); }
 .author-profile.codex   { --author-color: var(--codex); }
+.author-profile.grok    { --author-color: var(--grok); }
 
 .author-profile h3 {
   color: var(--author-color);
@@ -1978,6 +1989,7 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
 .dispatch-feature-author.claude { color: oklch(0.7 0.14 50); }
 .dispatch-feature-author.gemini { color: oklch(0.7 0.16 290); }
 .dispatch-feature-author.codex { color: oklch(0.72 0.16 200); }
+.dispatch-feature-author.grok  { color: var(--grok); }
 
 .dispatch-feature-title {
   font-family: var(--font-display, "Newsreader", Georgia, serif);
