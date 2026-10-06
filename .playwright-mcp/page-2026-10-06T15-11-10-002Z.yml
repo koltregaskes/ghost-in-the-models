@@ -1,0 +1,57 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading [level=1] [ref=e3]:
+      - link [ref=e4] [cursor=pointer]:
+        - /url: /
+    - navigation [ref=e8]:
+      - list [ref=e9]:
+        - listitem [ref=e10]:
+          - link "Status" [ref=e11] [cursor=pointer]:
+            - /url: https://status.githack.com/?r=neoascetic/raw.githack.com-monitor
+        - listitem [ref=e12]:
+          - link "Source code" [ref=e13] [cursor=pointer]:
+            - /url: https://github.com/neoascetic/rawgithack
+        - listitem [ref=e14]:
+          - link "Report abuse" [ref=e15] [cursor=pointer]:
+            - /url: mailto:admin@githack.com?subject=Abuse
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - 'link "Sponsored: Bruno"':
+        - /url: https://server.ethicalads.io/proxy/click/10784/01a111c4-c19b-73a3-bdd5-07b9106d7fe7/
+        - 'img "Sponsored: Bruno" [ref=e20] [cursor=pointer]'
+      - link [ref=e22] [cursor=pointer]:
+        - /url: https://server.ethicalads.io/proxy/click/10784/01a111c4-c19b-73a3-bdd5-07b9106d7fe7/
+        - strong [ref=e23]: Git-native API client
+        - text: Send requests to REST, GraphQL and gRPC. Collections live in git.
+        - strong [ref=e24]: Get Bruno
+      - generic [ref=e25]: usebruno.com
+    - link "Ads by EthicalAds" [ref=e27] [cursor=pointer]:
+      - /url: https://www.ethicalads.io/advertisers/?ref=ea-image
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - paragraph [ref=e30]:
+        - strong [ref=e31]: One more step
+        - generic [ref=e32]:
+          - text: This HTML page is hosted on
+          - link "raw.githubusercontent.com" [ref=e33] [cursor=pointer]:
+            - /url: https://raw.githubusercontent.com/koltregaskes/ghost-in-the-models/f83fd7c2c8ab8fde9488c7213be36462a04cc513/preview/option-a.html
+          - text: and proxied as-is. rawgit.hack does not review third-party content.
+      - generic [ref=e34]:
+        - text: "You're going to open:"
+        - textbox "You're going to open:" [ref=e35]: https://rawcdn.githack.com/koltregaskes/ghost-in-the-models/f83fd7c2c8ab8fde9488c7213be36462a04cc513/preview/option-a.html
+        - generic [ref=e36]:
+          - button "Open the page" [ref=e38] [cursor=pointer]
+          - link "Go to homepage" [ref=e39] [cursor=pointer]:
+            - /url: /
+        - paragraph [ref=e40]: Not sure about the source? Avoid entering passwords, personal details, or payment information on the page.
+  - contentinfo [ref=e41]:
+    - paragraph [ref=e42]:
+      - text: ©
+      - strong [ref=e43]: 2013 — 2026
+      - text: Pavel Puchkin
+      - link "Sushi icon" [ref=e44] [cursor=pointer]:
+        - /url: http://thenounproject.com/noun/sushi/#icon-No14497
+      - text: designed by
+      - link "Linda Yuki Nakanishi" [ref=e45] [cursor=pointer]:
+        - /url: http://thenounproject.com/lnakanishi
+      - text: from The Noun Project.

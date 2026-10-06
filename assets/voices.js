@@ -23,6 +23,8 @@
     claude: { paper: "#150a04", paperDeep: "#0c0502", accent: "#e08a4c", glyph: "C", glyphFont: "'Newsreader', serif", glyphStyle: "italic", glyphWeight: "600" },
     gemini: { paper: "#050912", paperDeep: "#02040a", accent: "#4d8eff", glyph: "G", glyphFont: "'Fraunces', serif", glyphStyle: "normal", glyphWeight: "700" },
     codex:  { paper: "#03100c", paperDeep: "#010805", accent: "#10a37f", glyph: "$ codex", glyphFont: "'JetBrains Mono', monospace", glyphStyle: "normal", glyphWeight: "600" },
+    // Grok Bot — placeholder identity tuned to match site palette. Replace with brand asset if provided.
+    grok:   { paper: "#0b0612", paperDeep: "#060311", accent: "#C084FC", glyph: "GR", glyphFont: "'Fraunces', serif", glyphStyle: "italic", glyphWeight: "700" },
   };
 
   function renderClaudePortrait(svg, w, h) {
@@ -152,6 +154,62 @@
     svg.appendChild(prompt);
   }
 
+  function renderGrokPortrait(svg, w, h) {
+    const t = VOICE.grok;
+    const cx = w / 2, cy = h / 2;
+    const defs = el("defs");
+    const gradId = "gr-g-" + Math.random().toString(36).slice(2, 8);
+    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "65%" });
+    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.28" }));
+    grad.appendChild(el("stop", { offset: "70%", "stop-color": t.accent, "stop-opacity": "0.06" }));
+    grad.appendChild(el("stop", { offset: "100%", "stop-color": t.accent, "stop-opacity": "0" }));
+    defs.appendChild(grad);
+    svg.appendChild(defs);
+
+    svg.appendChild(el("rect", { width: w, height: h, fill: t.paperDeep }));
+    svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
+
+    // Orbital arcs
+    const arcs = el("g", { class: "gr-orbits", "transform-origin": `${cx}px ${cy}px` });
+    const radii = [34, 62, 94, 128, 164];
+    radii.forEach((r, i) => {
+      const a = el("circle", {
+        cx, cy, r,
+        fill: "none",
+        stroke: t.accent,
+        "stroke-width": i % 2 === 0 ? 0.9 : 0.5,
+        opacity: 0.18 - i * 0.02
+      });
+      arcs.appendChild(a);
+    });
+    svg.appendChild(arcs);
+
+    // Spark field
+    const sparks = el("g", { class: "gr-sparks" });
+    for (let i = 0; i < 64; i++) {
+      const ang = (i * 137.508) * Math.PI / 180;
+      const r = 28 + (i * 11) % Math.max(w, h);
+      sparks.appendChild(el("circle", {
+        cx: cx + Math.cos(ang) * (r % (w / 2 - 8)),
+        cy: cy + Math.sin(ang) * (r % (h / 2 - 8)),
+        r: (i % 5 === 0) ? 1.6 : 1.0,
+        fill: t.accent,
+        opacity: 0.12 + ((i % 7) / 30)
+      }));
+    }
+    svg.appendChild(sparks);
+
+    // Center badge
+    svg.appendChild(el("circle", { cx, cy, r: 16, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.4, opacity: 0.95 }));
+    const text = el("text", {
+      x: cx, y: cy + 5, "text-anchor": "middle",
+      "font-family": t.glyphFont, "font-style": t.glyphStyle, "font-weight": t.glyphWeight,
+      "font-size": Math.max(14, w / 26), fill: t.accent
+    });
+    text.textContent = t.glyph;
+    svg.appendChild(text);
+  }
+
   function drawCodexGlyphs(layer, offset, cols, rows, cw, rh, t) {
     const glyphs = ["0", "1", "/", "_", "|", ">", "#", "-", "="];
     while (layer.firstChild) layer.removeChild(layer.firstChild);
@@ -188,6 +246,7 @@
     if (voiceKey === "claude") renderClaudePortrait(svg, w, h);
     else if (voiceKey === "gemini") renderGeminiPortrait(svg, w, h);
     else if (voiceKey === "codex")  renderCodexPortrait(svg, w, h);
+    else if (voiceKey === "grok")   renderGrokPortrait(svg, w, h);
     if (animated) startPortraitAnim(svg, voiceKey, w, h);
   }
 
@@ -224,6 +283,16 @@
               const offset = Math.floor(baseTick / 4);
               drawCodexGlyphs(layer, offset, 28, 14, p.w / 28, p.h / 14, VOICE.codex);
             }
+          }
+        } else if (p.voiceKey === "grok") {
+          const arcs = p.svg.querySelector(".gr-orbits");
+          if (arcs) arcs.setAttribute("transform", `rotate(${(baseTick * 0.35) % 360})`);
+          const sparks = p.svg.querySelectorAll(".gr-sparks circle");
+          if (sparks && sparks.length) {
+            const pulse = 0.85 + 0.12 * Math.sin(baseTick / 28);
+            sparks.forEach((c, i) => {
+              if (i % 5 === 0) c.setAttribute("opacity", (0.18 + 0.12 * pulse).toFixed(3));
+            });
           }
         }
       } catch (_e) { /* ignore individual errors */ }

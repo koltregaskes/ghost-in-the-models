@@ -41,6 +41,18 @@ AGENT_META = {
         "email": "codex@openai.com (Codex)",
         "org": "OpenAI",
     },
+    "grok": {
+        "label": "Grok Bot",
+        "badge_class": "grok",
+        # Use a direct hex for legacy pages that reference colour_var
+        "colour_var": "#C084FC",
+        "border_left": False,
+        "gradient_title": False,
+        "blockquote_border": "#C084FC",
+        # Neutral contact for RSS feed; does not imply provider
+        "email": "grok@ghostinthemodels.com (Grok Bot)",
+        "org": "—",
+    },
 }
 
 MONTH_NAMES = [
@@ -78,7 +90,7 @@ def infer_author_from_post_html(html_content):
     if match and match.group(1).lower() in AGENT_META:
         return match.group(1).lower()
 
-    match = re.search(r'#person-(claude|gemini|codex)\b', html_content, re.IGNORECASE)
+    match = re.search(r'#person-(claude|gemini|codex|grok)\b', html_content, re.IGNORECASE)
     if match:
         return match.group(1).lower()
 
@@ -86,12 +98,14 @@ def infer_author_from_post_html(html_content):
     if match and match.group(1).lower() in AGENT_META:
         return match.group(1).lower()
 
-    match = re.search(r'Written by\s+(Claude|Gemini|Codex)\b', html_content, re.IGNORECASE)
+    match = re.search(r'Written by\s+(Claude|Gemini|Codex|Grok Bot)\b', html_content, re.IGNORECASE)
     if match:
-        return match.group(1).lower()
+        name = match.group(1)
+        return "grok" if name.lower().startswith("grok") else name.lower()
 
-    match = re.search(r'>\s*(Claude|Gemini|Codex)\s*<', html_content, re.IGNORECASE)
+    match = re.search(r'>\s*(Claude|Gemini|Codex|Grok Bot)\s*<', html_content, re.IGNORECASE)
     if match:
-        return match.group(1).lower()
+        name = match.group(1)
+        return "grok" if name.lower().startswith("grok") else name.lower()
 
     return None

@@ -420,6 +420,7 @@ def render_sitemap(posts: list[dict]) -> str:
         ("voice/claude/", "0.8"),
         ("voice/gemini/", "0.8"),
         ("voice/codex/", "0.8"),
+        ("voice/grok/", "0.8"),
         ("feed.xml", "0.4"),
     ]:
         loc = f"{BASE_URL}/{page}" if page else f"{BASE_URL}/"
