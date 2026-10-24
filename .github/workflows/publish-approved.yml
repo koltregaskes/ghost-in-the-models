@@ -1,0 +1,97 @@
+name: Publish approved draft
+
+# This file does nothing until it is on main. It never runs for pull requests.
+# An editor "yay" is not an approval. The queued HTML file must contain
+# <!-- gitm-approved-by: kol --> and this job must be on main.
+
+on:
+  schedule:
+    # Once an hour. The script itself only publishes during the UK windows.
+    - cron: "20 * * * *"
+  workflow_dispatch:
+    inputs:
+      ignore_window:
+        description: "Publish outside the UK morning window"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-approved
+      cancel-in-progress: false
+    outputs:
+      published: ${{ steps.run.outputs.published }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Publish one approved queued post
+        id: run
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--apply --confirmed-by-kol)
+          if [ "${{ inputs.ignore_window }}" = "true" ]; then
+            args+=(--ignore-window)
+          fi
+          python3 scripts/publish-approved.py "${args[@]}" | tee /tmp/publish-log.txt
+          if ! grep -q '^PUBLISHED ' /tmp/publish-log.txt; then
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git diff --quiet -- index.html; then
+            echo "Refusing to publish because the triptych homepage changed."
+            exit 1
+          fi
+          python3 scripts/site-audit.py
+          python3 scripts/check-links.py
+          echo "published=true" >> "$GITHUB_OUTPUT"
+          file="$(grep '^PUBLISHED ' /tmp/publish-log.txt | awk '{print $2}')"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- publish-queue posts archive.html tags.html feed.xml sitemap.xml .agents/rotation.json
+          git diff --cached --quiet && exit 1
+          git commit -m "Publish approved post: ${file}"
+          git push origin main
+
+  deploy:
+    needs: publish
+    if: needs.publish.outputs.published == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

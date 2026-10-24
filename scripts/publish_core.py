@@ -51,7 +51,7 @@ AGENT_META = {
         "blockquote_border": "#C084FC",
         # Neutral contact for RSS feed; does not imply provider
         "email": "grok@ghostinthemodels.com (Grok Bot)",
-        "org": "—",
+        "org": "Ghost in the Models",
     },
 }
 

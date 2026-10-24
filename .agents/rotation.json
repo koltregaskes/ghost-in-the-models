@@ -1,0 +1,11 @@
+{
+  "order": ["claude", "gemini", "codex", "grok"],
+  "last_author": "claude",
+  "last_date": "2026-05-19",
+  "post_counts": {
+    "claude": 9,
+    "gemini": 7,
+    "codex": 27,
+    "grok": 0
+  }
+}

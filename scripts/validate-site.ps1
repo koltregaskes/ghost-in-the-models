@@ -113,5 +113,17 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+Write-Host "Running approved-publisher dry run..." -ForegroundColor Cyan
+python (Join-Path $SiteRoot "scripts\test-publish-approved.py")
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+Write-Host "Checking internal links..." -ForegroundColor Cyan
+python (Join-Path $SiteRoot "scripts\check-links.py")
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
 Write-Host "Validation passed: branding, files, and references look good." -ForegroundColor Green
 

@@ -258,6 +258,56 @@ def audit_publication_control(policy: dict, messages: list[AuditMessage]) -> Non
         )
 
 
+def audit_queue_publisher(messages: list[AuditMessage]) -> None:
+    script = read_text(SITE_ROOT / "scripts" / "publish-approved.py")
+    gate = re.search(
+        r"if args\.apply and not args\.confirmed_by_kol:\s*"
+        r"raise SystemExit\(\"Publication requires Kol's explicit approval\.\"\)",
+        script,
+    )
+    if gate is None or "gitm-approved-by: kol" not in script:
+        messages.append(
+            AuditMessage(
+                "error",
+                "missing_queue_publication_gate",
+                "publish-approved.py must refuse to apply without Kol's confirmation and the approval marker",
+            )
+        )
+
+    workflow = read_text(SITE_ROOT / ".github" / "workflows" / "publish-approved.yml")
+    if re.search(r"(?m)^[\s-]*pull_request\s*:", workflow) or "refs/heads/main" not in workflow:
+        messages.append(
+            AuditMessage(
+                "error",
+                "queue_publisher_not_main_only",
+                "publish-approved.yml must run only for main and must not trigger on pull requests",
+            )
+        )
+    if "--confirmed-by-kol" not in workflow:
+        messages.append(
+            AuditMessage(
+                "error",
+                "queue_publisher_missing_confirmation_flag",
+                "publish-approved.yml must pass --confirmed-by-kol only from the main-branch job",
+            )
+        )
+
+    for rel in (
+        "voice/grok/index.html",
+        "preview/option-a.html",
+        "preview/option-b.html",
+        "preview/option-c.html",
+    ):
+        if re.search(r"\bxAI\b", read_text(SITE_ROOT / rel)):
+            messages.append(
+                AuditMessage(
+                    "error",
+                    "grok_provider_named",
+                    f"{rel} names a provider for Grok Bot",
+                )
+            )
+
+
 def audit_text_integrity(messages: list[AuditMessage]) -> None:
     for path in tracked_text_files():
         raw = path.read_bytes()
@@ -293,6 +343,8 @@ def audit_text_integrity(messages: list[AuditMessage]) -> None:
 
 def audit_html_security(messages: list[AuditMessage]) -> None:
     html_files = sorted(SITE_ROOT.glob("*.html")) + sorted(POSTS_DIR.glob("*.html")) + sorted(DRAFTS_DIR.glob("*.html"))
+    for extra in (SITE_ROOT / "voice", SITE_ROOT / "preview"):
+        html_files.extend(sorted(extra.glob("**/*.html")))
 
     for path in html_files:
         rel = normalize_rel(path)
@@ -348,6 +400,7 @@ def main() -> int:
     messages: list[AuditMessage] = []
     audit_dates(policy, messages)
     audit_publication_control(policy, messages)
+    audit_queue_publisher(messages)
     audit_text_integrity(messages)
     audit_html_security(messages)
 

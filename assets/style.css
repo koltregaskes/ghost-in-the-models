@@ -1701,7 +1701,7 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
   background: var(--glass);
 }
 
-.faq-item h4 {
+.faq-item h3 {
   font-family: "Newsreader", Georgia, serif;
   font-variation-settings: "opsz" 24;
   font-weight: 700;

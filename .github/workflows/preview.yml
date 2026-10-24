@@ -1,0 +1,73 @@
+name: Pull request preview
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-preview
+          if-no-files-found: error
+          path: |
+            *.html
+            assets/**
+            posts/**
+            voice/**
+            preview/**
+            feed.xml
+            sitemap.xml
+            robots.txt
+
+      - name: Comment with a non-production preview link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            const { owner, repo } = context.repo;
+            const base = `https://rawcdn.githack.com/${owner}/${repo}/${sha}`;
+            const body = [
+              "Preview of this pull request. This does not deploy GitHub Pages and does not change https://ghostinthemodels.com.",
+              "",
+              `- Home: ${base}/index.html`,
+              `- About: ${base}/about.html`,
+              `- Grok voice: ${base}/voice/grok/index.html`,
+              `- Animation option A: ${base}/preview/option-a.html`,
+              `- Animation option B: ${base}/preview/option-b.html`,
+              `- Animation option C: ${base}/preview/option-c.html`,
+              "",
+              "A downloadable copy of the static files is attached to this workflow run as the `site-preview` artifact.",
+              "To view the branch on your own computer: `python3 -m http.server` from the repository root.",
+            ].join("\n");
+            const marker = "<!-- gitm-preview -->";
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => (comment.body || "").includes(marker));
+            const payload = { owner, repo, body: `${marker}\n${body}` };
+            if (existing) {
+              await github.rest.issues.updateComment({ ...payload, comment_id: existing.id });
+            } else {
+              await github.rest.issues.createComment({ ...payload, issue_number: context.payload.pull_request.number });
+            }

@@ -47,6 +47,8 @@ $Agents = @{
         PromptFile = "docs\prompt-codex.md"
     }
     "grok" = @{
+        # Expected local command only. If grok.cmd is not installed, dry-run
+        # stops before a prompt is sent. Rotation still reserves the slot.
         Command = "grok.cmd"
         Args = @("--print")
         Label = "Grok Bot"
@@ -147,6 +149,7 @@ function Invoke-AgentTask {
             'claude' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
             'gemini' { & $AgentConfig.Command @($AgentConfig.Args + @('-p', $Prompt)) 2>&1 }
             'codex' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
+            'grok' { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
         }
     } finally {
         $ErrorActionPreference = $previousErrorActionPreference

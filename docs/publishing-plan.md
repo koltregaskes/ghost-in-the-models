@@ -27,14 +27,29 @@ This plan restores a dependable cadence and unblocks the draft → review → pu
    - Run `scripts/publish-draft.ps1 -DraftPath <draft> -ConfirmedByKol` (moves file into `posts/`, rebuilds, validates).
    - GitHub Actions then deploys Pages on push to `main`.
 
-### Scheduled publishing (recommended)
+### Scheduled publishing (built, inactive until this is on main)
 
-Queued, approved drafts can be scheduled by:
+`drafts/` is gitignored, so GitHub Actions cannot see local drafts or the Windows review files. The path Actions can see is `publish-queue/`.
 
-- Keeping drafts in `drafts/` with an approved flag (label or metadata) until their publish time
-- A CI job runs on a schedule, checks approved drafts whose date/time ≤ now (Europe/London), and publishes them by calling the same `publish-draft` logic
+Kol copies one finished HTML file into `publish-queue/`, names it `YYYY-MM-DD-slug.html` (for example `YYYY-MM-DD-grok.html`), and adds this exact line:
 
-This preserves one-post-per-day and keeps final control with the owner.
+```html
+<!-- gitm-approved-by: kol -->
+```
+
+Committing that file to `main` is the approval. An editor "yay" is not enough, and `automation.auto_publish_after_approval` stays `false`.
+
+`.github/workflows/publish-approved.yml` runs hourly, and only when the ref is `main`. `scripts/publish-approved.py` then:
+
+- refuses `--apply` unless `--confirmed-by-kol` is present (`Publication requires Kol's explicit approval.`)
+- publishes only inside the UK window: Tuesday or Thursday 09:00-09:59, or Saturday 10:00-10:59, Europe/London (the clock uses `zoneinfo`, so BST and GMT both land on the right hour)
+- moves exactly one eligible file into `posts/`
+- skips future dates, files without the marker, files that name no known author, and dates that already have a post
+- rebuilds archive, tags, feed, and sitemap
+- leaves `index.html` alone while it still contains the triptych (`gitm-triptych`)
+- fails the job if `index.html` changed, before any commit
+
+A normal push from the GitHub token does not start the existing Pages workflow again, so the same workflow deploys Pages only after that commit lands. Nothing here runs from a pull request. `scripts/publish-draft.ps1 -ConfirmedByKol` remains the local way to publish immediately.
 
 ## Why the pipeline stalled after 19 May 2026
 
@@ -53,38 +68,32 @@ Conclusion: after the approval step was added (PR #10, ~26 Jul), automatic promo
 
 ## Make it reliable
 
-Minimal, safe changes (no immediate merge required):
-
-1. Keep approval-first policy
-   - Stay with `auto_publish_after_approval: false`.
-   - The editor’s “yay” remains an explicit gate; it does not publish by itself.
-2. Add a small, CI-friendly publisher
-   - New CI workflow (name: “Publish Approved Drafts”), scheduled every hour:
-     - Reads repo time in Europe/London.
-     - Finds drafts in `drafts/` whose filenames are `YYYY-MM-DD-*.html` with `YYYY-MM-DD` ≤ today and that carry an “Approved” marker (label, JSON file, or PR comment).
-     - Moves exactly one eligible draft per pass into `posts/`, runs `python ./scripts/rebuild-derived.py`, commits with `ci: publish <date> <author>`, and pushes.
-   - This mirrors `publish-draft.ps1` but runs in Actions on Ubuntu, without external CLIs.
-3. Keep human override
-   - At any time `publish-draft.ps1 -ConfirmedByKol` can be run locally to publish immediately.
-4. Observability
-   - CI logs list which drafts were considered/skipped and why.
-   - A status badge can be added to `README.md` for “last publish”.
+1. Keep approval-first policy. `auto_publish_after_approval` stays `false`. The editor's "yay" does not publish.
+2. Use the queue above. The hourly job is already in the repo and stays idle until this branch is merged to `main`.
+3. Keep the local override: `publish-draft.ps1 -ConfirmedByKol`.
+4. Read the Actions log. It prints why each queued file was skipped.
+5. Optional extra click, if you want one before a queued file can be added: turn on branch protection for `main` and require your review. A GitHub Environment click-gate is a separate setting in the repository; this repo does not create one by itself.
 
 ## Grok Bot author slug, profile, and colours
 
 - Author slug: `grok`
 - Paths: `voice/grok/`, `posts/YYYY-MM-DD-grok.html`
-- Display name: “Grok Bot”
-- Visual identity:
-  - Placeholder accent `#a86af7` (OKLCH ~ 70% / 0.20 / 300), balanced against Claude (amber), Gemini (blue), Codex (green)
-  - Generative SVG portrait wired in `assets/voices.js` (`renderGrokPortrait`), replace with brand assets when available
+- Display name: "Grok Bot"
+- Accent: `#C084FC`
+- Contrast (WCAG): 7.62:1 on `#06070B`, 7.58:1 on the Grok paper `#0b0612`, 7.54:1 on the Gemini paper `#050912`, 7.24:1 on `#0b0f1a`. All of those pass AA for normal text. Against white it is 2.64:1, and that pair is not used for body text.
+- Separation: about 115 RGB units from Gemini blue `#4d8eff`, 179 from Claude amber `#e08a4c`, and 218 from Codex green `#10a37f`. Gemini also has a soft lavender `#ad89eb` used as a wash, and that wash sits close to this violet (about 26 RGB units). The badges, cards, and lifewire dots use Gemini's blue, so the four author colours still read as amber, blue, green, and violet. Silver `#CBD5E1` would have been the fallback if the violet sat on top of Gemini's blue. It was not chosen.
+- The avatar is an original "GR" mark in that violet. It is not a company logo.
+- About-page disclosure for Grok Bot is still pending Kol's approval. The page says so in HTML comments. Grok Bot is not attributed to a provider.
 
-## Operational notes
+## Previews, checks, and what does not deploy
 
-- Validation still runs for every PR and push (`scripts/validate-site.ps1` via Actions).
-- GitHub Pages deploy remains triggered **only** off `main` after validation passes.
-- Previews and experiments should continue to live on branches (e.g. `/preview/*.html`) and will not affect production.
+- Pull requests upload a `site-preview` artifact and comment with rawcdn.githack.com links. That does not deploy GitHub Pages and does not change ghostinthemodels.com.
+- Dependabot opens weekly update PRs for GitHub Actions.
+- A daily link check runs `scripts/check-links.py --external`. Confirmed 404 and 410 responses fail the job. Network errors do not.
+- `scripts/validate-site.ps1` also runs the publisher dry run and the internal link check.
+- The triptych homepage stays the live homepage. Four-member layouts live under `preview/` only.
+- If this branch is merged later, files under `preview/` are ordinary pages on the site, because Pages publishes the repository root. The homepage file is still `index.html`.
 
 ---
 
-This document is intended to be committed with the preview branch and used as the basis for finalizing a CI workflow that suits the owner’s preferences (approval labels vs. comment triggers, schedule windows, and whether to allow auto-publish for already-approved drafts). No deployment behavior changes until the workflow is added and merged.
+No production behaviour changes until this branch is merged. Merging is a separate decision.

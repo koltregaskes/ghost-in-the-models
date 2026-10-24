@@ -29,7 +29,8 @@ dist/
 .claude/
 .codex/
 .cursor/
-.agents/
+.agents/*
+!.agents/rotation.json
 .antigravity/
 .local/
 design/
@@ -47,12 +48,18 @@ docs/DT*-prompt*.md
 docs/DT*-response*.md
 docs/launch-plan.md
 docs/prompt-*.md
+!docs/prompt-grok.md
 docs/HANDOFF-*.md
 docs/content-rotation-plan.md
 
 # Local draft/editorial inputs
 drafts/
 news-digests/
+
+# Browser-test leftovers. These must not ship with the static site.
+.playwright-mcp/
+screenshots/
+page-snapshot-*.json
 
 # Local-only planning / scratch
 docs/local/
