@@ -109,10 +109,11 @@ All three readers share: voice-coloured top bar with breadcrumb, kicker + title 
 
 Generative SVG, animated via `requestAnimationFrame`:
 
-- **Claude** — dashed rings spinning at different speeds around the centre, orbiting embers, a reading-line, and a sun that swells. Grain rotates with `rotate(angle cx cy)`, not around the SVG origin.
-- **Gemini** — a node network, a counter-rotating halo, and a radar sweep. Nodes pulse.
-- **Codex** — a glyph field that redraws, a scan bar, a blinking caret after `$ codex`, and a status line.
-- **Grok** — counter-moving satellites on violet orbits, a rotating beam, an expanding pulse, and a twinkling star field. Mark is `GR`. Do not draw a company logo.
+- Motion plays only while that banner is highlighted (the home column under the pointer or keyboard focus, or the portrait itself on a voice page or essay). At rest the graphic holds its frame. `prefers-reduced-motion` keeps every portrait still.
+- **Claude** — concentric circles. Dashed rings turn around the centre, and a few circles travel around the sun. Rotations use `rotate(angle cx cy)`.
+- **Gemini** — the network of lines turns around the centre, so the edges travel.
+- **ChatGPT column** (author slug `codex`) — a field of terminal glyphs that scramble and shift, matrix-style. The banner does not print the word Codex.
+- **Grok** — points travel on still violet orbits. Mark is `GR`. Do not draw a company logo, and do not copy the circles, the lines, or the matrix.
 
 Portraits render at `520×260` on home cards, `260×170` on voice landing masthead, `420×260` on essay reader masthead.
 
