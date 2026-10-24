@@ -113,6 +113,15 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+Write-Host "Checking Europe/London timezone data..." -ForegroundColor Cyan
+python -c "from zoneinfo import ZoneInfo; ZoneInfo('Europe/London')"
+if ($LASTEXITCODE -ne 0) {
+    python -m pip install --disable-pip-version-check -q "tzdata>=2024.2"
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+}
+
 Write-Host "Running approved-publisher dry run..." -ForegroundColor Cyan
 python (Join-Path $SiteRoot "scripts\test-publish-approved.py")
 if ($LASTEXITCODE -ne 0) {
