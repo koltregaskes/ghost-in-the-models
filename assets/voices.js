@@ -27,6 +27,8 @@
     grok:   { paper: "#0b0612", paperDeep: "#060311", accent: "#C084FC", glyph: "GR", glyphFont: "'Fraunces', serif", glyphStyle: "italic", glyphWeight: "700" },
   };
 
+  const MATRIX_GLYPHS = ["0", "1", "/", "_", "|", ">", "#", "-", "="];
+
   function renderClaudePortrait(svg, w, h) {
     const cx = w / 2, cy = h / 2;
     const t = VOICE.claude;
@@ -43,25 +45,36 @@
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
     const scale = Math.min(1, h / 260);
-    const speeds = [0.7, -1.15, 0.42, -0.85, 1.45];
-    [180, 140, 100, 70, 46].forEach((r, i) => {
+    const speeds = [1.6, -2.4, 0.9, -1.7, 2.8];
+    [168, 124, 92, 64, 40].forEach((r, i) => {
       svg.appendChild(el("circle", {
         class: "cl-ring",
         cx, cy, r: (r * scale).toFixed(1),
         fill: "none",
         stroke: t.accent,
-        "stroke-width": i === 4 ? 1.4 : 0.9,
-        "stroke-dasharray": i % 2 ? "16 18" : "4 12",
-        opacity: 0.28 + i * 0.08,
+        "stroke-width": i === 0 ? 1.6 : 1.05,
+        "stroke-dasharray": i % 2 ? "28 36" : "8 18",
+        opacity: 0.45 + i * 0.08,
         "data-speed": String(speeds[i]),
       }));
     });
 
+    svg.appendChild(el("circle", {
+      class: "cl-arc",
+      cx, cy, r: (78 * scale).toFixed(1),
+      fill: "none",
+      stroke: "#f6c08a",
+      "stroke-width": 3.4,
+      "stroke-linecap": "round",
+      "stroke-dasharray": "64 480",
+      opacity: 1,
+    }));
+
     const movers = el("g", { class: "cl-movers" });
     [
-      { orbit: 86, r: 20, phase: 0.4, rate: 0.028 },
-      { orbit: 118, r: 13, phase: 2.2, rate: -0.02 },
-      { orbit: 58, r: 9, phase: 4.1, rate: 0.036 },
+      { orbit: 86, r: 18, phase: 0.4, rate: 0.05 },
+      { orbit: 118, r: 12, phase: 2.2, rate: -0.038 },
+      { orbit: 54, r: 9, phase: 4.1, rate: 0.07 },
     ].forEach((m) => {
       movers.appendChild(el("circle", {
         class: "cl-orbit",
@@ -69,9 +82,9 @@
         cy: cy + Math.sin(m.phase) * m.orbit * scale * 0.72,
         r: m.r * scale,
         fill: "none",
-        stroke: t.accent,
-        "stroke-width": 1.3,
-        opacity: 0.8,
+        stroke: "#f6c08a",
+        "stroke-width": 1.6,
+        opacity: 0.95,
         "data-orbit": String(m.orbit * scale),
         "data-phase": String(m.phase),
         "data-rate": String(m.rate),
@@ -79,8 +92,8 @@
     });
     svg.appendChild(movers);
 
-    svg.appendChild(el("circle", { class: "cl-sun", cx, cy, r: 28 * scale, fill: t.accent, opacity: 0.85 }));
-    svg.appendChild(el("circle", { cx, cy, r: 18 * scale, fill: t.paper, opacity: 0.9 }));
+    svg.appendChild(el("circle", { class: "cl-sun", cx, cy, r: 28 * scale, fill: t.accent, opacity: 0.9 }));
+    svg.appendChild(el("circle", { cx, cy, r: 18 * scale, fill: t.paper, opacity: 0.92 }));
 
     const text = el("text", {
       x: cx, y: cy + 6 * scale, "text-anchor": "middle",
@@ -106,30 +119,38 @@
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
     const network = el("g", { class: "ge-network" });
+    const reach = Math.min(w * 0.46, h * 0.46);
     const nodes = [];
-    const reach = Math.min(w, h) * 0.42;
-    for (let i = 0; i < 11; i++) {
-      const a = (i / 11) * Math.PI * 2;
-      const r = reach * (0.45 + ((i * 31) % 70) / 140);
-      nodes.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 0.72, idx: i });
+    for (let i = 0; i < 10; i++) {
+      const ang = (i / 10) * Math.PI * 2;
+      const rad = reach * (0.55 + (i % 3) * 0.18);
+      const rate = (i % 2 ? -1 : 1) * (0.012 + (i % 4) * 0.004);
+      nodes.push({ ang, rad, rate, i });
     }
     for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const n = nodes[i], m = nodes[j];
-        const d = Math.hypot(n.x - m.x, n.y - m.y);
-        if (d > reach * 1.15) continue;
+      const j = (i + 1) % nodes.length;
+      const k = (i + 3) % nodes.length;
+      [j, k].forEach((other) => {
+        if (other < i && other !== j) return;
         network.appendChild(el("line", {
           class: "ge-line",
-          x1: n.x, y1: n.y, x2: m.x, y2: m.y,
-          stroke: t.accent, "stroke-width": 1.15,
-          opacity: Math.max(0.18, 0.75 - d / (reach * 3)),
+          "data-a": String(i),
+          "data-b": String(other),
+          x1: cx, y1: cy, x2: cx, y2: cy,
+          stroke: t.accent,
+          "stroke-width": 1.35,
+          opacity: 0.72,
         }));
-      }
+      });
     }
-    nodes.forEach(n => {
+    nodes.forEach((n) => {
       network.appendChild(el("circle", {
-        cx: n.x, cy: n.y, r: 3.2 + (n.idx % 3),
-        fill: t.accent, opacity: 0.95,
+        class: "ge-node",
+        "data-ang": String(n.ang),
+        "data-rad": String(n.rad),
+        "data-rate": String(n.rate),
+        cx, cy, r: 4.2,
+        fill: n.i % 3 === 0 ? "#9ec0ff" : t.accent,
       }));
     });
     svg.appendChild(network);
@@ -146,14 +167,38 @@
 
   function renderCodexPortrait(svg, w, h) {
     const t = VOICE.codex;
-    const cols = 28, rows = 14;
-    const cw = w / cols, rh = h / rows;
-
     svg.appendChild(el("rect", { width: w, height: h, fill: t.paperDeep }));
-
-    const glyphLayer = el("g", { class: "cx-glyphs" });
-    svg.appendChild(glyphLayer);
-    drawMatrixGlyphs(glyphLayer, 0, cols, rows, cw, rh, t);
+    const layer = el("g", { class: "cx-glyphs" });
+    const cols = Math.max(12, Math.round(w / 32));
+    const cw = w / cols;
+    const size = Math.max(13, Math.min(cw * 0.8, 18));
+    const step = size * 1.28;
+    for (let x = 0; x < cols; x++) {
+      const trail = 8 + (x % 4);
+      const speed = 1.35 + (x % 5) * 0.42;
+      const start = -((x * 47) % Math.round(h + trail * step));
+      const col = el("g", {
+        class: "cx-col",
+        "data-speed": String(speed),
+        "data-y": String(start),
+        transform: `translate(0 ${start})`,
+      });
+      for (let k = 0; k < trail; k++) {
+        const text = el("text", {
+          x: x * cw + cw / 2,
+          y: -k * step,
+          "text-anchor": "middle",
+          "font-family": "'JetBrains Mono', monospace",
+          "font-size": size,
+          fill: k === 0 ? "#f4fff9" : t.accent,
+          opacity: Math.max(0.16, 0.95 - k * 0.1).toFixed(2),
+        });
+        text.textContent = MATRIX_GLYPHS[(x * 5 + k * 3) % MATRIX_GLYPHS.length];
+        col.appendChild(text);
+      }
+      layer.appendChild(col);
+    }
+    svg.appendChild(layer);
   }
 
   function renderGrokPortrait(svg, w, h) {
@@ -173,31 +218,31 @@
 
     const scale = Math.min(1, Math.min(w, h) / 260);
     const arcs = el("g", { class: "gr-orbits" });
-    [34, 62, 94, 128].forEach((r, i) => {
+    [40, 72, 108, 146].forEach((r, i) => {
       arcs.appendChild(el("circle", {
         cx, cy, r: r * scale,
         fill: "none",
         stroke: t.accent,
         "stroke-width": i % 2 === 0 ? 0.9 : 0.5,
         "stroke-dasharray": "2 10",
-        opacity: 0.22,
+        opacity: 0.28,
       }));
     });
     svg.appendChild(arcs);
 
     const sats = el("g", { class: "gr-sats" });
     [
-      { orbit: 34, phase: 0.2, rate: 0.045 },
-      { orbit: 62, phase: 1.7, rate: -0.032 },
-      { orbit: 94, phase: 3.4, rate: 0.024 },
-      { orbit: 128, phase: 5.1, rate: -0.018 },
+      { orbit: 40, phase: 0.2, rate: 0.05 },
+      { orbit: 72, phase: 1.7, rate: -0.036 },
+      { orbit: 108, phase: 3.4, rate: 0.028 },
+      { orbit: 146, phase: 5.1, rate: -0.02 },
     ].forEach((m, i) => {
       const orbit = m.orbit * scale;
       sats.appendChild(el("circle", {
         class: "gr-sat",
         cx: cx + Math.cos(m.phase) * orbit,
         cy: cy + Math.sin(m.phase) * orbit * 0.72,
-        r: i === 0 ? 4.2 : 3.2,
+        r: i === 0 ? 5 : 3.6,
         fill: i % 2 ? "#e4c8ff" : t.accent,
         "data-orbit": String(orbit),
         "data-phase": String(m.phase),
@@ -214,30 +259,6 @@
     });
     text.textContent = t.glyph;
     svg.appendChild(text);
-  }
-
-  function drawMatrixGlyphs(layer, offset, cols, rows, cw, rh, t) {
-    const glyphs = ["0", "1", "/", "_", "|", ">", "#", "-", "="];
-    while (layer.firstChild) layer.removeChild(layer.firstChild);
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        const fall = (y + Math.floor(offset / 2) + x) % rows;
-        const v = ((x * 13 + fall * 31 + offset) ^ (x * fall * 7)) & 0xff;
-        if (v <= 150) continue;
-        const drift = ((v + offset) % 9) - 4;
-        const text = el("text", {
-          x: x * cw + cw / 2,
-          y: fall * rh + rh - 3 + drift,
-          "text-anchor": "middle",
-          "font-family": "'JetBrains Mono', monospace",
-          "font-size": Math.min(cw, rh) * 0.85,
-          fill: (x + fall + offset) % 11 === 0 ? "#d8fff2" : t.accent,
-          opacity: (0.28 + (v / 255) * 0.7).toFixed(3),
-        });
-        text.textContent = glyphs[v % glyphs.length];
-        layer.appendChild(text);
-      }
-    }
   }
 
   function renderPortrait(target, voiceKey, opts) {
@@ -268,7 +289,12 @@
     return svg.closest(".gitm-card") || svg.closest("[data-portrait]") || svg;
   }
 
+  function motionReduced() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
   function ensureLoop() {
+    if (motionReduced()) return;
     if (!rafHandle) rafHandle = requestAnimationFrame(tickLoop);
   }
 
@@ -277,7 +303,6 @@
     const on = () => {
       entry.hot = true;
       entry.svg.setAttribute("data-lit", "true");
-      ensureLoop();
     };
     const off = () => {
       entry.hot = false;
@@ -291,70 +316,99 @@
     });
   }
 
+  function placeGemini(svg, phase) {
+    const box = (svg.getAttribute("viewBox") || "0 0 520 260").split(/[\s,]+/);
+    const cx = parseFloat(box[2]) / 2;
+    const cy = parseFloat(box[3]) / 2;
+    const nodes = [...svg.querySelectorAll(".ge-node")];
+    const pts = nodes.map((node) => {
+      const ang = parseFloat(node.getAttribute("data-ang")) + phase * parseFloat(node.getAttribute("data-rate"));
+      const rad = parseFloat(node.getAttribute("data-rad"));
+      const x = cx + Math.cos(ang) * rad;
+      const y = cy + Math.sin(ang) * rad * 0.72;
+      node.setAttribute("cx", x.toFixed(1));
+      node.setAttribute("cy", y.toFixed(1));
+      return { x, y };
+    });
+    svg.querySelectorAll(".ge-line").forEach((line) => {
+      const a = pts[parseInt(line.getAttribute("data-a"), 10)];
+      const b = pts[parseInt(line.getAttribute("data-b"), 10)];
+      if (!a || !b) return;
+      line.setAttribute("x1", a.x.toFixed(1));
+      line.setAttribute("y1", a.y.toFixed(1));
+      line.setAttribute("x2", b.x.toFixed(1));
+      line.setAttribute("y2", b.y.toFixed(1));
+    });
+  }
+
   function tickLoop() {
-    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let any = false;
-    if (!reduced) {
-      for (const p of activePortraits) {
-        if (!p.hot) continue;
-        any = true;
-        p.phase += 1;
-        try {
-          const cx = p.w / 2, cy = p.h / 2;
-          if (p.voiceKey === "claude") {
-            p.svg.querySelectorAll(".cl-ring").forEach(ring => {
-              const speed = parseFloat(ring.getAttribute("data-speed") || "0.6");
-              const angle = (p.phase * speed) % 360;
-              ring.setAttribute("transform", `rotate(${angle.toFixed(2)} ${cx} ${cy})`);
-              ring.setAttribute("stroke-dashoffset", ((p.phase * speed * 1.6) % 240).toFixed(1));
-            });
-            p.svg.querySelectorAll(".cl-orbit").forEach(c => {
-              const orbit = parseFloat(c.getAttribute("data-orbit"));
-              const phase = parseFloat(c.getAttribute("data-phase"));
-              const rate = parseFloat(c.getAttribute("data-rate"));
-              const a = phase + p.phase * rate;
-              c.setAttribute("cx", (cx + Math.cos(a) * orbit).toFixed(1));
-              c.setAttribute("cy", (cy + Math.sin(a) * orbit * 0.72).toFixed(1));
-            });
-            const sun = p.svg.querySelector(".cl-sun");
-            if (sun) {
-              const wave = Math.sin(p.phase / 16);
-              sun.setAttribute("opacity", (0.62 + 0.3 * wave).toFixed(3));
-              sun.setAttribute("r", (28 * Math.min(1, p.h / 260) + 3.2 * wave).toFixed(2));
-            }
-          } else if (p.voiceKey === "gemini") {
-            const net = p.svg.querySelector(".ge-network");
-            if (net) {
-              const angle = (p.phase * 1.35) % 360;
-              net.setAttribute("transform", `rotate(${angle.toFixed(2)} ${cx} ${cy})`);
-            }
-          } else if (p.voiceKey === "codex") {
-            if (p.phase % 2 === 0) {
-              const layer = p.svg.querySelector(".cx-glyphs");
-              if (layer) {
-                drawMatrixGlyphs(layer, p.phase, 28, 14, p.w / 28, p.h / 14, VOICE.codex);
-              }
-            }
-          } else if (p.voiceKey === "grok") {
-            p.svg.querySelectorAll(".gr-sat").forEach(sat => {
-              const orbit = parseFloat(sat.getAttribute("data-orbit"));
-              const phase = parseFloat(sat.getAttribute("data-phase"));
-              const rate = parseFloat(sat.getAttribute("data-rate"));
-              const a = phase + p.phase * rate;
-              sat.setAttribute("cx", (cx + Math.cos(a) * orbit).toFixed(1));
-              sat.setAttribute("cy", (cy + Math.sin(a) * orbit * 0.72).toFixed(1));
-            });
-          }
-        } catch (_e) { /* ignore individual errors */ }
-      }
+    if (motionReduced()) {
+      rafHandle = null;
+      return;
     }
-    rafHandle = any ? requestAnimationFrame(tickLoop) : null;
+    for (const p of activePortraits) {
+      const boost = p.hot ? 1.85 : 1;
+      p.phase += boost;
+      try {
+        const cx = p.w / 2, cy = p.h / 2;
+        if (p.voiceKey === "claude") {
+          const arc = p.svg.querySelector(".cl-arc");
+          if (arc) arc.setAttribute("transform", `rotate(${(p.phase * 3.6).toFixed(2)} ${cx} ${cy})`);
+          p.svg.querySelectorAll(".cl-ring").forEach((ring) => {
+            const speed = parseFloat(ring.getAttribute("data-speed") || "1");
+            const angle = p.phase * speed;
+            ring.setAttribute("transform", `rotate(${angle.toFixed(2)} ${cx} ${cy})`);
+            ring.setAttribute("stroke-dashoffset", (angle * 1.4).toFixed(1));
+          });
+          p.svg.querySelectorAll(".cl-orbit").forEach((c) => {
+            const orbit = parseFloat(c.getAttribute("data-orbit"));
+            const phase = parseFloat(c.getAttribute("data-phase"));
+            const rate = parseFloat(c.getAttribute("data-rate"));
+            const a = phase + p.phase * rate;
+            c.setAttribute("cx", (cx + Math.cos(a) * orbit).toFixed(1));
+            c.setAttribute("cy", (cy + Math.sin(a) * orbit * 0.72).toFixed(1));
+          });
+          const sun = p.svg.querySelector(".cl-sun");
+          if (sun) {
+            const wave = Math.sin(p.phase / 14);
+            sun.setAttribute("opacity", (0.7 + 0.25 * wave).toFixed(3));
+          }
+        } else if (p.voiceKey === "gemini") {
+          placeGemini(p.svg, p.phase);
+        } else if (p.voiceKey === "codex") {
+          const cols = p.svg.querySelectorAll(".cx-col");
+          cols.forEach((col, i) => {
+            const speed = parseFloat(col.getAttribute("data-speed")) * boost;
+            let y = parseFloat(col.getAttribute("data-y")) + speed;
+            if (y > p.h + 30) y = -180 - (i % 4) * 36;
+            col.setAttribute("data-y", y.toFixed(2));
+            col.setAttribute("transform", `translate(0 ${y.toFixed(1)})`);
+            if (Math.floor(p.phase) % 10 === i % 10) {
+              const head = col.querySelector("text");
+              if (head) head.textContent = MATRIX_GLYPHS[(Math.floor(p.phase) + i) % MATRIX_GLYPHS.length];
+            }
+          });
+        } else if (p.voiceKey === "grok") {
+          p.svg.querySelectorAll(".gr-sat").forEach((sat) => {
+            const orbit = parseFloat(sat.getAttribute("data-orbit"));
+            const phase = parseFloat(sat.getAttribute("data-phase"));
+            const rate = parseFloat(sat.getAttribute("data-rate"));
+            const a = phase + p.phase * rate;
+            sat.setAttribute("cx", (cx + Math.cos(a) * orbit).toFixed(1));
+            sat.setAttribute("cy", (cy + Math.sin(a) * orbit * 0.72).toFixed(1));
+          });
+        }
+      } catch (_e) { /* ignore individual errors */ }
+    }
+    rafHandle = requestAnimationFrame(tickLoop);
   }
 
   function startPortraitAnim(svg, voiceKey, w, h) {
     const entry = { svg, voiceKey, w, h, hot: false, phase: 0 };
     activePortraits.push(entry);
     watchHighlight(entry);
+    if (voiceKey === "gemini") placeGemini(svg, 0);
+    ensureLoop();
   }
 
   function bootPortraits() {
