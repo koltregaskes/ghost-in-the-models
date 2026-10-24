@@ -124,6 +124,9 @@ function Get-NormalizedDraftInfo {
     if (-not $relativePath.StartsWith('drafts/')) {
         throw "publish-draft.ps1 expects a draft under drafts/. Got: $relativePath"
     }
+    if ($relativePath.StartsWith('drafts/archive/', [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Archived drafts are retired from the publication path. Restore the draft to the active drafts root and complete a fresh editorial review before publishing: $relativePath"
+    }
 
     return @{
         FullPath = $fullPath
@@ -263,6 +266,7 @@ if (-not $ConfirmedByKol) {
 }
 
 Set-Location $RepoPath
+$draft = Get-NormalizedDraftInfo -InputPath $DraftPath -Root $RepoPath
 Assert-CleanTrackedWorktree -Path $RepoPath
 
 if (-not (Test-Path $ManifestPath)) {
@@ -270,7 +274,6 @@ if (-not (Test-Path $ManifestPath)) {
 }
 
 $manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
-$draft = Get-NormalizedDraftInfo -InputPath $DraftPath -Root $RepoPath
 $destinationPath = Join-Path (Join-Path $RepoPath 'posts') $draft.FileName
 $stagingDir = Join-Path $RepoPath 'logs\publish-staging'
 $stagedDraftPath = Join-Path $stagingDir $draft.FileName

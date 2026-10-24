@@ -144,6 +144,8 @@ function Invoke-EditorAgent {
 
     $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
     $previousErrorActionPreference = $ErrorActionPreference
+    $lastMessagePath = if ($AgentKey -eq 'codex') { [System.IO.Path]::GetTempFileName() } else { $null }
+    $exitCode = 1
     try {
         # PSNativeCommandUseErrorActionPreference is PowerShell 7+ only. The
         # scheduler runs Windows PowerShell 5.1, where `& cli 2>&1` under
@@ -154,8 +156,22 @@ function Invoke-EditorAgent {
         $output = switch ($AgentKey) {
             'claude' { & $agent.Command @($agent.Args + @($Prompt)) 2>&1 }
             'gemini' { & $agent.Command @($agent.Args + @('-p', $Prompt)) 2>&1 }
-            'codex' { & $agent.Command @($agent.Args + @($Prompt)) 2>&1 }
+            # Windows PowerShell 5.1 can truncate a multiline native argument
+            # at the first newline. Stream the prompt and parse only Codex's
+            # final response, keeping CLI diagnostics in the transcript.
+            'codex' {
+                $codexArgs = @(
+                    $agent.Args
+                    '--ephemeral'
+                    '--ignore-user-config'
+                    '--output-last-message'
+                    $lastMessagePath
+                    '-'
+                )
+                $Prompt | & $agent.Command @codexArgs 2>&1
+            }
         }
+        $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousErrorActionPreference
         $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
@@ -168,8 +184,19 @@ function Invoke-EditorAgent {
     }
     Set-Content -Path $TranscriptPath -Value $rawOutput -Encoding UTF8
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "Editor agent exited with code $LASTEXITCODE. Transcript: $TranscriptPath"
+    if ($exitCode -ne 0) {
+        if ($lastMessagePath) {
+            Remove-Item $lastMessagePath -ErrorAction SilentlyContinue
+        }
+        throw "Editor agent exited with code $exitCode. Transcript: $TranscriptPath"
+    }
+
+    if ($lastMessagePath) {
+        try {
+            return Get-Content -Raw -LiteralPath $lastMessagePath -Encoding UTF8
+        } finally {
+            Remove-Item $lastMessagePath -ErrorAction SilentlyContinue
+        }
     }
 
     return $rawOutput
