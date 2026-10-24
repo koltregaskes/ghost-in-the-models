@@ -963,10 +963,24 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+/* Dashes race around the rings even if a script is slow.
+   These are the banner pictures, so they keep moving when the
+   system asks for reduced motion. The lifewire and the mark do not. */
+@keyframes gitm-dash {
+  to { stroke-dashoffset: -420; }
+}
+.gitm-portrait { overflow: hidden; }
+.gitm-portrait .gitm-dash {
+  animation-name: gitm-dash;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite !important;
+  animation-duration: 1.6s !important;
+}
+.gitm-portrait .gitm-dash-b { animation-duration: 2.5s !important; }
+.gitm-portrait .gitm-dash-c { animation-duration: 1.05s !important; }
 @media (prefers-reduced-motion: reduce) {
   .gitm-lifewire__track { animation-duration: 0s; }
   .gitm-topbar__mark { animation-duration: 0s; }
-  .gitm-portrait-anim * { animation-duration: 0s !important; }
 }
 
 @media (max-width: 700px) {

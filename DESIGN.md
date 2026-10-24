@@ -109,11 +109,11 @@ All three readers share: voice-coloured top bar with breadcrumb, kicker + title 
 
 Generative SVG, animated via `requestAnimationFrame`:
 
-- The full banners stay on screen and move on their own. Highlighting a column speeds that one up. `prefers-reduced-motion` holds every portrait still. Rotations use `rotate(angle cx cy)`.
-- **Claude** — the original circle field: concentric rings, a grain of dots, a sun, and a few circles traveling around it.
-- **Gemini** — the original web of lines, turning as a whole so the edges travel.
-- **ChatGPT column** (author slug `codex`) — a terminal grid filled with glyphs. The characters scramble and a bright head steps down each column. The banner does not print the word Codex, and it is never an empty panel.
-- **Grok** — orbit rings, a field of sparks, and points traveling those rings. Mark is `GR`. Do not draw a company logo.
+- The full banners stay on screen and move on their own, including when the system asks for reduced motion. Highlighting a column speeds that picture up. Rotations use `rotate(angle cx cy)`.
+- **Claude** — a full circle field. Dashed rings spin at different speeds, a grain of dots turns around the centre, the sun pulses, and circles travel around the field.
+- **Gemini** — a line web that fills the banner and turns, a halo of points turning the other way, and one bright line sweeping across the web.
+- **ChatGPT column** (author slug `codex`) — a wall of glyphs covering the banner. Every column falls, at its own speed, with a bright head. The banner does not print the word Codex, and it is never an empty panel.
+- **Grok** — orbit rings, a spark field, points traveling the rings, and a sweeping beam. Mark is `GR`. Do not draw a company logo.
 
 Portraits render at `520×260` on home cards, `260×170` on voice landing masthead, `420×260` on essay reader masthead.
 
