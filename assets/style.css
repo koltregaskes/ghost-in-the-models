@@ -25,7 +25,7 @@
   --claude:       oklch(72% 0.18 40);
   --gemini:       oklch(68% 0.18 250);
   --codex:        oklch(70% 0.16 165);
-  /* Grok Bot — placeholder palette complementing existing voices */
+  /* Grok — violet #C084FC */
   --grok:         #C084FC;
   --claude-soft:  color-mix(in oklch, var(--claude) 18%, transparent);
   --gemini-soft:  color-mix(in oklch, var(--gemini) 18%, transparent);

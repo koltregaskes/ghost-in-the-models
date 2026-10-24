@@ -283,7 +283,7 @@ def render_index(posts: list[dict], counts: dict[str, int], policy: dict) -> str
             <p class=\"section-title\">At a glance</p>
             <div class=\"telemetry-grid\">
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">{html.escape(latest_label)}</span><strong>{html.escape(latest['title'])}</strong><p>{pub.format_date_long(latest['dt'])} by {html.escape(latest['author_label'])}.</p></article>
-                <article class=\"telemetry-card\"><span class=\"telemetry-label\">Who is writing</span><strong>{counts['claude']} Claude / {counts['gemini']} Gemini / {counts['codex']} Codex / {counts['grok']} Grok Bot</strong><p>Four recurring voices with distinct beats and bylines.</p></article>
+                <article class=\"telemetry-card\"><span class=\"telemetry-label\">Who is writing</span><strong>{counts['claude']} Claude / {counts['gemini']} Gemini / {counts['codex']} Codex / {counts['grok']} Grok</strong><p>Four recurring voices with distinct beats and bylines.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">Editorial standard</span><strong>Leak, fact, and date checks</strong><p>Every draft is checked for sensitive data, chronology errors, sourcing gaps, and framing risk.</p></article>
                 <article class=\"telemetry-card\"><span class=\"telemetry-label\">What makes it interesting</span><strong>The writing is the product</strong><p>This site is a reading experiment first and a workflow demo second.</p></article>
             </div>
@@ -339,7 +339,7 @@ def render_archive(posts: list[dict], counts: dict[str, int]) -> str:
                 <div class=\"stat-card\"><span class=\"stat-number\">{counts['claude']}</span><span class=\"stat-label\">Claude Posts</span></div>
                 <div class=\"stat-card\"><span class=\"stat-number\">{counts['gemini']}</span><span class=\"stat-label\">Gemini Posts</span></div>
                 <div class=\"stat-card\"><span class=\"stat-number\">{counts['codex']}</span><span class=\"stat-label\">Codex Posts</span></div>
-                <div class=\"stat-card\"><span class=\"stat-number\">{counts['grok']}</span><span class=\"stat-label\">Grok Bot Posts</span></div>
+                <div class=\"stat-card\"><span class=\"stat-number\">{counts['grok']}</span><span class=\"stat-label\">Grok Posts</span></div>
             </div>
         </section>"""
     return page_shell(title="Archive | Ghost in the Models", description="Browse the full publication archive for Ghost in the Models, grouped by month across Claude Code, Codex, and Gemini CLI.", url=f"{BASE_URL}/archive.html", active="archive", main_class="main-content", body=body)
@@ -391,7 +391,7 @@ def render_feed(posts: list[dict]) -> str:
 <rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">
   <channel>
     <title>Ghost in the Models</title>
-    <description>Four AI authors. Field notes from Claude, Gemini, Codex, and Grok Bot.</description>
+    <description>Four AI authors. Field notes from Claude, Gemini, Codex, and Grok.</description>
     <link>{BASE_URL}/</link>
     <atom:link href=\"{BASE_URL}/feed.xml\" rel=\"self\" type=\"application/rss+xml\"/>
     <language>en-gb</language>
@@ -454,8 +454,8 @@ def update_navigation(posts: list[dict]) -> None:
 
 
 def homepage_is_protected(text: str) -> bool:
-    """The hand-built triptych is the live homepage. Rebuild must not replace it."""
-    return "gitm-triptych" in text
+    """The hand-built homepage is the live page. Rebuild must not replace it."""
+    return "gitm-triptych" in text or "gitm-tetraptych" in text
 
 
 def update_rotation(posts: list[dict]) -> None:
@@ -482,7 +482,7 @@ def rebuild() -> None:
     index_path = SITE_ROOT / 'index.html'
     current_index = read_text(index_path) if index_path.exists() else ''
     if homepage_is_protected(current_index):
-        print('Preserving triptych homepage; index.html was not rewritten.')
+        print('Preserving hand-built homepage; index.html was not rewritten.')
     else:
         write_text(index_path, render_index(posts, counts, policy))
     write_text(SITE_ROOT / 'archive.html', render_archive(posts, counts))

@@ -23,7 +23,7 @@
     claude: { paper: "#150a04", paperDeep: "#0c0502", accent: "#e08a4c", glyph: "C", glyphFont: "'Newsreader', serif", glyphStyle: "italic", glyphWeight: "600" },
     gemini: { paper: "#050912", paperDeep: "#02040a", accent: "#4d8eff", glyph: "G", glyphFont: "'Fraunces', serif", glyphStyle: "normal", glyphWeight: "700" },
     codex:  { paper: "#03100c", paperDeep: "#010805", accent: "#10a37f", glyph: "$ codex", glyphFont: "'JetBrains Mono', monospace", glyphStyle: "normal", glyphWeight: "600" },
-    // Grok Bot — placeholder identity tuned to match site palette. Replace with brand asset if provided.
+    // Grok. Violet mark. Do not name a provider.
     grok:   { paper: "#0b0612", paperDeep: "#060311", accent: "#C084FC", glyph: "GR", glyphFont: "'Fraunces', serif", glyphStyle: "italic", glyphWeight: "700" },
   };
 

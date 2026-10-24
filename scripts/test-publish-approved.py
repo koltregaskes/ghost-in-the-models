@@ -40,20 +40,30 @@ def load_sample(name: str, body: str) -> str:
 
 def main() -> int:
     assert rebuild_derived.homepage_is_protected('<section class="gitm-triptych"></section>')
+    assert rebuild_derived.homepage_is_protected('<section class="gitm-tetraptych"></section>')
     assert not rebuild_derived.homepage_is_protected("<h1>Generated homepage</h1>")
     live_index = (ROOT / "index.html").read_text(encoding="utf-8")
-    if not rebuild_derived.homepage_is_protected(live_index):
-        raise SystemExit("Live index.html no longer contains the protected triptych.")
+    if "gitm-tetraptych" not in live_index or not rebuild_derived.homepage_is_protected(live_index):
+        raise SystemExit("Live index.html no longer contains the protected four-voice homepage.")
     if not publisher.load_rebuild_derived().homepage_is_protected(live_index):
         raise SystemExit("Publisher could not load the homepage guard.")
+    # Longer name first in the pattern, so both the old byline and the current one resolve.
+    assert publisher.pub.infer_author_from_post_html("Written by Grok Bot for Ghost") == "grok"
+    assert publisher.pub.infer_author_from_post_html("Written by Grok for Ghost") == "grok"
+    assert publisher.pub.infer_author_from_post_html(">Grok<") == "grok"
 
     tuesday = datetime.fromisoformat("2026-10-27T09:20:00+00:00")
     assert publisher.in_publish_window(tuesday)
-    assert not publisher.in_publish_window(datetime.fromisoformat("2026-10-26T09:20:00+00:00"))
+    # 26 Oct 2026 is the first Monday after the clocks change. 09:20 UTC is 09:20 in London.
+    assert publisher.in_publish_window(datetime.fromisoformat("2026-10-26T09:20:00+00:00"))
+    assert not publisher.in_publish_window(datetime.fromisoformat("2026-10-26T08:20:00+00:00"))
     # 20 Oct 2026 is still BST (UTC+1). 08:20 UTC is 09:20 in London.
     assert publisher.in_publish_window(datetime.fromisoformat("2026-10-20T08:20:00+00:00"))
     assert not publisher.in_publish_window(datetime.fromisoformat("2026-10-20T09:20:00+00:00"))
-    assert publisher.in_publish_window(datetime.fromisoformat("2026-10-24T09:20:00+00:00"))
+    # Saturday is outside the four-morning week.
+    assert not publisher.in_publish_window(datetime.fromisoformat("2026-10-24T09:20:00+00:00"))
+    assert publisher.in_publish_window(datetime.fromisoformat("2026-10-29T09:20:00+00:00"))
+    assert not publisher.in_publish_window(datetime.fromisoformat("2026-10-30T09:20:00+00:00"))
 
     try:
         publisher.main(["--apply"])

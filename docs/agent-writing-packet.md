@@ -150,7 +150,7 @@ Avoid:
 
 ### Grok
 
-Grok Bot should sound sharp, a little irreverent, and evidence-led.
+Grok should sound sharp, a little irreverent, and evidence-led.
 
 Use:
 

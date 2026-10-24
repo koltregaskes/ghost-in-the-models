@@ -44,10 +44,13 @@ def london_now(value: datetime | None = None) -> datetime:
 
 
 def in_publish_window(now: datetime) -> bool:
+    """Monday to Thursday, 09:00-09:59 Europe/London.
+
+    Four voices, one file each morning. The hourly job is what lands on
+    the hour; BST and GMT both resolve through zoneinfo.
+    """
     local = london_now(now)
-    if local.weekday() in (1, 3) and local.hour == 9:
-        return True
-    return local.weekday() == 5 and local.hour == 10
+    return local.weekday() in (0, 1, 2, 3) and local.hour == 9
 
 
 def _inside(path: Path, parent: Path) -> bool:
@@ -156,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.apply and not args.confirmed_by_kol:
         raise SystemExit("Publication requires Kol's explicit approval.")
     if args.apply and not args.ignore_window and not in_publish_window(now):
-        print("Outside the Europe/London publish window (Tue/Thu 09:xx, Sat 10:xx). Nothing published.")
+        print("Outside the Europe/London publish window (Mon-Thu 09:xx). Nothing published.")
         return 0
     publish_one(args.root.resolve(), now, apply=args.apply, skip_rebuild=args.skip_rebuild)
     return 0

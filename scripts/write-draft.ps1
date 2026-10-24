@@ -51,7 +51,7 @@ $Agents = @{
         # stops before a prompt is sent. Rotation still reserves the slot.
         Command = "grok.cmd"
         Args = @("--print")
-        Label = "Grok Bot"
+        Label = "Grok"
         PromptFile = "docs\prompt-grok.md"
     }
 }
@@ -76,7 +76,30 @@ function Get-RotationOrder {
     return @{
         Order = $order
         LastAuthor = if ($rotation.last_author) { $rotation.last_author.ToString().ToLower() } else { $null }
+        LastDate = if ($rotation.last_date) { $rotation.last_date.ToString() } else { "" }
     }
+}
+
+function Get-AuthorsDraftedSince {
+    param(
+        [string]$DraftsDirectory,
+        [string]$SinceDate
+    )
+
+    $found = @{}
+    if (-not $SinceDate -or -not (Test-Path $DraftsDirectory)) {
+        return $found
+    }
+
+    foreach ($file in @(Get-ChildItem -Path $DraftsDirectory -Filter "*.html" -File -ErrorAction SilentlyContinue)) {
+        if ($file.Name -match '^(\d{4}-\d{2}-\d{2})-([a-z0-9-]+)\.html$') {
+            if ($Matches[1] -gt $SinceDate) {
+                $found[$Matches[2].ToLower()] = $true
+            }
+        }
+    }
+
+    return $found
 }
 
 function Sync-RepoWithMain {
@@ -176,14 +199,28 @@ Sync-RepoWithMain -Path $RepoPath
 
 $RotationState = Get-RotationOrder -Path $RotationPath -ConfiguredAgents $Agents
 $RotationOrder = $RotationState.Order
+$AlreadyDrafted = Get-AuthorsDraftedSince -DraftsDirectory $DraftsDir -SinceDate $RotationState.LastDate
 
 if ($Force -ne "") {
     $Author = $Force.ToLower()
-} elseif ($RotationState.LastAuthor -and $RotationOrder -contains $RotationState.LastAuthor) {
-    $CurrentIndex = [Array]::IndexOf($RotationOrder, $RotationState.LastAuthor)
-    $Author = $RotationOrder[($CurrentIndex + 1) % $RotationOrder.Count]
 } else {
-    $Author = $RotationOrder[0]
+    $start = 0
+    if ($RotationState.LastAuthor -and $RotationOrder -contains $RotationState.LastAuthor) {
+        $start = ([Array]::IndexOf($RotationOrder, $RotationState.LastAuthor) + 1) % $RotationOrder.Count
+    }
+    $Author = $null
+    for ($Step = 0; $Step -lt $RotationOrder.Count; $Step++) {
+        $Candidate = $RotationOrder[($start + $Step) % $RotationOrder.Count]
+        if (-not $AlreadyDrafted.ContainsKey($Candidate)) {
+            $Author = $Candidate
+            break
+        }
+    }
+    if (-not $Author) {
+        $sinceLabel = if ($RotationState.LastDate) { $RotationState.LastDate } else { "the last published post" }
+        Write-Host "Every voice already has a draft dated after $sinceLabel. Nothing new to write."
+        exit 0
+    }
 }
 
 $Agent = $Agents[$Author]

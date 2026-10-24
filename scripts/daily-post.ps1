@@ -15,6 +15,9 @@ $ErrorActionPreference = 'Stop'
     Runs on Windows Task Scheduler. Determines which model writes next
     from .agents/rotation.json, then launches the appropriate CLI agent
     to create a draft for editorial review.
+
+    The publish window is Monday to Thursday, 09:00 UK, one file per
+    morning. This script still only writes a draft. It does not publish.
 #>
 
 $RepoPath = $RepositoryPath
@@ -63,6 +66,13 @@ $Agents = @{
         PromptFile = "docs\prompt-codex.md"
         Label = "Codex"
     }
+    "grok" = @{
+        Enabled = $true
+        Command = "grok.cmd"
+        Args = @("--print")
+        PromptFile = "docs\prompt-grok.md"
+        Label = "Grok"
+    }
 }
 
 function Get-RotationOrder {
@@ -94,7 +104,30 @@ function Get-RotationOrder {
         Order = $order
         ConfiguredOrder = $configuredOrder
         LastAuthor = if ($rotation.last_author) { $rotation.last_author.ToString().ToLower() } else { $null }
+        LastDate = if ($rotation.last_date) { $rotation.last_date.ToString() } else { "" }
     }
+}
+
+function Get-AuthorsDraftedSince {
+    param(
+        [string]$DraftsDirectory,
+        [string]$SinceDate
+    )
+
+    $found = @{}
+    if (-not $SinceDate -or -not (Test-Path $DraftsDirectory)) {
+        return $found
+    }
+
+    foreach ($file in @(Get-ChildItem -Path $DraftsDirectory -Filter "*.html" -File -ErrorAction SilentlyContinue)) {
+        if ($file.Name -match '^(\d{4}-\d{2}-\d{2})-([a-z0-9-]+)\.html$') {
+            if ($Matches[1] -gt $SinceDate) {
+                $found[$Matches[2].ToLower()] = $true
+            }
+        }
+    }
+
+    return $found
 }
 
 function Write-DailyPostFailureLog {
@@ -229,6 +262,7 @@ function Invoke-AgentTask {
                 )
                 $Prompt | & $AgentConfig.Command @codexArgs 2>&1
             }
+            "grok" { & $AgentConfig.Command @($AgentConfig.Args + @($Prompt)) 2>&1 }
         }
         $exitCode = $LASTEXITCODE
     } finally {
@@ -260,24 +294,51 @@ if (-not $DryRun) {
 
 $RotationState = Get-RotationOrder -Path $RotationPath -ConfiguredAgents $Agents
 $RotationOrder = $RotationState.Order
+$DraftsDir = Join-Path $RepoPath "drafts"
+$AlreadyDrafted = Get-AuthorsDraftedSince -DraftsDirectory $DraftsDir -SinceDate $RotationState.LastDate
+
+foreach ($configuredName in @($RotationState.ConfiguredOrder)) {
+    if ($Agents[$configuredName].Enabled -eq $false) {
+        Write-Host "Not launching $($Agents[$configuredName].Label): $($Agents[$configuredName].DisabledReason)"
+    }
+}
 
 if ($Force -ne "") {
     $Author = $Force.ToLower()
     Write-Host "Forced author: $Author"
-} elseif ($RotationState.LastAuthor -and $RotationOrder -contains $RotationState.LastAuthor) {
-    $CurrentIndex = [Array]::IndexOf($RotationOrder, $RotationState.LastAuthor)
-    $Author = $RotationOrder[($CurrentIndex + 1) % $RotationOrder.Count]
-} elseif ($RotationState.LastAuthor -and $RotationState.ConfiguredOrder -contains $RotationState.LastAuthor) {
-    $CurrentIndex = [Array]::IndexOf($RotationState.ConfiguredOrder, $RotationState.LastAuthor)
-    for ($Offset = 1; $Offset -le $RotationState.ConfiguredOrder.Count; $Offset++) {
-        $Candidate = $RotationState.ConfiguredOrder[($CurrentIndex + $Offset) % $RotationState.ConfiguredOrder.Count]
-        if ($RotationOrder -contains $Candidate) {
+} else {
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if ($RotationState.LastAuthor -and $RotationOrder -contains $RotationState.LastAuthor) {
+        $start = [Array]::IndexOf($RotationOrder, $RotationState.LastAuthor)
+        for ($Offset = 1; $Offset -le $RotationOrder.Count; $Offset++) {
+            $candidates.Add($RotationOrder[($start + $Offset) % $RotationOrder.Count])
+        }
+    } elseif ($RotationState.LastAuthor -and $RotationState.ConfiguredOrder -contains $RotationState.LastAuthor) {
+        $start = [Array]::IndexOf($RotationState.ConfiguredOrder, $RotationState.LastAuthor)
+        for ($Offset = 1; $Offset -le $RotationState.ConfiguredOrder.Count; $Offset++) {
+            $Candidate = $RotationState.ConfiguredOrder[($start + $Offset) % $RotationState.ConfiguredOrder.Count]
+            if ($RotationOrder -contains $Candidate) {
+                $candidates.Add($Candidate)
+            }
+        }
+    } else {
+        foreach ($item in $RotationOrder) {
+            $candidates.Add($item)
+        }
+    }
+
+    $Author = $null
+    foreach ($Candidate in $candidates) {
+        if (-not $AlreadyDrafted.ContainsKey($Candidate)) {
             $Author = $Candidate
             break
         }
     }
-} else {
-    $Author = $RotationOrder[0]
+    if (-not $Author) {
+        $sinceLabel = if ($RotationState.LastDate) { $RotationState.LastDate } else { "the last published post" }
+        Write-Host "Every enabled voice already has a draft dated after $sinceLabel. Nothing new to write."
+        exit 0
+    }
 }
 
 $Agent = $Agents[$Author]

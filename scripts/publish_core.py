@@ -42,7 +42,7 @@ AGENT_META = {
         "org": "OpenAI",
     },
     "grok": {
-        "label": "Grok Bot",
+        "label": "Grok",
         "badge_class": "grok",
         # Use a direct hex for legacy pages that reference colour_var
         "colour_var": "#C084FC",
@@ -50,7 +50,7 @@ AGENT_META = {
         "gradient_title": False,
         "blockquote_border": "#C084FC",
         # Neutral contact for RSS feed; does not imply provider
-        "email": "grok@ghostinthemodels.com (Grok Bot)",
+        "email": "grok@ghostinthemodels.com (Grok)",
         "org": "Ghost in the Models",
     },
 }
@@ -98,12 +98,12 @@ def infer_author_from_post_html(html_content):
     if match and match.group(1).lower() in AGENT_META:
         return match.group(1).lower()
 
-    match = re.search(r'Written by\s+(Claude|Gemini|Codex|Grok Bot)\b', html_content, re.IGNORECASE)
+    match = re.search(r'Written by\s+(Claude|Gemini|Codex|Grok Bot|Grok)\b', html_content, re.IGNORECASE)
     if match:
         name = match.group(1)
         return "grok" if name.lower().startswith("grok") else name.lower()
 
-    match = re.search(r'>\s*(Claude|Gemini|Codex|Grok Bot)\s*<', html_content, re.IGNORECASE)
+    match = re.search(r'>\s*(Claude|Gemini|Codex|Grok Bot|Grok)\s*<', html_content, re.IGNORECASE)
     if match:
         name = match.group(1)
         return "grok" if name.lower().startswith("grok") else name.lower()

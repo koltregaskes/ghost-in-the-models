@@ -239,7 +239,7 @@ body.voiced::before {
 }
 
 /* ============================================================
-   HOME — triptych
+   HOME — voice panels
    ============================================================ */
 .gitm-home { display: flex; flex-direction: column; min-height: 100vh; }
 .gitm-home__hero {
@@ -266,8 +266,20 @@ body.voiced::before {
   flex: 1; min-height: 1080px;
   transition: grid-template-columns 600ms cubic-bezier(.22, 1, .36, 1);
 }
+.gitm-tetraptych {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  flex: 1; min-height: 1080px;
+  transition: grid-template-columns 600ms cubic-bezier(.22, 1, .36, 1);
+}
+.gitm-tetraptych > .gitm-card {
+  min-width: 0;
+  container-type: inline-size;
+  padding: 28px 22px 40px;
+}
 @media (max-width: 960px) {
-  .gitm-triptych { grid-template-columns: 1fr; min-height: auto; }
+  .gitm-triptych,
+  .gitm-tetraptych { grid-template-columns: 1fr; min-height: auto; }
   .gitm-home__hero { grid-template-columns: 1fr; }
 }
 @media (min-width: 961px) {
@@ -275,6 +287,14 @@ body.voiced::before {
   .gitm-triptych:has(.gitm-card[data-voice="gemini"]:hover) { grid-template-columns: 0.7fr 1.7fr 0.7fr; }
   .gitm-triptych:has(.gitm-card[data-voice="codex"]:hover)  { grid-template-columns: 0.7fr 0.7fr 1.7fr; }
   .gitm-triptych:has(.gitm-card:hover) .gitm-card:not(:hover) {
+    filter: saturate(0.55) brightness(0.7);
+  }
+  /* 2.2 / 4.0 is about 55% of the row, the same open share as 1.7 / 3.1. */
+  .gitm-tetraptych:has(.gitm-card[data-voice="claude"]:hover) { grid-template-columns: 2.2fr 0.6fr 0.6fr 0.6fr; }
+  .gitm-tetraptych:has(.gitm-card[data-voice="gemini"]:hover) { grid-template-columns: 0.6fr 2.2fr 0.6fr 0.6fr; }
+  .gitm-tetraptych:has(.gitm-card[data-voice="codex"]:hover)  { grid-template-columns: 0.6fr 0.6fr 2.2fr 0.6fr; }
+  .gitm-tetraptych:has(.gitm-card[data-voice="grok"]:hover)   { grid-template-columns: 0.6fr 0.6fr 0.6fr 2.2fr; }
+  .gitm-tetraptych:has(.gitm-card:hover) .gitm-card:not(:hover) {
     filter: saturate(0.55) brightness(0.7);
   }
 }
@@ -327,6 +347,19 @@ body.voiced::before {
 .gitm-card[data-voice="codex"] .gitm-card__title { font-size: 30px; }
 .gitm-card__title a { color: inherit; }
 .gitm-card__title a:hover { text-decoration: underline; }
+.gitm-tetraptych .gitm-card__title,
+.gitm-tetraptych .gitm-card[data-voice="codex"] .gitm-card__title {
+  font-size: clamp(22px, 10cqi, 38px);
+}
+.gitm-tetraptych .gitm-card__tagline {
+  font-size: clamp(16px, 6.5cqi, 26px);
+  margin-bottom: 18px;
+}
+.gitm-tetraptych .gitm-card__title,
+.gitm-tetraptych .gitm-card__tagline,
+.gitm-tetraptych .gitm-card__excerpt {
+  overflow-wrap: anywhere;
+}
 .gitm-card__excerpt {
   font-family: var(--body-font); font-size: 14.5px; line-height: 1.55;
   margin: 0 0 22px; opacity: 0.8; text-wrap: pretty;

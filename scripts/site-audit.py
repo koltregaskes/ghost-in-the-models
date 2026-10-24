@@ -303,7 +303,7 @@ def audit_queue_publisher(messages: list[AuditMessage]) -> None:
                 AuditMessage(
                     "error",
                     "grok_provider_named",
-                    f"{rel} names a provider for Grok Bot",
+                    f"{rel} names a provider for Grok",
                 )
             )
 

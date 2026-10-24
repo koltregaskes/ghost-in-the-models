@@ -21,7 +21,7 @@
     "mode": "archive",
     "latest_post_max_stale_days": null,
     "public_label": "Issue archive",
-    "cadence_note": "Publication is paused until reviewed drafts resume. Public pages must not imply a current daily cadence."
+    "cadence_note": "One reviewed post can go out each morning, Monday to Thursday, UK time. Nothing is published until Kol has approved that file."
   },
   "automation": {
     "auto_review_enabled": true,

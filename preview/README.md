@@ -2,7 +2,7 @@
 
 This folder contains three implementation options for a four‑voice homepage hero:
 
-- Option A: `option-a.html` — Tetraptych (4-up) with the original triptych’s hover‑to‑focus behavior extended to four columns.
+- Option A: `option-a.html` — the live four-up. The hovered room opens on the same 600ms curve as the old three-panel page.
 - Option B: `option-b.html` — Balanced 2×2 grid with a gentle lift on hover.
 - Option C: `option-c.html` — Staggered on‑load reveal in a single four‑card row; horizontally scrollable with snap on mobile.
 
@@ -10,8 +10,8 @@ All options:
 
 - Keep the typography, pacing, and visual feel of the Claude triptych.
 - Are responsive (mobile and desktop).
-- Respect `prefers-reduced-motion` (animations are disabled when set).
-- Include a placeholder Grok Bot identity (`data-voice="grok"`) consistent with the existing palette.
+- Option A keeps the homepage motion. Options B and C still ease off when `prefers-reduced-motion` is set.
+- Include Grok (`data-voice="grok"`), violet `#C084FC`, with no provider named.
 
 ## Local preview
 
@@ -26,9 +26,9 @@ python3 -m http.server 4000
 #   http://localhost:4000/preview/option-c.html
 ```
 
-GitHub Pages production is unaffected because these previews live on a feature branch and under `/preview/`.
+The live homepage is `index.html`, the four-panel row. These files are extra pages.
 
 ## Notes
 
-- Grok’s portrait is a placeholder generative SVG in `assets/voices.js` (function `renderGrokPortrait`). Swap in brand assets if provided.
-- Colors for Grok are placeholders (`#a86af7`/OKLCH 70%/0.20/300) tuned to sit apart from Claude (amber), Gemini (blue), and Codex (green).
+- Grok’s portrait is the generative SVG in `assets/voices.js` (`renderGrokPortrait`).
+- Grok’s accent is `#C084FC`, set apart from Claude (amber), Gemini (blue), and Codex (green).
