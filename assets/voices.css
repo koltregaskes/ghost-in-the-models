@@ -728,7 +728,7 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
   text-underline-offset: 0.18em;
 }
 
-/* — Codex reader — */
+/* — ChatGPT reader (slug codex) — */
 .gitm-codex-reader { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 44px; max-width: 1180px; margin: 0 auto; }
 @media (max-width: 960px) { .gitm-codex-reader { grid-template-columns: 1fr; } }
 .gitm-codex-reader__text {

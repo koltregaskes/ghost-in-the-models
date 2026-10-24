@@ -38,7 +38,7 @@ if ($dailyPostSource -match '--dangerously-bypass-approvals-and-sandbox') {
     throw 'Daily draft writer must not bypass the Codex sandbox.'
 }
 if ($dailyPostSource -notmatch '(?s)"--sandbox"\s*,\s*"workspace-write"') {
-    throw 'Daily draft writer must contain Codex in the workspace-write sandbox.'
+    throw 'Daily draft writer must contain the Codex CLI in the workspace-write sandbox.'
 }
 
 $before = @(git -C $liveRepoRoot status --porcelain)
@@ -61,8 +61,8 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Disabled-cursor rotation preflight failed with exit code $LASTEXITCODE."
     }
-    if (($rotationOutput -join "`n") -notmatch 'Author:\s+Codex') {
-        throw "Disabled-cursor rotation did not advance to Codex: $($rotationOutput -join ' ')"
+    if (($rotationOutput -join "`n") -notmatch 'Author:\s+ChatGPT') {
+        throw "Disabled-cursor rotation did not advance to ChatGPT: $($rotationOutput -join ' ')"
     }
 }
 finally {
@@ -78,7 +78,7 @@ finally {
     -RepositoryPath $liveRepoRoot `
     -RotationPathOverride $liveRotationPath | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw "Codex dry-run preflight failed with exit code $LASTEXITCODE."
+    throw "Codex CLI dry-run preflight failed with exit code $LASTEXITCODE."
 }
 
 $disabledOutput = & powershell.exe `

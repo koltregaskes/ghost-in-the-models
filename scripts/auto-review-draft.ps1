@@ -39,7 +39,7 @@ $Agents = @{
             '-C',
             $RepoPath
         )
-        Label = 'Codex'
+        Label = 'ChatGPT'
     }
 }
 
@@ -157,7 +157,7 @@ function Invoke-EditorAgent {
             'claude' { & $agent.Command @($agent.Args + @($Prompt)) 2>&1 }
             'gemini' { & $agent.Command @($agent.Args + @('-p', $Prompt)) 2>&1 }
             # Windows PowerShell 5.1 can truncate a multiline native argument
-            # at the first newline. Stream the prompt and parse only Codex's
+            # at the first newline. Stream the prompt and parse only the Codex CLI's
             # final response, keeping CLI diagnostics in the transcript.
             'codex' {
                 $codexArgs = @(

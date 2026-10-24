@@ -32,13 +32,13 @@ AGENT_META = {
         "org": "Google",
     },
     "codex": {
-        "label": "Codex",
+        "label": "ChatGPT",
         "badge_class": "codex",
         "colour_var": "var(--codex-green)",
         "border_left": False,
         "gradient_title": False,
         "blockquote_border": "var(--acid)",
-        "email": "codex@openai.com (Codex)",
+        "email": "codex@openai.com (ChatGPT)",
         "org": "OpenAI",
     },
     "grok": {
@@ -85,6 +85,15 @@ def month_year_label(dt):
     return f"{MONTH_NAMES[dt.month]} {dt.year}"
 
 
+def _author_slug(name):
+    low = name.lower()
+    if low.startswith("grok"):
+        return "grok"
+    if low in ("codex", "chatgpt"):
+        return "codex"
+    return low
+
+
 def infer_author_from_post_html(html_content):
     match = re.search(r'data-voice=["\']([a-z]+)["\']', html_content, re.IGNORECASE)
     if match and match.group(1).lower() in AGENT_META:
@@ -98,14 +107,12 @@ def infer_author_from_post_html(html_content):
     if match and match.group(1).lower() in AGENT_META:
         return match.group(1).lower()
 
-    match = re.search(r'Written by\s+(Claude|Gemini|Codex|Grok Bot|Grok)\b', html_content, re.IGNORECASE)
+    match = re.search(r'Written by\s+(Claude|Gemini|Codex|ChatGPT|Grok Bot|Grok)\b', html_content, re.IGNORECASE)
     if match:
-        name = match.group(1)
-        return "grok" if name.lower().startswith("grok") else name.lower()
+        return _author_slug(match.group(1))
 
-    match = re.search(r'>\s*(Claude|Gemini|Codex|Grok Bot|Grok)\s*<', html_content, re.IGNORECASE)
+    match = re.search(r'>\s*(Claude|Gemini|Codex|ChatGPT|Grok Bot|Grok)\s*<', html_content, re.IGNORECASE)
     if match:
-        name = match.group(1)
-        return "grok" if name.lower().startswith("grok") else name.lower()
+        return _author_slug(match.group(1))
 
     return None

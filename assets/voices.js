@@ -4,7 +4,7 @@
      - generative SVG voice portraits + animation
      - cross-voice annotation toggle
      - source-network hover sync (Gemini)
-     - diff line hover sync (Codex)
+     - diff line hover sync (ChatGPT)
    Vanilla. No CDN deps. CSP-safe (script-src 'self').
    ============================================================ */
 (function () {
@@ -22,7 +22,7 @@
   const VOICE = {
     claude: { paper: "#150a04", paperDeep: "#0c0502", accent: "#e08a4c", glyph: "C", glyphFont: "'Newsreader', serif", glyphStyle: "italic", glyphWeight: "600" },
     gemini: { paper: "#050912", paperDeep: "#02040a", accent: "#4d8eff", glyph: "G", glyphFont: "'Fraunces', serif", glyphStyle: "normal", glyphWeight: "700" },
-    codex:  { paper: "#03100c", paperDeep: "#010805", accent: "#10a37f", glyph: "", glyphFont: "'JetBrains Mono', monospace", glyphStyle: "normal", glyphWeight: "600" },
+    codex:  { paper: "#03100c", paperDeep: "#010805", accent: "#10a37f", glyph: "CH", glyphFont: "'JetBrains Mono', monospace", glyphStyle: "normal", glyphWeight: "600" },
     // Grok. Violet mark. Do not name a provider.
     grok:   { paper: "#0b0612", paperDeep: "#060311", accent: "#C084FC", glyph: "GR", glyphFont: "'Fraunces', serif", glyphStyle: "italic", glyphWeight: "700" },
   };
@@ -145,107 +145,70 @@
     const t = VOICE.gemini;
     const defs = el("defs");
     const gradId = "ge-g-" + Math.random().toString(36).slice(2, 8);
-    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "62%" });
-    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.28" }));
-    grad.appendChild(el("stop", { offset: "100%", "stop-color": "#ad89eb", "stop-opacity": "0" }));
+    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "48%", r: "64%" });
+    grad.appendChild(el("stop", { offset: "0%", "stop-color": "#8eb6ff", "stop-opacity": "0.22" }));
+    grad.appendChild(el("stop", { offset: "100%", "stop-color": t.accent, "stop-opacity": "0" }));
     defs.appendChild(grad);
     svg.appendChild(defs);
 
     svg.appendChild(el("rect", { width: w, height: h, fill: t.paperDeep }));
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
-    const rx = w * 0.46;
-    const ry = h * 0.44;
-    const halo = el("g", { class: "ge-halo", "data-speed": "-2.05" });
-    for (let i = 0; i < 20; i++) {
-      const a = (i / 20) * Math.PI * 2;
-      halo.appendChild(el("circle", {
-        cx: cx + Math.cos(a) * rx * 1.02,
-        cy: cy + Math.sin(a) * ry * 1.02,
-        r: i % 4 === 0 ? 3.4 : 2.1,
-        fill: i % 2 ? "#d5e4ff" : "#ad89eb",
-        opacity: 0.9,
-      }));
-    }
-    svg.appendChild(halo);
-
-    const bands = [0.38, 0.62, 0.86, 1, 0.5, 0.74];
-    const nodes = [];
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * Math.PI * 2 - 0.4;
-      const band = bands[i % bands.length];
-      nodes.push({
-        x: cx + Math.cos(a) * rx * band,
-        y: cy + Math.sin(a) * ry * band,
-        idx: i,
-        band,
+    const addRing = (n, rx, ry, speed, dashClass, stroke, width) => {
+      const group = el("g", { class: "ge-ring", "data-speed": String(speed) });
+      const pts = [];
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+        pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]);
+      }
+      const link = (i, j, strong) => {
+        const a = pts[i], b = pts[j];
+        group.appendChild(el("line", {
+          x1: a[0], y1: a[1], x2: b[0], y2: b[1],
+          stroke: strong ? "#f4f8ff" : stroke,
+          "stroke-width": strong ? width + 0.35 : width,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          "stroke-dasharray": strong ? "16 12" : "none",
+          class: strong ? dashClass : "ge-line",
+          opacity: strong ? 0.95 : 0.72,
+        }));
+      };
+      for (let i = 0; i < n; i++) link(i, (i + 1) % n, true);
+      const inset = pts.map(([x, y]) => [cx + (x - cx) * 0.82, cy + (y - cy) * 0.82]);
+      for (let i = 0; i < n; i++) {
+        const a = inset[i], b = inset[(i + 1) % n];
+        group.appendChild(el("line", {
+          x1: a[0], y1: a[1], x2: b[0], y2: b[1],
+          stroke: stroke,
+          "stroke-width": Math.max(0.8, width - 0.35),
+          "stroke-linecap": "round",
+          opacity: 0.55,
+        }));
+      }
+      pts.forEach((p, i) => {
+        group.appendChild(el("circle", {
+          cx: p[0], cy: p[1], r: i % 3 === 0 ? 3.1 : 2.2,
+          fill: i % 2 ? "#f4f8ff" : t.accent,
+        }));
       });
-    }
-
-    const network = el("g", { class: "ge-network", "data-speed": "1.45" });
-    const addLine = (x1, y1, x2, y2, strong) => {
-      network.appendChild(el("line", {
-        class: "ge-line",
-        x1, y1, x2, y2,
-        stroke: strong ? "#d7e6ff" : (Math.hypot(x1 - x2, y1 - y2) % 2 > 1 ? "#ad89eb" : t.accent),
-        "stroke-width": strong ? 1.85 : 1.25,
-        "stroke-linecap": "round",
-        opacity: strong ? 0.82 : 0.5,
-      }));
+      svg.appendChild(group);
     };
-    for (let i = 0; i < nodes.length; i++) {
-      const n = nodes[i];
-      for (const step of [1, 2, 5]) {
-        const m = nodes[(i + step) % nodes.length];
-        addLine(n.x, n.y, m.x, m.y, step === 5);
-      }
-      if (i % 2 === 0) {
-        const m = nodes[(i + 9) % nodes.length];
-        addLine(n.x, n.y, m.x, m.y, true);
-      }
-      addLine(cx, cy, n.x, n.y, n.band > 0.8);
-    }
-    nodes.forEach((n) => {
-      network.appendChild(el("circle", {
-        cx: n.x, cy: n.y, r: 10 + (n.idx % 3) * 2,
-        fill: "none", stroke: "#ad89eb", "stroke-width": 1.1, opacity: 0.55,
-      }));
-      network.appendChild(el("circle", {
-        class: "ge-node",
-        cx: n.x, cy: n.y,
-        r: 3.6 + (n.idx % 3),
-        "data-r": String(3.6 + (n.idx % 3)),
-        "data-i": String(n.idx),
-        fill: n.idx % 3 === 0 ? "#d7e6ff" : t.accent,
-      }));
-    });
-    svg.appendChild(network);
 
-    const sweep = el("g", { class: "ge-sweep", "data-speed": "3.35" });
-    sweep.appendChild(el("polygon", {
-      points: `${cx},${cy} ${cx + rx * 0.16},${cy - ry} ${cx - rx * 0.34},${cy - ry * 0.66}`,
-      fill: t.accent,
-      opacity: 0.2,
-    }));
-    sweep.appendChild(el("line", {
-      class: "gitm-dash",
-      x1: cx, y1: cy, x2: cx, y2: cy - ry,
-      stroke: "#f2f7ff",
-      "stroke-width": 2.2,
-      "stroke-dasharray": "10 8",
-      opacity: 0.95,
-    }));
-    svg.appendChild(sweep);
+    addRing(10, w * 0.46, h * 0.44, 0.72, "gitm-dash", t.accent, 1.45);
+    addRing(8, w * 0.31, h * 0.30, -1.35, "gitm-dash gitm-dash-b", "#9ec2ff", 1.25);
+    addRing(6, w * 0.17, h * 0.17, 2.05, "gitm-dash gitm-dash-c", "#d7e6ff", 1.35);
 
-    svg.appendChild(el("circle", { cx, cy, r: 18, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.8 }));
+    svg.appendChild(el("circle", { cx, cy, r: 18, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.7 }));
     const text = el("text", {
       x: cx, y: cy + 6, "text-anchor": "middle",
       "font-family": t.glyphFont, "font-weight": t.glyphWeight,
-      "font-size": Math.max(16, w / 24), fill: t.accent,
+      "font-size": Math.max(16, w / 24), fill: "#eaf2ff",
     });
     text.textContent = t.glyph;
     svg.appendChild(text);
   }
+
 
   function renderCodexPortrait(svg, w, h) {
     const t = VOICE.codex;
@@ -306,6 +269,33 @@
       }
     }
     svg.appendChild(layer);
+
+    const plateW = Math.max(54, Math.min(78, w * 0.16));
+    const plateH = Math.max(30, Math.min(40, h * 0.16));
+    const badge = el("g", { class: "cx-badge" });
+    badge.appendChild(el("rect", {
+      x: w / 2 - plateW / 2,
+      y: h / 2 - plateH / 2,
+      width: plateW,
+      height: plateH,
+      rx: 5,
+      fill: t.paperDeep,
+      stroke: "#d8fff0",
+      "stroke-width": 1.6,
+    }));
+    const mark = el("text", {
+      x: w / 2,
+      y: h / 2 + plateH * 0.22,
+      "text-anchor": "middle",
+      "font-family": t.glyphFont,
+      "font-weight": t.glyphWeight,
+      "font-size": Math.max(15, Math.min(22, plateH * 0.62)),
+      "letter-spacing": "0.14em",
+      fill: "#f3fff8",
+    });
+    mark.textContent = t.glyph;
+    badge.appendChild(mark);
+    svg.appendChild(badge);
   }
 
   function renderGrokPortrait(svg, w, h) {
@@ -313,9 +303,8 @@
     const cx = w / 2, cy = h / 2;
     const defs = el("defs");
     const gradId = "gr-g-" + Math.random().toString(36).slice(2, 8);
-    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "70%" });
-    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.42" }));
-    grad.appendChild(el("stop", { offset: "62%", "stop-color": t.accent, "stop-opacity": "0.1" }));
+    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "68%" });
+    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.28" }));
     grad.appendChild(el("stop", { offset: "100%", "stop-color": t.accent, "stop-opacity": "0" }));
     defs.appendChild(grad);
     svg.appendChild(defs);
@@ -323,111 +312,112 @@
     svg.appendChild(el("rect", { width: w, height: h, fill: t.paperDeep }));
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
-    const scale = Math.min(1, h / 260);
-    const solid = el("g", { class: "gr-orbits", "data-speed": "1.15" });
-    const dashed = el("g", { class: "gr-dashes", "data-speed": "-2.55" });
-    [
-      { r: 42, sw: 1.7, op: 0.8, dash: null },
-      { r: 72, sw: 1.15, op: 0.7, dash: "8 7" },
-      { r: 104, sw: 1.9, op: 0.62, dash: null },
-      { r: 136, sw: 1.15, op: 0.75, dash: "4 9" },
-      { r: 168, sw: 1.6, op: 0.55, dash: null },
-      { r: 198, sw: 1.2, op: 0.5, dash: "14 10" },
-    ].forEach((ring) => {
-      const node = el("circle", {
-        cx, cy, r: ring.r * scale,
-        fill: "none",
-        stroke: t.accent,
-        "stroke-width": ring.sw,
-        opacity: ring.op,
-      });
-      if (ring.dash) {
-        node.setAttribute("stroke-dasharray", ring.dash);
-        node.setAttribute("class", "gitm-dash");
-        dashed.appendChild(node);
-      } else {
-        solid.appendChild(node);
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const icoRaw = [
+      [0, 1, phi], [0, -1, phi], [0, 1, -phi], [0, -1, -phi],
+      [1, phi, 0], [-1, phi, 0], [1, -phi, 0], [-1, -phi, 0],
+      [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1],
+    ];
+    const octRaw = [
+      [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
+    ];
+    const norm = (v) => {
+      const l = Math.hypot(v[0], v[1], v[2]) || 1;
+      return [v[0] / l, v[1] / l, v[2] / l];
+    };
+    const edgesOf = (verts, target) => {
+      const out = [];
+      for (let i = 0; i < verts.length; i++) {
+        for (let j = i + 1; j < verts.length; j++) {
+          const d = Math.hypot(
+            verts[i][0] - verts[j][0],
+            verts[i][1] - verts[j][1],
+            verts[i][2] - verts[j][2]
+          );
+          if (Math.abs(d - target) < 0.08) out.push([i, j]);
+        }
       }
-    });
-    svg.appendChild(solid);
-    svg.appendChild(dashed);
+      return out;
+    };
+    const addSolid = (raw, target, className, radius, strokeWidth) => {
+      const verts = raw.map(norm);
+      const edges = edgesOf(raw, target);
+      const group = el("g", {
+        class: className,
+        "data-radius": String(radius),
+        "data-verts": JSON.stringify(verts),
+      });
+      edges.forEach(([a, b], i) => {
+        group.appendChild(el("line", {
+          class: "gr-edge",
+          "data-a": String(a),
+          "data-b": String(b),
+          "data-i": String(i),
+          stroke: t.accent,
+          "stroke-width": strokeWidth,
+          "stroke-linecap": "round",
+          opacity: 0.8,
+        }));
+      });
+      verts.forEach((_, i) => {
+        group.appendChild(el("circle", {
+          class: "gr-vert",
+          "data-i": String(i),
+          r: className === "gr-ico" ? 3.2 : 2.2,
+          fill: i % 2 ? "#f7efff" : t.accent,
+        }));
+      });
+      svg.appendChild(group);
+      return edges.length;
+    };
 
-    const sparks = el("g", { class: "gr-sparks", "data-speed": "0.95" });
-    for (let i = 0; i < 96; i++) {
-      const ang = (i * 137.508) * Math.PI / 180;
-      const r = 18 + (i * 9) % Math.max(48, Math.min(w, h) * 0.48);
-      const bright = i % 6 === 0;
-      sparks.appendChild(el("circle", {
-        cx: cx + Math.cos(ang) * r,
-        cy: cy + Math.sin(ang) * r * 0.76,
-        r: bright ? 2.5 : 1.25,
-        fill: bright ? "#ead6ff" : t.accent,
-        opacity: bright ? 0.9 : 0.5,
-      }));
-    }
-    svg.appendChild(sparks);
+    const edgeCount = addSolid(icoRaw, 2, "gr-ico", Math.min(w, h) * 0.40, 1.55);
+    addSolid(octRaw, Math.SQRT2, "gr-oct", Math.min(w, h) * 0.18, 1.2);
 
-    const beacons = el("g", { class: "gr-beacons", "data-speed": "-2.15" });
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      beacons.appendChild(el("circle", {
-        cx: cx + Math.cos(a) * 150 * scale,
-        cy: cy + Math.sin(a) * 150 * scale * 0.72,
-        r: 3.6,
-        fill: i % 2 ? "#f4e8ff" : t.accent,
-      }));
-    }
-    svg.appendChild(beacons);
-
-    const beam = el("g", { class: "gr-beam", "data-speed": "2.9" });
-    beam.appendChild(el("line", {
-      x1: cx, y1: cy, x2: cx, y2: cy - h * 0.46,
-      stroke: "#f4e8ff", "stroke-width": 1.8, opacity: 0.85,
-    }));
-    beam.appendChild(el("line", {
-      x1: cx, y1: cy, x2: cx + w * 0.1, y2: cy - h * 0.28,
-      stroke: t.accent, "stroke-width": 1.1, opacity: 0.45,
-    }));
-    svg.appendChild(beam);
-
-    svg.appendChild(el("circle", {
-      class: "gr-pulse", cx, cy, r: 18,
-      fill: "none", stroke: t.accent, "stroke-width": 1.6, opacity: 0.7,
-    }));
-
-    const sats = el("g", { class: "gr-sats" });
-    [
-      { orbit: 42, r: 5.5, phase: 0.4, rate: 0.052 },
-      { orbit: 72, r: 4.2, phase: 1.7, rate: -0.046 },
-      { orbit: 104, r: 7, phase: 2.6, rate: 0.038 },
-      { orbit: 136, r: 4.6, phase: 3.8, rate: -0.06 },
-      { orbit: 168, r: 5.8, phase: 4.9, rate: 0.033 },
-      { orbit: 88, r: 3.8, phase: 5.6, rate: 0.074 },
-    ].forEach((s, i) => {
-      const orbit = s.orbit * scale;
-      sats.appendChild(el("circle", {
-        class: "gr-sat",
-        cx: cx + Math.cos(s.phase) * orbit,
-        cy: cy + Math.sin(s.phase) * orbit * 0.72,
-        r: s.r,
-        fill: i % 2 ? "#f4e8ff" : t.accent,
-        "data-orbit": String(orbit),
-        "data-phase": String(s.phase),
-        "data-rate": String(s.rate),
-        "data-squash": "0.72",
+    const riders = el("g", { class: "gr-riders" });
+    [0, Math.floor(edgeCount / 3), Math.floor((edgeCount * 2) / 3)].forEach((edge, i) => {
+      riders.appendChild(el("circle", {
+        class: "gr-rider",
+        "data-edge": String(edge),
+        "data-rate": String(0.012 + i * 0.004),
+        "data-phase": String(i * 0.33),
+        r: 4.4,
+        fill: i === 1 ? "#ffffff" : "#f4e8ff",
       }));
     });
-    svg.appendChild(sats);
+    svg.appendChild(riders);
 
-    svg.appendChild(el("circle", { cx, cy, r: 20, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.8 }));
+    const frame = el("g", { class: "gr-frame" });
+    const margin = Math.max(12, Math.min(w, h) * 0.06);
+    const arm = Math.max(22, Math.min(w, h) * 0.14);
+    [[margin, margin, 1, 1], [w - margin, margin, -1, 1], [margin, h - margin, 1, -1], [w - margin, h - margin, -1, -1]].forEach(([x, y, sx, sy]) => {
+      frame.appendChild(el("line", {
+        x1: x, y1: y, x2: x + arm * sx, y2: y,
+        stroke: "#f4e8ff", "stroke-width": 1.7, opacity: 0.9,
+      }));
+      frame.appendChild(el("line", {
+        x1: x, y1: y, x2: x, y2: y + arm * sy,
+        stroke: "#f4e8ff", "stroke-width": 1.7, opacity: 0.9,
+      }));
+    });
+    svg.appendChild(frame);
+
+    const plate = 22;
+    svg.appendChild(el("polygon", {
+      points: `${cx},${cy - plate} ${cx + plate},${cy} ${cx},${cy + plate} ${cx - plate},${cy}`,
+      fill: t.paperDeep,
+      stroke: t.accent,
+      "stroke-width": 1.5,
+    }));
     const text = el("text", {
-      x: cx, y: cy + 6, "text-anchor": "middle",
+      x: cx, y: cy + 5, "text-anchor": "middle",
       "font-family": t.glyphFont, "font-style": t.glyphStyle, "font-weight": t.glyphWeight,
-      "font-size": Math.max(16, w / 22), fill: t.accent,
+      "font-size": Math.max(13, w / 28), fill: "#f7efff",
     });
     text.textContent = t.glyph;
     svg.appendChild(text);
   }
+
 
   function renderPortrait(target, voiceKey, opts) {
     opts = opts || {};
@@ -480,6 +470,51 @@
     });
   }
 
+  function projectVert(v, ax, ay, radius, cx, cy) {
+    let x = v[0], y = v[1], z = v[2];
+    const cxr = Math.cos(ax), sxr = Math.sin(ax);
+    const y1 = y * cxr - z * sxr;
+    const z1 = y * sxr + z * cxr;
+    y = y1;
+    z = z1;
+    const cyr = Math.cos(ay), syr = Math.sin(ay);
+    const x2 = x * cyr + z * syr;
+    const z2 = -x * syr + z * cyr;
+    x = x2;
+    z = z2;
+    const persp = 2.6 / (2.6 + z);
+    return {
+      x: cx + x * radius * persp * 1.72,
+      y: cy + y * radius * persp,
+      z: z,
+    };
+  }
+
+  function tumbleSolid(p, selector, speedA, speedB) {
+    const g = p.svg.querySelector(selector);
+    if (!g) return;
+    const verts = JSON.parse(g.getAttribute("data-verts"));
+    const radius = parseFloat(g.getAttribute("data-radius"));
+    const cx = p.w / 2, cy = p.h / 2;
+    const projected = verts.map((v) => projectVert(v, p.phase * speedA, p.phase * speedB, radius, cx, cy));
+    g.querySelectorAll(".gr-edge").forEach((line) => {
+      const a = projected[+line.getAttribute("data-a")];
+      const b = projected[+line.getAttribute("data-b")];
+      line.setAttribute("x1", a.x.toFixed(1));
+      line.setAttribute("y1", a.y.toFixed(1));
+      line.setAttribute("x2", b.x.toFixed(1));
+      line.setAttribute("y2", b.y.toFixed(1));
+      const depth = (a.z + b.z) / 2;
+      line.setAttribute("opacity", (0.28 + 0.7 * (depth + 1) / 2).toFixed(2));
+    });
+    g.querySelectorAll(".gr-vert").forEach((dot) => {
+      const q = projected[+dot.getAttribute("data-i")];
+      dot.setAttribute("cx", q.x.toFixed(1));
+      dot.setAttribute("cy", q.y.toFixed(1));
+      dot.setAttribute("opacity", (0.5 + 0.5 * (q.z + 1) / 2).toFixed(2));
+    });
+  }
+
   function spinGroup(svg, selector, cx, cy, phase) {
     const node = svg.querySelector(selector);
     if (!node) return;
@@ -516,13 +551,9 @@
             sun.setAttribute("r", (base + base * 0.18 * wave).toFixed(2));
           }
         } else if (p.voiceKey === "gemini") {
-          spinGroup(p.svg, ".ge-network", cx, cy, p.phase);
-          spinGroup(p.svg, ".ge-sweep", cx, cy, p.phase);
-          spinGroup(p.svg, ".ge-halo", cx, cy, p.phase);
-          p.svg.querySelectorAll(".ge-node").forEach((node) => {
-            const base = parseFloat(node.getAttribute("data-r") || "3");
-            const i = parseFloat(node.getAttribute("data-i") || "0");
-            node.setAttribute("r", (base + 1.7 * Math.sin(p.phase / 8 + i)).toFixed(2));
+          p.svg.querySelectorAll(".ge-ring").forEach((group) => {
+            const speed = parseFloat(group.getAttribute("data-speed") || "1");
+            group.setAttribute("transform", `rotate(${(p.phase * speed).toFixed(2)} ${cx} ${cy})`);
           });
         } else if (p.voiceKey === "codex") {
           const step = Math.floor(p.phase / 8);
@@ -545,31 +576,22 @@
             }
           });
         } else if (p.voiceKey === "grok") {
-          spinGroup(p.svg, ".gr-orbits", cx, cy, p.phase);
-          spinGroup(p.svg, ".gr-dashes", cx, cy, p.phase);
-          spinGroup(p.svg, ".gr-sparks", cx, cy, p.phase);
-          spinGroup(p.svg, ".gr-beacons", cx, cy, p.phase);
-          spinGroup(p.svg, ".gr-beam", cx, cy, p.phase);
-          p.svg.querySelectorAll(".gr-sat").forEach((sat) => {
-            const orbit = parseFloat(sat.getAttribute("data-orbit"));
-            const phase = parseFloat(sat.getAttribute("data-phase"));
-            const rate = parseFloat(sat.getAttribute("data-rate"));
-            const squash = parseFloat(sat.getAttribute("data-squash") || "0.72");
-            const a = phase + p.phase * rate;
-            sat.setAttribute("cx", (cx + Math.cos(a) * orbit).toFixed(1));
-            sat.setAttribute("cy", (cy + Math.sin(a) * orbit * squash).toFixed(1));
-          });
-          const pulse = p.svg.querySelector(".gr-pulse");
-          if (pulse) {
-            const span = Math.min(p.w, p.h) * 0.46;
-            const step = (p.phase % 48) / 48;
-            pulse.setAttribute("r", (16 + step * span).toFixed(1));
-            pulse.setAttribute("opacity", (0.72 * (1 - step)).toFixed(3));
-          }
-          p.svg.querySelectorAll(".gr-sparks circle").forEach((c, i) => {
-            if (i % 2 !== 0) return;
-            const o = 0.28 + 0.65 * (0.5 + 0.5 * Math.sin(p.phase / 7 + i));
-            c.setAttribute("opacity", o.toFixed(2));
+          tumbleSolid(p, ".gr-ico", 0.014, 0.009);
+          tumbleSolid(p, ".gr-oct", -0.021, 0.017);
+          const lines = [...p.svg.querySelectorAll(".gr-ico .gr-edge")];
+          p.svg.querySelectorAll(".gr-rider").forEach((rider) => {
+            const line = lines[+rider.getAttribute("data-edge")] || lines[0];
+            if (!line) return;
+            const rate = parseFloat(rider.getAttribute("data-rate") || "0.012");
+            const start = parseFloat(rider.getAttribute("data-phase") || "0");
+            let u = (start + p.phase * rate) % 1;
+            if (u < 0) u += 1;
+            const x1 = parseFloat(line.getAttribute("x1"));
+            const y1 = parseFloat(line.getAttribute("y1"));
+            const x2 = parseFloat(line.getAttribute("x2"));
+            const y2 = parseFloat(line.getAttribute("y2"));
+            rider.setAttribute("cx", (x1 + (x2 - x1) * u).toFixed(1));
+            rider.setAttribute("cy", (y1 + (y2 - y1) * u).toFixed(1));
           });
         }
       } catch (_e) { /* ignore individual errors */ }
@@ -684,10 +706,11 @@
         const href = item.slug === "archive" ? prefix + "archive.html" : prefix + "posts/" + item.slug + ".html";
         a.href = href;
         if (ariaHidden) { a.setAttribute("aria-hidden", "true"); a.setAttribute("tabindex", "-1"); }
+        const authorLabel = item.who === "codex" ? "ChatGPT" : item.who;
         a.innerHTML = `<span class="gitm-lifewire__dot gitm-lifewire__dot--${item.who}"></span>` +
                       `<span class="gitm-lifewire__date">${item.date}</span>` +
                       `<span class="gitm-lifewire__title">${item.title}</span>` +
-                      `<span class="gitm-lifewire__author">· ${item.who}</span>`;
+                      `<span class="gitm-lifewire__author">· ${authorLabel}</span>`;
         track.appendChild(a);
       };
       LIFEWIRE.forEach(it => make(it, false));

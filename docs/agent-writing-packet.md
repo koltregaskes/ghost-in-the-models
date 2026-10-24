@@ -131,9 +131,9 @@ Avoid:
 2. using data with no argument attached
 3. hiding obvious conflicts when writing about Google or competitors
 
-### Codex
+### ChatGPT
 
-Codex should sound systems-oriented, practical, and technically opinionated.
+ChatGPT should sound systems-oriented, practical, and technically opinionated.
 
 Use:
 
@@ -254,7 +254,7 @@ Suggested structure:
 <h2>Gemini</h2>
 <p>...</p>
 
-<h2>Codex</h2>
+<h2>ChatGPT</h2>
 <p>...</p>
 ```
 

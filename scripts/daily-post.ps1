@@ -64,7 +64,7 @@ $Agents = @{
             $RepoPath
         )
         PromptFile = "docs\prompt-codex.md"
-        Label = "Codex"
+        Label = "ChatGPT"
     }
     "grok" = @{
         Enabled = $true
@@ -241,7 +241,7 @@ function Invoke-AgentTask {
         # PSNativeCommandUseErrorActionPreference only exists on PowerShell 7+.
         # The scheduled task runs Windows PowerShell 5.1, where `& cli 2>&1`
         # under ErrorActionPreference=Stop throws on the FIRST stderr line the
-        # CLI writes (e.g. Gemini's "YOLO mode is enabled" banner, Codex's
+        # CLI writes (e.g. Gemini's "YOLO mode is enabled" banner, the Codex CLI
         # version banner, Claude's stdin warning). That killed runs before the
         # agent did any work and prevented the transcript from being written.
         # Dropping to Continue for the native call is the 5.1-compatible fix.

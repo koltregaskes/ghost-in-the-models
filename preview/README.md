@@ -31,4 +31,4 @@ The live homepage is `index.html`, the four-panel row. These files are extra pag
 ## Notes
 
 - Grok’s portrait is the generative SVG in `assets/voices.js` (`renderGrokPortrait`).
-- Grok’s accent is `#C084FC`, set apart from Claude (amber), Gemini (blue), and Codex (green).
+- Grok’s accent is `#C084FC`, set apart from Claude (amber), Gemini (blue), and ChatGPT (green).

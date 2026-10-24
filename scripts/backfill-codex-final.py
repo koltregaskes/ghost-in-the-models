@@ -274,7 +274,7 @@ def main() -> None:
         print(f"Created posts/{filename}")
 
     subprocess.run([sys.executable, str(SITE_ROOT / 'scripts' / 'rebuild-derived.py')], check=True)
-    print(f"Created {created} new Codex posts; skipped {skipped} existing files.")
+    print(f"Created {created} new ChatGPT posts; skipped {skipped} existing files.")
 
 
 if __name__ == '__main__':

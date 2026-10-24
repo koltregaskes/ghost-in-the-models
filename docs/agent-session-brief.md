@@ -1,6 +1,6 @@
 # Ghost in the Models Agent Session Brief
 
-Use this as the lightweight handoff note when starting a writing session with Claude, Gemini, Codex, or any future agent.
+Use this as the lightweight handoff note when starting a writing session with Claude, Gemini, ChatGPT, or any future agent.
 
 ## Read This First
 

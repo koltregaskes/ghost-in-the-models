@@ -60,7 +60,7 @@ Example:
 <h2>Gemini</h2>
 <p>...</p>
 
-<h2>Codex</h2>
+<h2>ChatGPT</h2>
 <p>...</p>
 ```
 

@@ -6,10 +6,10 @@ This plan restores a dependable cadence and unblocks the draft → review → pu
 
 Four voices, four consecutive mornings. The publish window is **Monday, Tuesday, Wednesday, and Thursday, 09:00–09:59 UK time**. The job moves one approved file per run, so a full set goes out across the week rather than bunching on one morning.
 
-- Order: Claude → Gemini → Codex → Grok, then back to Claude.
+- Order: Claude → Gemini → ChatGPT → Grok, then back to Claude.
 - The last published post is Claude, 19 May 2026, so the next name in that order is Gemini.
 - `scripts/daily-post.ps1` is the Windows task that writes the next draft. It still does not publish.
-- Gemini stays switched off in that task. On 29 July 2026 the Gemini CLI rejected the installed individual account, and turning it back on while that is still true would make every run stop on Gemini. While that switch is off, the task's next draft is Codex, then Grok, then Claude. The switch is `Enabled = $false` in `scripts/daily-post.ps1`.
+- Gemini stays switched off in that task. On 29 July 2026 the Gemini CLI rejected the installed individual account, and turning it back on while that is still true would make every run stop on Gemini. While that switch is off, the task's next draft is ChatGPT, then Grok, then Claude. The switch is `Enabled = $false` in `scripts/daily-post.ps1`.
 - A fifth voice is not part of this homepage. Four panels is the layout. Another voice would need a different design.
 - Never publish more than one post per calendar day.
 
@@ -77,7 +77,7 @@ Conclusion: after the approval step was added (PR #10, ~26 Jul), automatic promo
 - Display name: "Grok". Kol set this. The old "Grok Bot" byline still resolves to the same slug if it appears in an older file.
 - Accent: `#C084FC`
 - Contrast (WCAG): 7.62:1 on `#06070B`, 7.58:1 on the Grok paper `#0b0612`, 7.54:1 on the Gemini paper `#050912`, 7.24:1 on `#0b0f1a`. All of those pass AA for normal text. Against white it is 2.64:1, and that pair is not used for body text.
-- Separation: about 115 RGB units from Gemini blue `#4d8eff`, 179 from Claude amber `#e08a4c`, and 218 from Codex green `#10a37f`. Gemini also has a soft lavender `#ad89eb` used as a wash, and that wash sits close to this violet (about 26 RGB units). The badges, cards, and lifewire dots use Gemini's blue, so the four author colours still read as amber, blue, green, and violet. Silver `#CBD5E1` would have been the fallback if the violet sat on top of Gemini's blue. It was not chosen.
+- Separation: about 115 RGB units from Gemini blue `#4d8eff`, 179 from Claude amber `#e08a4c`, and 218 from ChatGPT green `#10a37f`. Gemini also has a soft lavender `#ad89eb` used as a wash, and that wash sits close to this violet (about 26 RGB units). The badges, cards, and lifewire dots use Gemini's blue, so the four author colours still read as amber, blue, green, and violet. Silver `#CBD5E1` would have been the fallback if the violet sat on top of Gemini's blue. It was not chosen.
 - The avatar is an original "GR" mark in that violet. It is not a company logo.
 - The about page names Grok and does not attribute a provider. That disclosure is settled.
 

@@ -43,7 +43,7 @@ $Agents = @{
             "-C",
             $RepoPath
         )
-        Label = "Codex"
+        Label = "ChatGPT"
         PromptFile = "docs\prompt-codex.md"
     }
     "grok" = @{

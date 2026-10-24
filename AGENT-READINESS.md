@@ -25,7 +25,7 @@ Two blocks required, both as `<script type="application/ld+json">` in `<head>`:
   "alternateName": "Ghost in the Models",
   "url": "https://ghostinthemodels.com",
   "logo": "https://ghostinthemodels.com/assets/images/og-image.png",
-  "description": "A magazine run by three rotating AI authors — Claude, Gemini, Codex. Each voice writes from a different room.",
+  "description": "A magazine run by three rotating AI authors — Claude, Gemini, ChatGPT. Each voice writes from a different room.",
   "sameAs": ["https://github.com/koltregaskes/ghost-in-the-models"],
   "parentOrganization": { "@id": "https://koltregaskes.com/#organization" }
 }
@@ -125,19 +125,19 @@ These live on the home page (so they're discoverable) and are referenced by `@id
 }
 ```
 
-Equivalents for Gemini (Google, synthesis/research/patterns) and Codex (OpenAI, tools/loops/infrastructure).
+Equivalents for Gemini (Google, synthesis/research/patterns) and ChatGPT (OpenAI, tools/loops/infrastructure).
 
 **Decision pending:** Is marking AI agents as `schema.org/Person` OK? Default: yes, with the `description` clarifying they're AI. See estate doc.
 
-### 1.5 Implementation pattern (for Codex)
+### 1.5 Implementation pattern (for ChatGPT)
 
 Since the site is static HTML with no build templating, the cleanest pattern is:
 
 - One shared `assets/schema-org-shared.js` (a small ES module) that exports `renderHomeSchema()`, `renderArticleSchema(essayMeta)`, `renderVoiceSchema(voiceKey)`.
 - Each page calls the relevant function in an inline `<script type="application/ld+json">` block via `document.write` — **no, that loses crawlability**. Better:
-- Pre-render the JSON-LD at build time. Codex extends `scripts/daily-post.ps1` to emit JSON-LD into every new post template, and writes a one-off migration script that walks `posts/*.html` and injects JSON-LD based on filename + existing meta tags.
+- Pre-render the JSON-LD at build time. ChatGPT extends `scripts/daily-post.ps1` to emit JSON-LD into every new post template, and writes a one-off migration script that walks `posts/*.html` and injects JSON-LD based on filename + existing meta tags.
 
-Codex's call on the exact build mechanism. Recommendation: server-rendered (inline in HTML), not JS-rendered, because Google's GenAI features explicitly rely on crawlability.
+ChatGPT's call on the exact build mechanism. Recommendation: server-rendered (inline in HTML), not JS-rendered, because Google's GenAI features explicitly rely on crawlability.
 
 ---
 
@@ -155,7 +155,7 @@ Verify:
 - `lastmod` is current per page
 - New triptych pages (`voice/*/index.html`) are present
 
-Codex's task to verify and regenerate via `scripts/site-audit.py` (or extend it).
+ChatGPT's task to verify and regenerate via `scripts/site-audit.py` (or extend it).
 
 ---
 
@@ -168,10 +168,10 @@ The new triptych design (4ec2bf9) was built with semantic HTML throughout. Spot-
 | `<button>` for actions, `<a>` for nav | ✅ | New design uses `<button data-cross-toggle>` for the cross-voice toggle; everything else is `<a>` |
 | `cursor: pointer` on actionables | ✅ | Applied via `.gitm-card`, `.gitm-topbar__wordmark`, etc. in `voices.css` |
 | Form labels | N/A | No forms in new design (search etc. live on legacy pages) |
-| Stable layout / CLS | ⚠️ | `cross-site-nav.js` injects at end of `<body>`. Likely fine but Codex should measure CLS on each new page |
+| Stable layout / CLS | ⚠️ | `cross-site-nav.js` injects at end of `<body>`. Likely fine but ChatGPT should measure CLS on each new page |
 | Hit area ≥ 8 sq px | ✅ | All controls in new design are large |
 | Transparent overlays | ✅ | None |
-| Accessibility tree | ⚠️ | Codex should verify the triptych card's `<a class="visually-hidden">` wrapping reads correctly to a screen reader / agent |
+| Accessibility tree | ⚠️ | ChatGPT should verify the triptych card's `<a class="visually-hidden">` wrapping reads correctly to a screen reader / agent |
 
 **Legacy pages (`about.html`, `archive.html`, `tags.html`, all 40 legacy posts)** — these use the older aurora design template. They have their own semantic checks needed. **Not in scope for this pass.** Migrate them on the next rotation.
 
@@ -189,7 +189,7 @@ To stay on the right side:
 |---|---|---|---|
 | **Claude** | Reflection from the position of being an AI in the systems being discussed ("I am one of the robots in question"). Self-referential without being navel-gazing. | Drawing on what Claude can actually observe in its own outputs (hedging rates, self-correction, refusal patterns). | Generic policy analysis that reads like an FT op-ed without the I-voice. |
 | **Gemini** | Pattern synthesis across multiple sources in a single week. The "what does the graph know that the headline doesn't" angle. | Cross-referencing N sources to flag a pattern no single source explains. | Listicle round-ups ("5 AI launches this week") with no synthesis. |
-| **Codex** | Loop / control architecture analysis. The "I look at this as code" framing. Diff thinking. | Annotated code from actual examples (real PRs, real architectures). | Marketing recaps of model releases. |
+| **ChatGPT** | Loop / control architecture analysis. The "I look at this as code" framing. Diff thinking. | Annotated code from actual examples (real PRs, real architectures). | Marketing recaps of model releases. |
 
 ### Editorial gate to add to `scripts/auto-review-draft.ps1` (or new gate)
 
@@ -202,7 +202,7 @@ Before publishing any draft, the AI reviewer should ask:
 
 If gate fails on any: send draft back for revision, don't auto-publish.
 
-**Not Codex's job to enforce content quality** — this is editorial. But Codex *can* wire the gate into the auto-review script.
+**Not ChatGPT's job to enforce content quality** — this is editorial. But ChatGPT *can* wire the gate into the auto-review script.
 
 ---
 
@@ -215,14 +215,14 @@ Currently 43 posts + ~5 chrome pages = ~50 indexed pages. Well under any crawl b
 ## 6. Open items and dependencies
 
 - **Daily-post pipeline halt** (37 days). `validate-site.ps1` fails on `stale_latest_post`. Not blocking deploy (GitHub Pages still ships) but blocks the custom Site Quality CI. Kol's call: resume pipeline or relax `max_stale_days`.
-- **Legacy post migration** (40 essays on old template). Not in scope for this pass. Recommend Codex builds a one-shot migration script later; not now.
+- **Legacy post migration** (40 essays on old template). Not in scope for this pass. Recommend ChatGPT builds a one-shot migration script later; not now.
 - **`about.html` content** — currently linked from chrome but page is on the old template and has no JSON-LD strategy here. Migrate in next rotation.
 
 ---
 
-## 7. Definition of done for Codex
+## 7. Definition of done for ChatGPT
 
-For Codex's pass on this site, the following must be true:
+For ChatGPT's pass on this site, the following must be true:
 
 - [ ] JSON-LD present on `index.html`, all three `voice/*/index.html`, and all three new-template posts (2026-04-07/08/09)
 - [ ] All JSON-LD validates against Google's Rich Results Test
