@@ -27,16 +27,16 @@
     grok:   { paper: "#0b0612", paperDeep: "#060311", accent: "#C084FC", glyph: "GR", glyphFont: "'Fraunces', serif", glyphStyle: "italic", glyphWeight: "700" },
   };
 
-  const MATRIX_GLYPHS = ["0", "1", "/", "_", "|", ">", "#", "-", "="];
+  const MATRIX_GLYPHS = ["0", "1", "/", "_", "|", ">", "#", "-", "=", "+", "*"];
 
   function renderClaudePortrait(svg, w, h) {
     const cx = w / 2, cy = h / 2;
     const t = VOICE.claude;
     const defs = el("defs");
     const gradId = "cl-g-" + Math.random().toString(36).slice(2, 8);
-    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "55%", r: "60%" });
-    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.5" }));
-    grad.appendChild(el("stop", { offset: "60%", "stop-color": t.accent, "stop-opacity": "0.05" }));
+    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "55%", r: "62%" });
+    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.55" }));
+    grad.appendChild(el("stop", { offset: "58%", "stop-color": t.accent, "stop-opacity": "0.08" }));
     grad.appendChild(el("stop", { offset: "100%", "stop-color": t.accent, "stop-opacity": "0" }));
     defs.appendChild(grad);
     svg.appendChild(defs);
@@ -45,36 +45,40 @@
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
     const scale = Math.min(1, h / 260);
-    const speeds = [1.6, -2.4, 0.9, -1.7, 2.8];
-    [168, 124, 92, 64, 40].forEach((r, i) => {
+    const speeds = [0.55, -0.9, 1.25, -1.6, 0.4];
+    const dashes = ["18 22", "6 14", "26 18", "3 11", "14 20"];
+    [180, 142, 108, 76, 48].forEach((r, i) => {
       svg.appendChild(el("circle", {
         class: "cl-ring",
         cx, cy, r: (r * scale).toFixed(1),
         fill: "none",
-        stroke: t.accent,
-        "stroke-width": i === 0 ? 1.6 : 1.05,
-        "stroke-dasharray": i % 2 ? "28 36" : "8 18",
-        opacity: 0.45 + i * 0.08,
+        stroke: i === 2 ? "#f3b078" : t.accent,
+        "stroke-width": i === 2 ? 1.7 : 1.05,
+        "stroke-dasharray": dashes[i],
+        opacity: 0.42 + i * 0.1,
         "data-speed": String(speeds[i]),
       }));
     });
 
-    svg.appendChild(el("circle", {
-      class: "cl-arc",
-      cx, cy, r: (78 * scale).toFixed(1),
-      fill: "none",
-      stroke: "#f6c08a",
-      "stroke-width": 3.4,
-      "stroke-linecap": "round",
-      "stroke-dasharray": "64 480",
-      opacity: 1,
-    }));
+    const grain = el("g", { class: "cl-grain" });
+    for (let i = 0; i < 96; i++) {
+      const a = (i * 137.5) * Math.PI / 180;
+      const r = 34 + (i * 7) % 150;
+      grain.appendChild(el("circle", {
+        cx: cx + Math.cos(a) * r * scale,
+        cy: cy + Math.sin(a) * r * scale,
+        r: i % 9 === 0 ? 1.7 : 1,
+        fill: t.accent,
+        opacity: 0.28,
+      }));
+    }
+    svg.appendChild(grain);
 
     const movers = el("g", { class: "cl-movers" });
     [
-      { orbit: 86, r: 18, phase: 0.4, rate: 0.05 },
-      { orbit: 118, r: 12, phase: 2.2, rate: -0.038 },
-      { orbit: 54, r: 9, phase: 4.1, rate: 0.07 },
+      { orbit: 96, r: 16, phase: 0.3, rate: 0.022 },
+      { orbit: 128, r: 11, phase: 2.4, rate: -0.016 },
+      { orbit: 64, r: 8, phase: 4.2, rate: 0.03 },
     ].forEach((m) => {
       movers.appendChild(el("circle", {
         class: "cl-orbit",
@@ -83,8 +87,8 @@
         r: m.r * scale,
         fill: "none",
         stroke: "#f6c08a",
-        "stroke-width": 1.6,
-        opacity: 0.95,
+        "stroke-width": 1.5,
+        opacity: 0.9,
         "data-orbit": String(m.orbit * scale),
         "data-phase": String(m.phase),
         "data-rate": String(m.rate),
@@ -92,9 +96,8 @@
     });
     svg.appendChild(movers);
 
-    svg.appendChild(el("circle", { class: "cl-sun", cx, cy, r: 28 * scale, fill: t.accent, opacity: 0.9 }));
-    svg.appendChild(el("circle", { cx, cy, r: 18 * scale, fill: t.paper, opacity: 0.92 }));
-
+    svg.appendChild(el("circle", { class: "cl-sun", cx, cy, r: 30 * scale, fill: t.accent, opacity: 0.92 }));
+    svg.appendChild(el("circle", { cx, cy, r: 18 * scale, fill: t.paper, opacity: 0.94 }));
     const text = el("text", {
       x: cx, y: cy + 6 * scale, "text-anchor": "middle",
       "font-family": t.glyphFont, "font-style": t.glyphStyle, "font-weight": t.glyphWeight,
@@ -109,9 +112,9 @@
     const t = VOICE.gemini;
     const defs = el("defs");
     const gradId = "ge-g-" + Math.random().toString(36).slice(2, 8);
-    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "55%" });
-    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.18" }));
-    grad.appendChild(el("stop", { offset: "100%", "stop-color": t.accent, "stop-opacity": "0" }));
+    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "58%" });
+    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.22" }));
+    grad.appendChild(el("stop", { offset: "100%", "stop-color": "#ad89eb", "stop-opacity": "0" }));
     defs.appendChild(grad);
     svg.appendChild(defs);
 
@@ -119,47 +122,44 @@
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
     const network = el("g", { class: "ge-network" });
-    const reach = Math.min(w * 0.46, h * 0.46);
     const nodes = [];
-    for (let i = 0; i < 10; i++) {
-      const ang = (i / 10) * Math.PI * 2;
-      const rad = reach * (0.55 + (i % 3) * 0.18);
-      const rate = (i % 2 ? -1 : 1) * (0.012 + (i % 4) * 0.004);
-      nodes.push({ ang, rad, rate, i });
+    const scale = Math.min(1, h / 260, w / 520);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const r = (58 + ((i * 29) % 78)) * scale;
+      nodes.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 0.72, idx: i });
     }
     for (let i = 0; i < nodes.length; i++) {
-      const j = (i + 1) % nodes.length;
-      const k = (i + 3) % nodes.length;
-      [j, k].forEach((other) => {
-        if (other < i && other !== j) return;
+      for (let j = i + 1; j < nodes.length; j++) {
+        const n = nodes[i], m = nodes[j];
+        const d = Math.hypot(n.x - m.x, n.y - m.y);
+        if (d > 150 * scale) continue;
         network.appendChild(el("line", {
           class: "ge-line",
-          "data-a": String(i),
-          "data-b": String(other),
-          x1: cx, y1: cy, x2: cx, y2: cy,
+          x1: n.x, y1: n.y, x2: m.x, y2: m.y,
           stroke: t.accent,
-          "stroke-width": 1.35,
-          opacity: 0.72,
+          "stroke-width": 1.15,
+          opacity: Math.max(0.22, 0.8 - d / 220),
         }));
-      });
+      }
     }
     nodes.forEach((n) => {
       network.appendChild(el("circle", {
-        class: "ge-node",
-        "data-ang": String(n.ang),
-        "data-rad": String(n.rad),
-        "data-rate": String(n.rate),
-        cx, cy, r: 4.2,
-        fill: n.i % 3 === 0 ? "#9ec0ff" : t.accent,
+        cx: n.x, cy: n.y, r: 9 + (n.idx % 3),
+        fill: "none", stroke: "#ad89eb", "stroke-width": 0.7, opacity: 0.45,
+      }));
+      network.appendChild(el("circle", {
+        cx: n.x, cy: n.y, r: 3.4 + (n.idx % 3),
+        fill: n.idx % 4 === 0 ? "#c9d8ff" : t.accent,
       }));
     });
     svg.appendChild(network);
 
-    svg.appendChild(el("circle", { cx, cy, r: 14, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.5 }));
+    svg.appendChild(el("circle", { cx, cy, r: 16, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.6 }));
     const text = el("text", {
       x: cx, y: cy + 5, "text-anchor": "middle",
       "font-family": t.glyphFont, "font-weight": t.glyphWeight,
-      "font-size": Math.max(14, w / 28), fill: t.accent,
+      "font-size": Math.max(14, w / 26), fill: t.accent,
     });
     text.textContent = t.glyph;
     svg.appendChild(text);
@@ -167,36 +167,41 @@
 
   function renderCodexPortrait(svg, w, h) {
     const t = VOICE.codex;
+    const cols = 24, rows = 11;
+    const cw = w / cols, rh = h / rows;
     svg.appendChild(el("rect", { width: w, height: h, fill: t.paperDeep }));
+    for (let i = 0; i <= cols; i++) {
+      svg.appendChild(el("line", {
+        x1: i * cw, y1: 0, x2: i * cw, y2: h,
+        stroke: t.accent, "stroke-width": 0.4, opacity: 0.14,
+      }));
+    }
+    for (let i = 0; i <= rows; i++) {
+      svg.appendChild(el("line", {
+        x1: 0, y1: i * rh, x2: w, y2: i * rh,
+        stroke: t.accent, "stroke-width": 0.4, opacity: 0.14,
+      }));
+    }
     const layer = el("g", { class: "cx-glyphs" });
-    const cols = Math.max(12, Math.round(w / 32));
-    const cw = w / cols;
-    const size = Math.max(13, Math.min(cw * 0.8, 18));
-    const step = size * 1.28;
-    for (let x = 0; x < cols; x++) {
-      const trail = 8 + (x % 4);
-      const speed = 1.35 + (x % 5) * 0.42;
-      const start = -((x * 47) % Math.round(h + trail * step));
-      const col = el("g", {
-        class: "cx-col",
-        "data-speed": String(speed),
-        "data-y": String(start),
-        transform: `translate(0 ${start})`,
-      });
-      for (let k = 0; k < trail; k++) {
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const v = ((x * 13 + y * 31) ^ (x * y * 7)) & 0xff;
+        if (v < 48) continue;
         const text = el("text", {
+          class: "cx-cell",
           x: x * cw + cw / 2,
-          y: -k * step,
+          y: y * rh + rh * 0.78,
           "text-anchor": "middle",
-          "font-family": "'JetBrains Mono', monospace",
-          "font-size": size,
-          fill: k === 0 ? "#f4fff9" : t.accent,
-          opacity: Math.max(0.16, 0.95 - k * 0.1).toFixed(2),
+          "font-family": "'JetBrains Mono', ui-monospace, monospace",
+          "font-size": Math.min(cw, rh) * 0.72,
+          fill: t.accent,
+          opacity: "0.72",
+          "data-x": String(x),
+          "data-y": String(y),
         });
-        text.textContent = MATRIX_GLYPHS[(x * 5 + k * 3) % MATRIX_GLYPHS.length];
-        col.appendChild(text);
+        text.textContent = MATRIX_GLYPHS[v % MATRIX_GLYPHS.length];
+        layer.appendChild(text);
       }
-      layer.appendChild(col);
     }
     svg.appendChild(layer);
   }
@@ -206,9 +211,9 @@
     const cx = w / 2, cy = h / 2;
     const defs = el("defs");
     const gradId = "gr-g-" + Math.random().toString(36).slice(2, 8);
-    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "65%" });
-    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.28" }));
-    grad.appendChild(el("stop", { offset: "70%", "stop-color": t.accent, "stop-opacity": "0.06" }));
+    const grad = el("radialGradient", { id: gradId, cx: "50%", cy: "50%", r: "68%" });
+    grad.appendChild(el("stop", { offset: "0%", "stop-color": t.accent, "stop-opacity": "0.36" }));
+    grad.appendChild(el("stop", { offset: "70%", "stop-color": t.accent, "stop-opacity": "0.08" }));
     grad.appendChild(el("stop", { offset: "100%", "stop-color": t.accent, "stop-opacity": "0" }));
     defs.appendChild(grad);
     svg.appendChild(defs);
@@ -216,46 +221,56 @@
     svg.appendChild(el("rect", { width: w, height: h, fill: t.paperDeep }));
     svg.appendChild(el("rect", { width: w, height: h, fill: `url(#${gradId})` }));
 
-    const scale = Math.min(1, Math.min(w, h) / 260);
+    const scale = Math.min(1, h / 260);
     const arcs = el("g", { class: "gr-orbits" });
-    [40, 72, 108, 146].forEach((r, i) => {
+    [36, 64, 96, 132, 168].forEach((r, i) => {
       arcs.appendChild(el("circle", {
         cx, cy, r: r * scale,
         fill: "none",
         stroke: t.accent,
-        "stroke-width": i % 2 === 0 ? 0.9 : 0.5,
-        "stroke-dasharray": "2 10",
-        opacity: 0.28,
+        "stroke-width": i % 2 === 0 ? 1.15 : 0.7,
+        "stroke-dasharray": i % 2 ? "5 9" : "none",
+        opacity: 0.34 + (i % 2) * 0.12,
       }));
     });
     svg.appendChild(arcs);
 
+    const sparks = el("g", { class: "gr-sparks" });
+    for (let i = 0; i < 72; i++) {
+      const ang = (i * 137.508) * Math.PI / 180;
+      const r = 22 + (i * 11) % Math.max(40, Math.min(w, h) / 2 - 16);
+      sparks.appendChild(el("circle", {
+        cx: cx + Math.cos(ang) * r,
+        cy: cy + Math.sin(ang) * r * 0.78,
+        r: i % 6 === 0 ? 1.8 : 1.05,
+        fill: i % 5 === 0 ? "#ead6ff" : t.accent,
+        opacity: 0.35,
+      }));
+    }
+    svg.appendChild(sparks);
+
     const sats = el("g", { class: "gr-sats" });
-    [
-      { orbit: 40, phase: 0.2, rate: 0.05 },
-      { orbit: 72, phase: 1.7, rate: -0.036 },
-      { orbit: 108, phase: 3.4, rate: 0.028 },
-      { orbit: 146, phase: 5.1, rate: -0.02 },
-    ].forEach((m, i) => {
-      const orbit = m.orbit * scale;
+    [36, 64, 96, 132, 168].forEach((r, i) => {
+      const orbit = r * scale;
+      const phase = i * 1.25;
       sats.appendChild(el("circle", {
         class: "gr-sat",
-        cx: cx + Math.cos(m.phase) * orbit,
-        cy: cy + Math.sin(m.phase) * orbit * 0.72,
-        r: i === 0 ? 5 : 3.6,
-        fill: i % 2 ? "#e4c8ff" : t.accent,
+        cx: cx + Math.cos(phase) * orbit,
+        cy: cy + Math.sin(phase) * orbit * 0.72,
+        r: i === 2 ? 5 : 3.5,
+        fill: i % 2 ? "#ead6ff" : t.accent,
         "data-orbit": String(orbit),
-        "data-phase": String(m.phase),
-        "data-rate": String(m.rate),
+        "data-phase": String(phase),
+        "data-rate": String(i % 2 ? -0.02 : 0.028),
       }));
     });
     svg.appendChild(sats);
 
-    svg.appendChild(el("circle", { cx, cy, r: 16, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.4 }));
+    svg.appendChild(el("circle", { cx, cy, r: 18, fill: t.paperDeep, stroke: t.accent, "stroke-width": 1.6 }));
     const text = el("text", {
       x: cx, y: cy + 5, "text-anchor": "middle",
       "font-family": t.glyphFont, "font-style": t.glyphStyle, "font-weight": t.glyphWeight,
-      "font-size": Math.max(13, w / 28), fill: t.accent,
+      "font-size": Math.max(14, w / 26), fill: t.accent,
     });
     text.textContent = t.glyph;
     svg.appendChild(text);
@@ -316,49 +331,24 @@
     });
   }
 
-  function placeGemini(svg, phase) {
-    const box = (svg.getAttribute("viewBox") || "0 0 520 260").split(/[\s,]+/);
-    const cx = parseFloat(box[2]) / 2;
-    const cy = parseFloat(box[3]) / 2;
-    const nodes = [...svg.querySelectorAll(".ge-node")];
-    const pts = nodes.map((node) => {
-      const ang = parseFloat(node.getAttribute("data-ang")) + phase * parseFloat(node.getAttribute("data-rate"));
-      const rad = parseFloat(node.getAttribute("data-rad"));
-      const x = cx + Math.cos(ang) * rad;
-      const y = cy + Math.sin(ang) * rad * 0.72;
-      node.setAttribute("cx", x.toFixed(1));
-      node.setAttribute("cy", y.toFixed(1));
-      return { x, y };
-    });
-    svg.querySelectorAll(".ge-line").forEach((line) => {
-      const a = pts[parseInt(line.getAttribute("data-a"), 10)];
-      const b = pts[parseInt(line.getAttribute("data-b"), 10)];
-      if (!a || !b) return;
-      line.setAttribute("x1", a.x.toFixed(1));
-      line.setAttribute("y1", a.y.toFixed(1));
-      line.setAttribute("x2", b.x.toFixed(1));
-      line.setAttribute("y2", b.y.toFixed(1));
-    });
-  }
-
   function tickLoop() {
     if (motionReduced()) {
       rafHandle = null;
       return;
     }
     for (const p of activePortraits) {
-      const boost = p.hot ? 1.85 : 1;
+      const boost = p.hot ? 1.7 : 1;
       p.phase += boost;
       try {
         const cx = p.w / 2, cy = p.h / 2;
         if (p.voiceKey === "claude") {
-          const arc = p.svg.querySelector(".cl-arc");
-          if (arc) arc.setAttribute("transform", `rotate(${(p.phase * 3.6).toFixed(2)} ${cx} ${cy})`);
+          const grain = p.svg.querySelector(".cl-grain");
+          if (grain) grain.setAttribute("transform", `rotate(${(p.phase * 0.45).toFixed(2)} ${cx} ${cy})`);
           p.svg.querySelectorAll(".cl-ring").forEach((ring) => {
-            const speed = parseFloat(ring.getAttribute("data-speed") || "1");
+            const speed = parseFloat(ring.getAttribute("data-speed") || "0.8");
             const angle = p.phase * speed;
             ring.setAttribute("transform", `rotate(${angle.toFixed(2)} ${cx} ${cy})`);
-            ring.setAttribute("stroke-dashoffset", (angle * 1.4).toFixed(1));
+            ring.setAttribute("stroke-dashoffset", (angle * 1.2).toFixed(1));
           });
           p.svg.querySelectorAll(".cl-orbit").forEach((c) => {
             const orbit = parseFloat(c.getAttribute("data-orbit"));
@@ -370,25 +360,31 @@
           });
           const sun = p.svg.querySelector(".cl-sun");
           if (sun) {
-            const wave = Math.sin(p.phase / 14);
-            sun.setAttribute("opacity", (0.7 + 0.25 * wave).toFixed(3));
+            const wave = Math.sin(p.phase / 18);
+            sun.setAttribute("opacity", (0.72 + 0.22 * wave).toFixed(3));
+            sun.setAttribute("r", (30 * Math.min(1, p.h / 260) + 2.4 * wave).toFixed(2));
           }
         } else if (p.voiceKey === "gemini") {
-          placeGemini(p.svg, p.phase);
+          const net = p.svg.querySelector(".ge-network");
+          if (net) net.setAttribute("transform", `rotate(${(p.phase * 0.85).toFixed(2)} ${cx} ${cy})`);
         } else if (p.voiceKey === "codex") {
-          const cols = p.svg.querySelectorAll(".cx-col");
-          cols.forEach((col, i) => {
-            const speed = parseFloat(col.getAttribute("data-speed")) * boost;
-            let y = parseFloat(col.getAttribute("data-y")) + speed;
-            if (y > p.h + 30) y = -180 - (i % 4) * 36;
-            col.setAttribute("data-y", y.toFixed(2));
-            col.setAttribute("transform", `translate(0 ${y.toFixed(1)})`);
-            if (Math.floor(p.phase) % 10 === i % 10) {
-              const head = col.querySelector("text");
-              if (head) head.textContent = MATRIX_GLYPHS[(Math.floor(p.phase) + i) % MATRIX_GLYPHS.length];
-            }
-          });
+          const step = Math.floor(p.phase / 3);
+          if (step !== p.glyphStep) {
+            p.glyphStep = step;
+            const rows = 11;
+            p.svg.querySelectorAll(".cx-cell").forEach((cell) => {
+              const x = parseInt(cell.getAttribute("data-x"), 10);
+              const y = parseInt(cell.getAttribute("data-y"), 10);
+              const head = (y + x) % rows === step % rows;
+              const v = ((x * 17 + y * 13 + step * 3) ^ (x * y)) & 0xff;
+              cell.textContent = MATRIX_GLYPHS[v % MATRIX_GLYPHS.length];
+              cell.setAttribute("fill", head ? "#f3fff8" : VOICE.codex.accent);
+              cell.setAttribute("opacity", head ? "1" : (0.48 + (v / 255) * 0.4).toFixed(2));
+            });
+          }
         } else if (p.voiceKey === "grok") {
+          const arcs = p.svg.querySelector(".gr-orbits");
+          if (arcs) arcs.setAttribute("transform", `rotate(${(p.phase * 0.22).toFixed(2)} ${cx} ${cy})`);
           p.svg.querySelectorAll(".gr-sat").forEach((sat) => {
             const orbit = parseFloat(sat.getAttribute("data-orbit"));
             const phase = parseFloat(sat.getAttribute("data-phase"));
@@ -397,6 +393,11 @@
             sat.setAttribute("cx", (cx + Math.cos(a) * orbit).toFixed(1));
             sat.setAttribute("cy", (cy + Math.sin(a) * orbit * 0.72).toFixed(1));
           });
+          p.svg.querySelectorAll(".gr-sparks circle").forEach((c, i) => {
+            if (i % 3 !== 0) return;
+            const o = 0.2 + 0.65 * (0.5 + 0.5 * Math.sin(p.phase / 10 + i));
+            c.setAttribute("opacity", o.toFixed(2));
+          });
         }
       } catch (_e) { /* ignore individual errors */ }
     }
@@ -404,10 +405,9 @@
   }
 
   function startPortraitAnim(svg, voiceKey, w, h) {
-    const entry = { svg, voiceKey, w, h, hot: false, phase: 0 };
+    const entry = { svg, voiceKey, w, h, hot: false, phase: 0, glyphStep: -1 };
     activePortraits.push(entry);
     watchHighlight(entry);
-    if (voiceKey === "gemini") placeGemini(svg, 0);
     ensureLoop();
   }
 
