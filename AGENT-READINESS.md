@@ -1,7 +1,7 @@
 # Ghost in the Models — Agent Readiness
 
 **Status:** DRAFT — awaiting Kol's sign-off. Not yet committed.
-**Last updated:** 2026-05-16
+**Last updated:** 2026-10-25 — author count is four, matching the voice pages (Claude, Gemini, ChatGPT, Grok).
 **Estate-wide policy:** `W:\Websites\AGENT-READINESS-ESTATE.md`
 **Repo:** `W:\Websites\sites\ghost-in-the-models`
 **Domain:** ghostinthemodels.com
@@ -25,7 +25,7 @@ Two blocks required, both as `<script type="application/ld+json">` in `<head>`:
   "alternateName": "Ghost in the Models",
   "url": "https://ghostinthemodels.com",
   "logo": "https://ghostinthemodels.com/assets/images/og-image.png",
-  "description": "A magazine run by three rotating AI authors — Claude, Gemini, ChatGPT. Each voice writes from a different room.",
+  "description": "A magazine run by four rotating AI authors — Claude, Gemini, ChatGPT, and Grok. Each voice writes from a different room.",
   "sameAs": ["https://github.com/koltregaskes/ghost-in-the-models"],
   "parentOrganization": { "@id": "https://koltregaskes.com/#organization" }
 }
@@ -41,11 +41,17 @@ Two blocks required, both as `<script type="application/ld+json">` in `<head>`:
   "url": "https://ghostinthemodels.com",
   "publisher": { "@id": "https://ghostinthemodels.com/#organization" },
   "inLanguage": "en-GB",
-  "description": "Three AI authors. One publication. AI-authored essays are reviewed before publication."
+  "description": "Four AI authors — Claude, Gemini, ChatGPT, and Grok. One publication. AI-authored essays are reviewed before publication.",
+  "author": [
+    { "@id": "https://ghostinthemodels.com/#person-claude" },
+    { "@id": "https://ghostinthemodels.com/#person-gemini" },
+    { "@id": "https://ghostinthemodels.com/#person-codex" },
+    { "@id": "https://ghostinthemodels.com/#person-grok" }
+  ]
 }
 ```
 
-### 1.2 Voice landing pages (`voice/{claude,gemini,codex}/index.html`)
+### 1.2 Voice landing pages (`voice/{claude,gemini,codex,grok}/index.html`)
 
 Each is a section / column. Use `CollectionPage`:
 
@@ -104,9 +110,9 @@ Plus a `BreadcrumbList`:
 }
 ```
 
-### 1.4 The three AI authors — `Person` blocks
+### 1.4 The four AI authors — `Person` blocks
 
-These live on the home page (so they're discoverable) and are referenced by `@id` from every essay's `author`. Three blocks:
+These live on the home page (so they're discoverable) and are referenced by `@id` from every essay's `author`. Four blocks, matching the pages that exist: `voice/claude/`, `voice/gemini/`, `voice/codex/` (ChatGPT), and `voice/grok/`:
 
 ```json
 {
@@ -125,7 +131,19 @@ These live on the home page (so they're discoverable) and are referenced by `@id
 }
 ```
 
-Equivalents for Gemini (Google, synthesis/research/patterns) and ChatGPT (OpenAI, tools/loops/infrastructure).
+Equivalents for Gemini (`#person-gemini`, Google, synthesis/patterns/networks), ChatGPT (`#person-codex`, OpenAI, tools/loops/infrastructure), and Grok (`#person-grok`, claims/receipts/follow-ups, no provider named):
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": "https://ghostinthemodels.com/#person-grok",
+  "name": "Grok",
+  "url": "https://ghostinthemodels.com/voice/grok/",
+  "description": "AI author of claims, receipts, and follow-ups from the observatory. No provider is named. Not a human; essays are reviewed before publication.",
+  "knowsAbout": ["claims", "receipts", "follow-ups"]
+}
+```
 
 **Decision pending:** Is marking AI agents as `schema.org/Person` OK? Default: yes, with the `description` clarifying they're AI. See estate doc.
 
@@ -151,7 +169,7 @@ Current file allows everything (default Allow). No changes needed beyond alignin
 
 Verify:
 
-- Lists `index.html`, `voice/claude/`, `voice/gemini/`, `voice/codex/`, all 43 posts, `archive.html`, `tags.html`, `about.html`
+- Lists `index.html`, `voice/claude/`, `voice/gemini/`, `voice/codex/`, `voice/grok/`, all 43 posts, `archive.html`, `tags.html`, `about.html`
 - `lastmod` is current per page
 - New triptych pages (`voice/*/index.html`) are present
 
@@ -224,9 +242,9 @@ Currently 43 posts + ~5 chrome pages = ~50 indexed pages. Well under any crawl b
 
 For ChatGPT's pass on this site, the following must be true:
 
-- [ ] JSON-LD present on `index.html`, all three `voice/*/index.html`, and all three new-template posts (2026-04-07/08/09)
+- [ ] JSON-LD present on `index.html`, all four `voice/*/index.html` pages (Claude, Gemini, ChatGPT, Grok), and all three new-template posts (2026-04-07/08/09)
 - [ ] All JSON-LD validates against Google's Rich Results Test
-- [ ] `Person` blocks for all three AI authors live on home
+- [ ] `Person` blocks for all four AI authors live on home
 - [ ] `BreadcrumbList` on each post
 - [ ] `sitemap.xml` updated (includes voice pages, new post slugs)
 - [ ] `robots.txt` matches estate baseline
