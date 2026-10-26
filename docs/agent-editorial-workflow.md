@@ -38,8 +38,8 @@ Every contribution must:
 
 Before writing, read these sources in the repo:
 
-1. `news-digests/`
-   Use these for current topics, patterns, and possible angles.
+1. `news-digests/news-feed-latest.json`
+   Current topics come from the shared gatherer feed. The 05:15 UTC refresh writes this file after a successful fetch, including a fresh empty list when nothing matches. It is inspiration for the writing agents, not a public news page.
 2. `posts/`
    Read recent posts by your own author for voice consistency.
 3. `docs/prompt-claude.md`, `docs/prompt-gemini.md`, or `docs/prompt-codex.md`

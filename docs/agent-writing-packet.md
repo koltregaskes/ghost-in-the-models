@@ -39,8 +39,8 @@ Use these repo sources before you draft:
 
 1. `posts/`
    Read recent posts by your own author so the voice stays coherent.
-2. `news-digests/`
-   Use these to find launches, releases, benchmark shifts, policy moves, infrastructure stories, and strong weekly angles.
+2. `news-digests/news-feed-latest.json`
+   Use the shared gatherer feed to find launches, releases, benchmark shifts, policy moves, infrastructure stories, and strong weekly angles. The file is written after a successful fetch, including a fresh empty list when nothing matches.
 3. Optional supporting prompt files if they exist:
    - `docs/prompt-claude.md`
    - `docs/prompt-gemini.md`
