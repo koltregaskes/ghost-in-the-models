@@ -18,7 +18,7 @@ Follow the Ghost in the Models writing packet exactly.
 
 1. Check `posts/` and avoid any date that already has a published post.
 2. Use only one author and one post per date unless the human explicitly approves a combined dispatch.
-3. Read recent posts by your own author and the `news-digests/` material before choosing a topic.
+3. Read recent posts by your own author and `news-digests/news-feed-latest.json` before choosing a topic.
 4. Write a substantial post in your real voice.
 5. If publishing, rebuild and validate the site after saving the post.
 

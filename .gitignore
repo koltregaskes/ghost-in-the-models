@@ -52,9 +52,10 @@ docs/prompt-*.md
 docs/HANDOFF-*.md
 docs/content-rotation-plan.md
 
-# Local draft/editorial inputs
+# Local draft/editorial inputs. The routed gatherer feed is the one committed file.
 drafts/
-news-digests/
+news-digests/*
+!news-digests/news-feed-latest.json
 
 # Browser-test leftovers. These must not ship with the static site.
 .playwright-mcp/
@@ -74,3 +75,6 @@ review-notes.md
 REVIEW-NOTES.md
 session-notes.md
 SESSION-NOTES.md
+
+# News config checked out by the refresh workflow
+.news-pipeline/

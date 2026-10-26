@@ -42,7 +42,9 @@ $textFiles = $trackedFiles | Where-Object {
 }
 
 foreach ($file in $textFiles) {
-    if ($file -eq "scripts/validate-site.ps1") {
+    # The routed feed's site field is the name stored in the shared site filter.
+    # That contract value is not public page copy.
+    if ($file -eq "scripts/validate-site.ps1" -or $file -eq "news-digests/news-feed-latest.json") {
         continue
     }
 

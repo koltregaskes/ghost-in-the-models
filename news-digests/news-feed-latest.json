@@ -1,0 +1,205 @@
+{
+  "generated": "2026-10-26T00:35:55.694Z",
+  "site": "Ghost in the Model",
+  "article_count": 10,
+  "articles": [
+    {
+      "title": "Research agenda proposes seven open problems for multi-agent AI swarms",
+      "url": "https://www.digg.com/ai/r76rcah4",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T23:40:03.518Z",
+      "summary": "A JinesisLab researcher says each problem is scored for its importance to AI alignment.",
+      "category": "industry-media"
+    },
+    {
+      "title": "Eight-video course on building reasoning models is online",
+      "url": "https://www.digg.com/ai/qjwaj81v",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T22:42:49.472Z",
+      "summary": "Sebastian Raschka says the course offers over 11 hours of Python and PyTorch coding on evaluation, reinforcement learning and distillation.",
+      "category": "industry-media"
+    },
+    {
+      "title": "Shigeru Miyamoto selected for Japan's Order of Culture, reflects on AI and creativity",
+      "url": "https://www.digg.com/ai/9j7dv2z0",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T22:30:01.750Z",
+      "summary": "Famitsu reports Miyamoto distinguished creating from the satisfying work of execution, saying AI could make that difference clearer.",
+      "category": "industry-media"
+    },
+    {
+      "title": "One-time reset restores 25% of monthly quota for Kimi subscribers",
+      "url": "https://www.digg.com/ai/p8tafiis",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T21:24:50.895Z",
+      "summary": "Kimi apologized for K3.1 Pro rate limits and unnecessary quota use, saying it is reducing unnecessary subagent calls.",
+      "category": "industry-media"
+    },
+    {
+      "title": "Softmax and cross-entropy implementations reportedly contain two subtle bugs",
+      "url": "https://www.digg.com/ai/we3n4mdl",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T21:01:18.506Z",
+      "summary": "On X, @jon_barron claims a simple rewrite fixes both bugs and eliminates slingshots during grokking.",
+      "category": "industry-media"
+    },
+    {
+      "title": "@theo's T3 Code work list includes two-click clones and live guest thread sharing",
+      "url": "https://www.digg.com/ai/bpr7gowe",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T20:01:22.038Z",
+      "summary": "In an October 25 post, @theo also described compiler projects and put other merged PRs at roughly 370.",
+      "category": "industry-media"
+    },
+    {
+      "title": "A musical joke about rain on a wedding day",
+      "url": "https://www.digg.com/ai/83foctzd",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T19:42:26.971Z",
+      "summary": "A poster riffs on “It's like raaaaain on your wedding day” and links to a photo.",
+      "category": "industry-media"
+    },
+    {
+      "title": "The 'Scale mafia' and its alumni in AI, venture capital and government",
+      "url": "https://www.digg.com/ai/txkinlkq",
+      "source": "Digg AI",
+      "tags": [
+        "announcement",
+        "model_release",
+        "open_source",
+        "ai_agents",
+        "research_paper",
+        "industry_move"
+      ],
+      "matching_tags": [
+        "ai_agents"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-25T19:03:40.452Z",
+      "summary": "Alexandr Wang calls Scale alumni the 'first true mafia of the modern tech era,' listing their current roles.",
+      "category": "industry-media"
+    },
+    {
+      "title": "LitPivot: Developing research ideas through dynamic contextualization within the literature landscape",
+      "url": "https://huggingface.co/blog/allenai/litpivot",
+      "source": "Hugging Face Blog",
+      "tags": [
+        "open_source",
+        "model_release",
+        "tool_use",
+        "agentic_framework"
+      ],
+      "matching_tags": [
+        "tool_use",
+        "agentic_framework"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-23T16:15:50.000Z",
+      "summary": "LitPivot: Developing research ideas through dynamic contextualization within the literature landscape",
+      "category": "platform-blog"
+    },
+    {
+      "title": "Does Your Model Run on AWS Trainium? Look It Up",
+      "url": "https://huggingface.co/blog/torch-neuronx-model-support",
+      "source": "Hugging Face Blog",
+      "tags": [
+        "open_source",
+        "model_release",
+        "tool_use",
+        "agentic_framework"
+      ],
+      "matching_tags": [
+        "tool_use",
+        "agentic_framework"
+      ],
+      "importance": 0.4,
+      "date": "2026-10-23T00:00:00.000Z",
+      "summary": "Does Your Model Run on AWS Trainium? Look It Up",
+      "category": "platform-blog"
+    }
+  ]
+}
