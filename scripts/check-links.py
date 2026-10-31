@@ -18,6 +18,12 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parent.parent
 REF_RE = re.compile(r'(?:href|src)\s*=\s*"([^"]+)"', re.IGNORECASE)
 SKIP_EXTERNAL_PREFIXES = ("data:", "mailto:", "tel:", "javascript:", "#")
+# <link rel="preconnect"> and rel="dns-prefetch" name an origin to connect to early, not a
+# document. Requesting the bare origin (https://fonts.googleapis.com) returns 404, so these
+# resource hints are not links and are left out of the check.
+RESOURCE_HINT_RE = re.compile(
+    r"<link\b[^>]*\brel\s*=\s*\"[^\"]*\b(?:preconnect|dns-prefetch)\b[^\"]*\"[^>]*>", re.IGNORECASE
+)
 
 
 def tracked_html() -> list[Path]:
@@ -62,7 +68,7 @@ def main() -> int:
     external: set[str] = set()
     files = tracked_html()
     for path in files:
-        raw = path.read_text(encoding="utf-8", errors="ignore")
+        raw = RESOURCE_HINT_RE.sub("", path.read_text(encoding="utf-8", errors="ignore"))
         for match in REF_RE.finditer(raw):
             ref = match.group(1)
             if ref.startswith(("http://", "https://")):
