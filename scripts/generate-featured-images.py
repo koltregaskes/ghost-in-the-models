@@ -255,7 +255,7 @@ def render_featured_image(path: Path, *, title: str, summary: str, author: str, 
 
 
 def update_html_references(raw: str, image_name: str) -> str:
-    image_url = featured_absolute_url(image_name)
+    image_url = "https://ghostinthemodels.com/assets/images/og-image.png"
     meta_tag = f'    <meta property="og:image" content="{image_url}">'
     og_line_pattern = r'^[ \t]*<meta\s+property="og:image"\s+content="[^"]+">\s*$'
     og_pattern = r'(<meta\s+property="og:image"\s+content=")[^"]+(")'

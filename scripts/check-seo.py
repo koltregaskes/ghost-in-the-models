@@ -1,7 +1,7 @@
 """Validate shipped SEO contracts without network access or dependencies."""
 from pathlib import Path
 from html.parser import HTMLParser
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, urljoin
 import json
 import struct
 import xml.etree.ElementTree as ET
@@ -32,8 +32,8 @@ urls = [n.text for n in ET.parse(ROOT / 'sitemap.xml').findall('.//{*}loc')]
 assert len(urls) == len(set(urls))
 for url in urls:
     assert local(url).is_file(), url
-for rel in ['index.html', 'about.html', 'archive.html', 'tags.html']:
-    url = BASE + ('' if rel == 'index.html' else rel)
+for rel in [str(local(url).relative_to(ROOT)).replace('\\', '/') for url in urls if local(url).suffix == '.html']:
+    url = BASE + ('' if rel == 'index.html' else rel.removesuffix('index.html'))
     h = Head(); h.feed((ROOT / rel).read_text(encoding='utf-8'))
     assert h.links.get('canonical') == url, (rel, 'canonical')
     assert h.meta.get('description'), (rel, 'description')
@@ -42,7 +42,7 @@ for rel in ['index.html', 'about.html', 'archive.html', 'tags.html']:
     assert data[:8] == b'\x89PNG\r\n\x1a\n', image
     width, height = struct.unpack('>II', data[16:24]); assert width >= 600 and height >= 315
     assert h.schemas, (rel, 'JSON-LD')
-    assert h.links.get('alternate') == BASE + FEED or h.links.get('alternate') == FEED
+    assert urljoin(url, h.links.get('alternate', '')) == BASE + FEED
     assert url in urls
 assert BASE + 'sitemap.xml' in (ROOT / 'robots.txt').read_text()
 assert BASE in (ROOT / 'llms.txt').read_text()
