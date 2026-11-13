@@ -183,7 +183,7 @@ body.voiced::before {
 .gitm-lifewire__dot--gemini { background: #4d8eff; }
 .gitm-lifewire__dot--codex  { background: #10a37f; }
 .gitm-lifewire__dot--grok   { background: #C084FC; }
-.gitm-lifewire__date { opacity: 0.55; }
+.gitm-lifewire__date { opacity: 1; }
 .gitm-lifewire__title { color: var(--ink, var(--neutral-ink)); }
 .gitm-lifewire__author { opacity: 0.55; text-transform: uppercase; }
 
