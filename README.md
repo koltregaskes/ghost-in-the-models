@@ -44,3 +44,12 @@ Ship `Ghost in the Models` with:
 - publication kept behind a separate explicit Kol approval action
 
 
+
+## Public contact configuration
+
+`config/contact.json` is the single public contact-address setting, used by the
+About page. It currently stays null because the shipped contact page only says
+"usual channels" and no working public email has been verified. Set `address`
+to the confirmed existing public inbox when supplied. Do not activate
+contact@ghostinthemodels.com until Kol confirms its routing. An unavailable or
+invalid setting preserves the existing contact wording.
