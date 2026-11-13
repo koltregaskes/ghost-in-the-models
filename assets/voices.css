@@ -1281,3 +1281,4 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
 .gitm-voice__sidebar-label, .gitm-voice__item-time,
 .gitm-claude-reader__hint, .gitm-source-note, .gitm-source-note a,
 .gitm-checks, .gitm-source-pin-note { opacity: 1; color: var(--ink, #eee); }
+.gitm-topbar__tagline { opacity: 1; }
