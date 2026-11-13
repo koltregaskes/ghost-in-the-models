@@ -1,6 +1,7 @@
 """Verify current pages and regeneration paths retain the supported CSP."""
 from pathlib import Path
 import importlib, subprocess
+from security_policy import CSP
 from html.parser import HTMLParser
 ROOT=Path(__file__).resolve().parent.parent
 class Policy(HTMLParser):
@@ -13,7 +14,7 @@ class Policy(HTMLParser):
 def verify(text, name):
     p=Policy(); p.feed(text)
     assert len(p.values)==1, (name,'one CSP required')
-    assert "object-src 'none'" in p.values[0], (name,'object-src missing')
+    assert p.values[0] == CSP, (name,'policy drift')
 for name in subprocess.check_output(['git','ls-files','*.html'],cwd=ROOT,text=True).splitlines():
     verify((ROOT/name).read_text(encoding='utf-8'),name)
 verify(importlib.import_module('harden-html').CSP_META,'hardening output')
