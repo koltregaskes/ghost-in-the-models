@@ -2,6 +2,12 @@
   "name": "ghost-in-the-models-checks",
   "private": true,
   "type": "module",
-  "scripts": {"test:routes": "node scripts/check-routes.mjs"},
-  "devDependencies": {"@axe-core/playwright": "4.11.1", "playwright": "1.56.1"}
+  "scripts": {
+    "test:routes": "node scripts/check-routes.mjs",
+    "audit:dependencies": "node scripts/check-dependencies.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "playwright": "1.56.1"
+  }
 }

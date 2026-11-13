@@ -18,7 +18,7 @@ jobs:
           node-version: '22'
       - run: python3 scripts/check-security.py
       - run: npm ci --ignore-scripts
-      - run: npm audit --audit-level=low
+      - run: npm run audit:dependencies
       - name: Secret scan (redacted summary only)
         shell: bash
         run: |
