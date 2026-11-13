@@ -1275,3 +1275,9 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
     font-size: clamp(30px, 13vw, 44px);
   }
 }
+
+/* Preserve readable contrast in the shared chrome and article annotations. */
+.gitm-topbar__crumb--active, .gitm-lifewire__author,
+.gitm-voice__sidebar-label, .gitm-voice__item-time,
+.gitm-claude-reader__hint, .gitm-source-note, .gitm-source-note a,
+.gitm-checks, .gitm-source-pin-note { opacity: 1; color: var(--ink, #eee); }
