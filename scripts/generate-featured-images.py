@@ -252,10 +252,12 @@ def render_featured_image(path: Path, *, title: str, summary: str, author: str, 
 
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="WEBP", quality=92, method=6)
+    with Image.open(path) as encoded:
+        encoded.convert("RGB").save(path.with_suffix(".png"), format="PNG")
 
 
 def update_html_references(raw: str, image_name: str) -> str:
-    image_url = "https://ghostinthemodels.com/assets/images/og-image.png"
+    image_url = featured_absolute_url(str(Path(image_name).with_suffix(".png")))
     meta_tag = f'    <meta property="og:image" content="{image_url}">'
     og_line_pattern = r'^[ \t]*<meta\s+property="og:image"\s+content="[^"]+">\s*$'
     og_pattern = r'(<meta\s+property="og:image"\s+content=")[^"]+(")'
