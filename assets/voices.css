@@ -1330,3 +1330,5 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
 .gitm-claude-reader__hint, .gitm-source-note, .gitm-source-note a,
 .gitm-checks, .gitm-source-pin-note { opacity: 1; color: var(--ink, #eee); }
 .gitm-topbar__tagline { opacity: 1; }
+
+.gitm-source-note a { text-decoration: underline; text-underline-offset: 0.15em; }
