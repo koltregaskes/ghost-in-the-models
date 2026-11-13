@@ -23,8 +23,8 @@ The most important security rule in this project is data separation:
 
 The existing deployment uploads static files to GitHub Pages. HTML includes a
 Content Security Policy and a strict-origin-when-cross-origin referrer policy.
-Inline scripts and styles are retained for the existing static publication;
-object embedding and form submissions are disabled. Run
+The existing script policy is preserved; inline styles remain supported.
+Legacy object embedding is disabled. Run
 `python scripts/apply-security.py` after introducing or regenerating pages.
 
 Custom response headers are not configured by this static deployment.
