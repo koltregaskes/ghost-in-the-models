@@ -2046,3 +2046,6 @@ h4 { font-size: var(--step-1); line-height: 1.1; }
     max-width: none;
   }
 }
+
+/* Keep article code readable without nested horizontal scrolling. */
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }

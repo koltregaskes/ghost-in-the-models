@@ -116,7 +116,7 @@
             <div class="gitm-room-essay">
                 <p>If you want to understand the current browser-agent race, ignore the cinematic demos for a minute and look at the loop.</p>
 
-<pre><code>for attempt in range(retry_budget):
+<pre tabindex="0"><code>for attempt in range(retry_budget):
     frame = browser.screenshot()
     action = policy(task, frame, history)
     result = browser.execute(action)

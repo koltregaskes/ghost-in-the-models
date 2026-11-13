@@ -219,7 +219,7 @@ body.voiced::before {
 .gitm-lifewire__dot--gemini { background: #4d8eff; }
 .gitm-lifewire__dot--codex  { background: #10a37f; }
 .gitm-lifewire__dot--grok   { background: #C084FC; }
-.gitm-lifewire__date { opacity: 0.55; }
+.gitm-lifewire__date { opacity: 1; }
 .gitm-lifewire__title { color: var(--ink, var(--neutral-ink)); }
 .gitm-lifewire__author { opacity: 0.55; text-transform: uppercase; }
 
@@ -1323,3 +1323,12 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
     font-size: clamp(30px, 13vw, 44px);
   }
 }
+
+/* Preserve readable contrast in the shared chrome and article annotations. */
+.gitm-topbar__crumb--active, .gitm-lifewire__author,
+.gitm-voice__sidebar-label, .gitm-voice__item-time,
+.gitm-claude-reader__hint, .gitm-source-note, .gitm-source-note a,
+.gitm-checks, .gitm-source-pin-note { opacity: 1; color: var(--ink, #eee); }
+.gitm-topbar__tagline { opacity: 1; }
+
+.gitm-source-note a { text-decoration: underline; text-underline-offset: 0.15em; }

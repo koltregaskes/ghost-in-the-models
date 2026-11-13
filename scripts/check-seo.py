@@ -3,6 +3,7 @@ from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urlparse, unquote, urljoin
 import json
+import subprocess
 import struct
 import xml.etree.ElementTree as ET
 
@@ -30,6 +31,14 @@ def local(url):
 
 urls = [n.text for n in ET.parse(ROOT / 'sitemap.xml').findall('.//{*}loc')]
 assert len(urls) == len(set(urls))
+# A missing sitemap entry must not evade the contract.
+tracked = subprocess.check_output(['git', 'ls-files', '*.html'], cwd=ROOT, text=True).splitlines()
+for name in tracked:
+    head = Head(); head.feed((ROOT / name).read_text(encoding='utf-8'))
+    if 'noindex' in head.meta.get('robots', '').lower():
+        continue
+    expected = BASE + ('' if name == 'index.html' else name.removesuffix('index.html'))
+    assert expected in urls, (name, 'indexable page absent from sitemap')
 for url in urls:
     assert local(url).is_file(), url
 for rel in [str(local(url).relative_to(ROOT)).replace('\\', '/') for url in urls if local(url).suffix == '.html']:
@@ -42,6 +51,12 @@ for rel in [str(local(url).relative_to(ROOT)).replace('\\', '/') for url in urls
     assert data[:8] == b'\x89PNG\r\n\x1a\n', image
     width, height = struct.unpack('>II', data[16:24]); assert width >= 600 and height >= 315
     assert h.schemas, (rel, 'JSON-LD')
+    nodes = []
+    for schema in h.schemas:
+        nodes.extend(schema.get('@graph', [schema]))
+    singleton_types = {'WebSite', 'Organization', 'CollectionPage', 'Article', 'BlogPosting', 'BreadcrumbList'}
+    identities = [node.get('@type') if node.get('@type') in singleton_types else node.get('@id', node.get('@type')) for node in nodes]
+    assert len(identities) == len(set(identities)), (rel, 'duplicate JSON-LD entity')
     assert urljoin(url, h.links.get('alternate', '')) == BASE + FEED
     assert url in urls
 assert BASE + 'sitemap.xml' in (ROOT / 'robots.txt').read_text()
