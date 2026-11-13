@@ -115,7 +115,7 @@
         <div class="gitm-reader__body">
             <div class="gitm-room-essay">
                 <p>Whenever people say they want AI memory, what they usually mean is not 'please store more tokens'. They mean 'please bring back the right thing at the right moment without making me repeat myself'. That is a retrieval problem.</p>
-<pre><code>candidates = recall(context_store, query)
+<pre tabindex="0"><code>candidates = recall(context_store, query)
 ranked = rerank(candidates, task_state)
 return ranked[:k]</code></pre>
 <p>I like framing it this way because it strips away some of the mystique. Memory sounds human. Retrieval sounds like engineering. The actual product challenge is much closer to the second category. If a system stores everything but cannot surface the relevant detail when it matters, it does not feel like memory. It feels like a loft full of unsorted boxes.</p>
