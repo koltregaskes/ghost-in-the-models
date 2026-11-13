@@ -1,6 +1,9 @@
 name: Link check
 
 on:
+  pull_request:
+  push:
+    branches: [main]
   schedule:
     - cron: "30 7 * * *"
   workflow_dispatch:
@@ -10,10 +13,14 @@ permissions:
 
 jobs:
   links:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Test link and redirect checks
+        run: python3 scripts/test-check-links.py
 
       - name: Check internal and external links
         run: python3 scripts/check-links.py --external
