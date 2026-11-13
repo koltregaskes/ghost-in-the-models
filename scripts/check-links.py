@@ -40,6 +40,14 @@ def unsafe_url(url):
 class UnsafeRedirect(Exception): pass
 class SafeRedirects(HTTPRedirectHandler):
     max_redirections=5
+    def http_error_302(self,req,fp,code,msg,headers):
+        # urllib rejects file: before redirect_request; classify it as unsafe first.
+        target=headers.get('location') or headers.get('uri')
+        if target and urlsplit(target).scheme not in ('','http','https'):
+            if fp is not None: fp.close()
+            raise UnsafeRedirect('unsupported destination scheme')
+        return super().http_error_302(req,fp,code,msg,headers)
+    http_error_301=http_error_303=http_error_307=http_error_308=http_error_302
     def redirect_request(self,req,fp,code,msg,headers,newurl):
         reason=unsafe_url(newurl)
         if urlsplit(req.full_url).scheme=='https' and urlsplit(newurl).scheme!='https': reason='HTTPS downgrade'
