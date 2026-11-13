@@ -13,13 +13,7 @@ HTML_PATHS = (
 )
 
 REFERRER_META = '<meta name="referrer" content="strict-origin-when-cross-origin">'
-CSP_META = (
-    '<meta http-equiv="Content-Security-Policy" '
-    'content="default-src \'self\'; img-src \'self\' data: https:; media-src \'self\' https:; '
-    'style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; '
-    'font-src https://fonts.gstatic.com data:; script-src \'self\'; connect-src \'self\'; '
-    'object-src \'none\'; base-uri \'self\'; form-action \'self\'">'
-)
+from security_policy import CSP_META
 STANDARD_ICON = (
     '<link rel="icon" href="data:image/svg+xml,'
     "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"

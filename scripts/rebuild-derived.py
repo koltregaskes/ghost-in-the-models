@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from security_policy import CSP_META
 import html
 import json
 import re
@@ -152,7 +153,7 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
     <meta charset=\"UTF-8\">
     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
     <meta name=\"referrer\" content=\"strict-origin-when-cross-origin\">
-    <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'\">
+    {CSP_META}
     <title>{html.escape(title)}</title>
     <meta name=\"description\" content=\"{html.escape(description)}\">
     <meta property=\"og:type\" content=\"website\">
