@@ -7,19 +7,28 @@ permissions:
   contents: read
 jobs:
   launch:
-    runs-on: ubuntu-24.04
+    runs-on: windows-latest
     timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        width: [320, 390, 1280]
+        shard: [1, 2, 3]
+    env:
+      PLAYWRIGHT_CHANNEL: msedge
+      VIEWPORT_WIDTH: ${{ matrix.width }}
+      ROUTE_SHARD: ${{ matrix.shard }}/3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npm ci --ignore-scripts
       - name: Build and validate static publication
         shell: pwsh
         run: ./scripts/validate-site.ps1
-      - run: python3 scripts/check-links.py
-      - run: python3 scripts/check-seo.py
-      - run: npm run test:routes
+      - run: python scripts/check-links.py
+      - run: python scripts/check-seo.py
+      - name: Audit all routes using preinstalled Edge (no browser download)
+        run: npm run test:routes
