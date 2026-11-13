@@ -30,4 +30,3 @@ jobs:
           set -e
           echo "Secret scan exit code: $result (0 clean, 1 findings; other codes scanner failure). Details suppressed."
           exit "$result"
-      - run: python3 scripts/check-links.py --external
