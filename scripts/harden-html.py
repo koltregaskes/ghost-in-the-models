@@ -18,7 +18,7 @@ CSP_META = (
     'content="default-src \'self\'; img-src \'self\' data: https:; media-src \'self\' https:; '
     'style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; '
     'font-src https://fonts.gstatic.com data:; script-src \'self\'; connect-src \'self\'; '
-    'base-uri \'self\'; form-action \'self\'">'
+    'object-src \'none\'; base-uri \'self\'; form-action \'self\'">'
 )
 STANDARD_ICON = (
     '<link rel="icon" href="data:image/svg+xml,'
