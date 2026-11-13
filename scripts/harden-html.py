@@ -50,6 +50,13 @@ def ensure_meta_tag(head: str, tag: str, *, after: str) -> str:
 def harden_file(path: Path) -> bool:
     original = path.read_text(encoding="utf-8")
     updated = original
+    shell = re.search(r'<article(\b[^>]*\bclass="[^"]*\bgitm-reader\b[^"]*"[^>]*)>', updated)
+    if shell:
+        attrs = shell[1] + ('' if 'tabindex=' in shell[1] else ' tabindex="-1"')
+        updated = updated[:shell.start()] + '<main' + attrs + '>' + updated[shell.end():]
+        close = updated.rfind('</article>')
+        if close >= 0:
+            updated = updated[:close] + '</main>' + updated[close + len('</article>'):]
 
     updated = GSAP_TAG_RE.sub("", updated)
 
