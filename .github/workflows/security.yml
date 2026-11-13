@@ -1,0 +1,32 @@
+name: Security and external links
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm audit --audit-level=low
+      - name: Secret scan (redacted summary only)
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location https://github.com/gitleaks/gitleaks/releases/download/v8.24.2/gitleaks_8.24.2_linux_x64.tar.gz -o "$RUNNER_TEMP/gitleaks.tar.gz"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          set +e
+          "$RUNNER_TEMP/gitleaks" git . --redact=100 --no-banner > "$RUNNER_TEMP/secret-scan.log" 2>&1
+          result=$?
+          set -e
+          echo "Secret scan exit code: $result (0 clean, 1 findings; other codes scanner failure). Details suppressed."
+          exit "$result"
+      - run: python3 scripts/check-links.py --external

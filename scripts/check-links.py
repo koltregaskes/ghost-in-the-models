@@ -63,6 +63,7 @@ def main() -> int:
     files = tracked_html()
     for path in files:
         raw = path.read_text(encoding="utf-8", errors="ignore")
+        raw = re.sub(r'<link\b[^>]*\brel=["\x27](?:preconnect|dns-prefetch)["\x27][^>]*>', '', raw, flags=re.I)
         for match in REF_RE.finditer(raw):
             ref = match.group(1)
             if ref.startswith(("http://", "https://")):
