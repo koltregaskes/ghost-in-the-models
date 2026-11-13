@@ -54,7 +54,8 @@ for rel in [str(local(url).relative_to(ROOT)).replace('\\', '/') for url in urls
     nodes = []
     for schema in h.schemas:
         nodes.extend(schema.get('@graph', [schema]))
-    identities = [node.get('@id', node.get('@type')) for node in nodes]
+    singleton_types = {'WebSite', 'Organization', 'CollectionPage', 'Article', 'BlogPosting', 'BreadcrumbList'}
+    identities = [node.get('@type') if node.get('@type') in singleton_types else node.get('@id', node.get('@type')) for node in nodes]
     assert len(identities) == len(set(identities)), (rel, 'duplicate JSON-LD entity')
     assert urljoin(url, h.links.get('alternate', '')) == BASE + FEED
     assert url in urls
