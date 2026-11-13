@@ -160,6 +160,9 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
     <meta property=\"og:title\" content=\"{html.escape(title)}\">
     <meta property=\"og:description\" content=\"{html.escape(description)}\">
     <meta property=\"og:image\" content=\"{BASE_URL}/assets/images/og-image.png\">
+    <link rel=\"canonical\" href=\"{html.escape(url)}\">
+    <meta name=\"twitter:card\" content=\"summary_large_image\">
+    <script type=\"application/ld+json\">{{"@context":"https://schema.org","@type":"CollectionPage","name":{json.dumps(title)},"url":{json.dumps(url)}}}</script>
     <meta name=\"theme-color\" content=\"#07070d\">
     <link rel=\"alternate\" type=\"application/rss+xml\" title=\"Ghost in the Models RSS\" href=\"feed.xml\">
     <link rel=\"icon\" href=\"{ICON_HREF}\">
