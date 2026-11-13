@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { findOverflow } from './check-overflow.mjs';
 const root = process.cwd();
 const watchdog = setTimeout(() => {
   console.error('Audit exceeded 250 seconds; stopping this audit and its browser.');
@@ -35,10 +36,16 @@ try {
     catch { await route.fulfill({status:404,body:'Missing asset'}); }
   });
   const page = await context.newPage();
+  if (width<700) {
+    await page.goto('https://launch.test/about.html',{waitUntil:'load',timeout:15000});
+    await page.evaluate(()=>{ const probe=document.createElement('canvas'); probe.id='overflow-negative-probe'; probe.style.width='2000px'; document.querySelector('main').append(probe); });
+    if (!(await page.evaluate(findOverflow)).some(item=>item.id==='overflow-negative-probe')) throw new Error('Negative test failed: clipped wide element was missed at '+width);
+    console.log('Negative overflow test detected planted wide canvas at '+width+'px.');
+  }
   for (const file of routes) {
     console.log('Checking '+width+'px '+file);
     if (Date.now()>deadline) throw new Error('Stopped before five-minute command limit.');
-    await page.goto(`https://launch.test/${file}`,{waitUntil:'domcontentloaded',timeout:15000});
+    await page.goto(`https://launch.test/${file}`,{waitUntil:'load',timeout:15000});
     await page.waitForFunction(()=>document.fonts.status==='loaded',null,{timeout:15000});
     const result = await new AxeBuilder({page}).analyze();
     // All severities: includes landmarks, heading order, names, labels, alt and contrast.
@@ -76,10 +83,11 @@ try {
       const rect=element.getBoundingClientRect();
       return element.tabIndex>=0 && !element.disabled && rect.width>0 && rect.height>0 && !ids.includes(element.getAttribute('data-a11y-probe'));
     }).map(element=>element.getAttribute('data-a11y-probe')),[...reached]);
-    const overflow = await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth);
+    const overflowElements = await page.evaluate(findOverflow);
+    const overflow = overflowElements.length>0;
     if (violations.length || overflow || keyboardErrors.length || unreachable.length) {
       failures++;
-      console.error(JSON.stringify({file,width,overflow,keyboardErrors,unreachable,violations:violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)}))}));
+      console.error(JSON.stringify({file,width,overflow,overflowElements,keyboardErrors,unreachable,violations:violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)}))}));
     }
   }
   await context.close();
