@@ -1333,3 +1333,10 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
 .gitm-topbar__tagline { opacity: 1; }
 
 .gitm-source-note a { text-decoration: underline; text-underline-offset: 0.15em; }
+
+/* Long code lines remain readable inside the clipped article shell. */
+.gitm-room-essay pre, .gitm-room-essay pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}

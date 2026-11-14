@@ -14,13 +14,14 @@ export function findOverflow() {
     if (!rect.width || !rect.height || style.visibility==='hidden' || style.opacity==='0') continue;
     if(element.matches(intentional))continue;
     const contentWide=element.clientWidth>0 && element.scrollWidth>element.clientWidth+tolerance;
-    let clipped=false, textClipped=['hidden','clip'].includes(style.overflowX), permitted=labelledScroller(element) && rect.right<=innerWidth+1 && rect.left>=-1;
+    const contentRight=rect.left+element.scrollWidth;
+    let clipped=false, textClipped=contentWide && ['hidden','clip'].includes(style.overflowX), permitted=labelledScroller(element) && rect.right<=innerWidth+1 && rect.left>=-1;
     let innerClip=textClipped;
     for (let parent=element.parentElement;parent;parent=parent.parentElement) {
       const box=parent.getBoundingClientRect(), overflow=getComputedStyle(parent).overflowX;
       if (parent.matches(intentional)) { permitted=true; break; }
       if (!innerClip && labelledScroller(parent) && box.right<=innerWidth+1 && box.left>=-1) { permitted=true; break; }
-      if (['hidden','clip'].includes(overflow)) { textClipped=true; innerClip=true; }
+      if (['hidden','clip'].includes(overflow) && (contentRight>box.right+tolerance || rect.right>box.right+1)) { textClipped=true; innerClip=true; }
       if (['hidden','clip'].includes(overflow) && rect.right>box.right+1) clipped=true;
     }
     const textOverflow=contentWide && (textClipped || ['auto','scroll'].includes(style.overflowX));
