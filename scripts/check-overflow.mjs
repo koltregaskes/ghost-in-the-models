@@ -14,7 +14,7 @@ export function findOverflow() {
     if (!rect.width || !rect.height || style.visibility==='hidden' || style.opacity==='0') continue;
     if(element.matches(intentional))continue;
     const contentWide=element.clientWidth>0 && element.scrollWidth>element.clientWidth+tolerance;
-    let clipped=false, textClipped=['hidden','clip'].includes(style.overflowX), permitted=labelledScroller(element);
+    let clipped=false, textClipped=['hidden','clip'].includes(style.overflowX), permitted=labelledScroller(element) && rect.right<=innerWidth+1 && rect.left>=-1;
     let innerClip=textClipped;
     for (let parent=element.parentElement;parent;parent=parent.parentElement) {
       const box=parent.getBoundingClientRect(), overflow=getComputedStyle(parent).overflowX;
