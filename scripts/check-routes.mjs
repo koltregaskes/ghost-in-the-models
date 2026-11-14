@@ -41,7 +41,38 @@ try {
     await page.evaluate(()=>{ const probe=document.createElement('canvas'); probe.id='overflow-negative-probe'; probe.style.width='2000px'; document.querySelector('main').append(probe); });
     if (!(await page.evaluate(findOverflow)).some(item=>item.id==='overflow-negative-probe')) throw new Error('Negative test failed: clipped wide element was missed at '+width);
     console.log('Negative overflow test detected planted wide canvas at '+width+'px.');
+    await page.goto('https://launch.test/posts/2026-01-03-project-aegis.html',{waitUntil:'load',timeout:15000});
+    await page.evaluate(()=>{
+      const main=document.querySelector('main.gitm-reader'); main.style.overflowX='clip';
+      const pre=document.createElement('pre'); pre.id='text-overflow-negative-probe';
+      pre.style.cssText='box-sizing:border-box;width:100%;max-width:100%;white-space:pre;overflow:visible;overflow-wrap:normal;word-break:normal';
+      pre.textContent='unbroken'.repeat(50); main.append(pre);
+    });
+    if (!(await page.evaluate(findOverflow)).some(item=>item.id==='text-overflow-negative-probe'&&item.textOverflow)) throw new Error('Negative test failed: clipped pre text was missed at '+width);
+    await page.evaluate(()=>{
+      const pre=document.getElementById('text-overflow-negative-probe'); pre.style.overflowX='auto';pre.tabIndex=0;pre.setAttribute('role','region');pre.setAttribute('aria-label','Scrollable code example');
+    });
+    if ((await page.evaluate(findOverflow)).some(item=>item.id==='text-overflow-negative-probe')) throw new Error('Labelled focusable code scroller was rejected at '+width);
+    await page.evaluate(()=>document.getElementById('text-overflow-negative-probe').removeAttribute('aria-label'));
+    if (!(await page.evaluate(findOverflow)).some(item=>item.id==='text-overflow-negative-probe'&&item.textOverflow)) throw new Error('Unlabelled code scroller was missed at '+width);
+    console.log('Clipped pre text detected; labelled focusable scroller allowed; unlabelled scroller rejected at '+width+'px.');
   }
+  // Check both original box guards at every audited width, independently of text exemptions.
+  await page.goto('https://launch.test/posts/2026-01-03-project-aegis.html',{waitUntil:'load',timeout:15000});
+  if ((await page.evaluate(findOverflow)).length) throw new Error('Aegis baseline/table should remain accessible at '+width);
+  await page.evaluate(()=>{
+    const probe=document.createElement('div');probe.id='wide-intentional-probe';probe.className='gitm-lifewire__viewport';probe.style.cssText='width:3000px;height:20px;flex:none';document.querySelector('main').append(probe);
+  });
+  if (!(await page.evaluate(findOverflow)).some(item=>item.id==='wide-intentional-probe')) throw new Error('Oversized intentional element escaped box guard at '+width);
+  await page.evaluate(()=>{
+    document.getElementById('wide-intentional-probe').remove();
+    const clip=document.createElement('div');clip.id='narrow-clip-probe';clip.style.cssText='width:150px;height:40px;overflow:hidden';
+    const scroller=document.createElement('div');scroller.id='clipped-scroller-probe';scroller.style.cssText='width:280px;height:30px;overflow-x:auto';scroller.tabIndex=0;scroller.setAttribute('role','region');scroller.setAttribute('aria-label','Clipped scroller control');scroller.textContent='A labelled scroller';clip.append(scroller);document.querySelector('main').append(clip);
+  });
+  if (!(await page.evaluate(findOverflow)).some(item=>item.id==='clipped-scroller-probe'&&item.clipped)) throw new Error('Ancestor-clipped labelled scroller escaped box guard at '+width);
+  await page.evaluate(()=>document.getElementById('narrow-clip-probe').remove());
+  if ((await page.evaluate(findOverflow)).length) throw new Error('Aegis baseline changed after negative probes at '+width);
+  console.log('Oversized intentional element and clipped labelled scroller detected; Aegis table allowed at '+width+'px.');
   for (const file of routes) {
     console.log('Checking '+width+'px '+file);
     if (Date.now()>deadline) throw new Error('Stopped before five-minute command limit.');
