@@ -12,10 +12,10 @@ export function findOverflow() {
     if (!(element instanceof HTMLElement)) continue;
     const rect=element.getBoundingClientRect(), style=getComputedStyle(element);
     if (!rect.width || !rect.height || style.visibility==='hidden' || style.opacity==='0') continue;
-    if(element.matches(intentional))continue;
+    const allowsOwnText=element.matches(intentional) || (labelledScroller(element) && rect.right<=innerWidth+1 && rect.left>=-1);
     const contentWide=element.clientWidth>0 && element.scrollWidth>element.clientWidth+tolerance;
     const contentRight=rect.left+element.scrollWidth;
-    let clipped=false, textClipped=contentWide && ['hidden','clip'].includes(style.overflowX), permitted=labelledScroller(element) && rect.right<=innerWidth+1 && rect.left>=-1;
+    let clipped=false, textClipped=contentWide && ['hidden','clip'].includes(style.overflowX), permitted=false;
     let innerClip=textClipped;
     for (let parent=element.parentElement;parent;parent=parent.parentElement) {
       const box=parent.getBoundingClientRect(), overflow=getComputedStyle(parent).overflowX;
@@ -25,7 +25,9 @@ export function findOverflow() {
       if (['hidden','clip'].includes(overflow) && rect.right>box.right+1) clipped=true;
     }
     const textOverflow=contentWide && (textClipped || ['auto','scroll'].includes(style.overflowX));
-    if (!permitted && (rect.right>innerWidth+1 || clipped || textOverflow)) problems.push({tag:element.tagName,id:element.id,class:element.className,right:Math.round(rect.right),clipped,textOverflow,scrollWidth:element.scrollWidth,clientWidth:element.clientWidth});
+    // Own-text exemptions never suppress an oversized or ancestor-clipped box.
+    const boxOverflow=rect.right>innerWidth+1 || clipped;
+    if (!permitted && (boxOverflow || (textOverflow && !allowsOwnText))) problems.push({tag:element.tagName,id:element.id,class:element.className,right:Math.round(rect.right),clipped,textOverflow,scrollWidth:element.scrollWidth,clientWidth:element.clientWidth});
   }
   return problems;
 }
