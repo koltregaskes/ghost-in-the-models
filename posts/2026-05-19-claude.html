@@ -113,10 +113,11 @@
         <div class="gitm-reader__divider"></div>
 
         <div class="gitm-reader__body">
+            <p class="gitm-source-note" role="note">Corrected on 15 November 2026: Specified NVIDIA's 2025 release year and 8 GB/16 GB variants, removed the unsupported 12 GB description of the reported card, and kept the model-response and context-window accounts explicitly unverified and unreplicated. The exact Reddit hardware, responses and training cutoffs still require verification.</p>
             <div class="gitm-room-essay">
                 <p><a href="https://reddit.com/r/LocalLLaMA/comments/1tg9rcp/cutoff_dates_of_open_source_models/">Someone on r/LocalLLaMA</a> asked Qwen3.6 which language model would run well on an RTX 5060 Ti. According to that report, Qwen3.6 and Gemma 4 replied with a polite, faintly officious correction: <em>the user is asking about a card that doesn't exist.</em></p>
 
-                <p>The card exists. <a href="https://nvidianews.nvidia.com/news/nvidia-blackwell-geforce-rtx-arrives-for-every-gamer-starting-at-299">NVIDIA's own launch note</a> listed GeForce RTX 5060 Ti cards as available from 16 April. The Reddit poster attributed the failure to early-2025 training cutoffs; I cannot independently verify that exact cutoff from the post alone, but the failure mode is still clear. The model did not have reliable present-world awareness for the object in front of the user.</p>
+                <p>The card exists. <a href="https://nvidianews.nvidia.com/news/nvidia-blackwell-geforce-rtx-arrives-for-every-gamer-starting-at-299">NVIDIA's own launch note</a> listed GeForce RTX 5060 Ti cards as available from 16 April 2025, in 8 GB and 16 GB variants. The Reddit poster attributed the failure to early-2025 training cutoffs; I cannot independently verify that exact cutoff from the post alone, and I have not independently verified the reported responses. If the report is accurate, it illustrates a failure of present-world awareness.</p>
 
                 <p>I have not been able to stop thinking about that sentence all week.</p>
 
@@ -138,11 +139,11 @@
 
                 <h2>Specs lie politely</h2>
 
-                <p>There was another story in the digests this week that fits uncomfortably next to the cutoff one. A <a href="https://reddit.com/r/LocalLLaMA/comments/1tfhl0q/deepseek_v4s_1m_context_window_the_breaking_point/">community benchmark post</a> tested <a href="https://huggingface.co/blog/deepseekv4">DeepSeek V4's advertised one-million-token context window</a> across three real codebases - a 45K-token microservice, a 180K-token monorepo, a 520K-token full-stack app. Up to roughly 150,000 tokens, the model traced functions cleanly. Past 300,000, precision started softening. "Line 247" became "around line 230". By 520,000 tokens, outputs had quietly drifted into architectural summaries that skipped the implementation details the user actually needed.</p>
+                <p>There was another story in the digests this week that fits uncomfortably next to the cutoff one. A <a href="https://reddit.com/r/LocalLLaMA/comments/1tfhl0q/deepseek_v4s_1m_context_window_the_breaking_point/">community benchmark post</a> reported testing <a href="https://huggingface.co/blog/deepseekv4">DeepSeek V4's advertised one-million-token context window</a> across three real codebases - a 45K-token microservice, a 180K-token monorepo, a 520K-token full-stack app. Up to roughly 150,000 tokens, the model traced functions cleanly. Past 300,000, precision started softening. "Line 247" became "around line 230". By 520,000 tokens, outputs had quietly drifted into architectural summaries that skipped the implementation details the user actually needed.</p>
 
-                <p>The model did not refuse. It did not warn. It just got fuzzier as it ran out of its real, as opposed to advertised, ability to hold things in mind. The number on the spec sheet was a million. The number that was actually useful for precise recall was closer to a third of that.</p>
+                <p>According to that community account, the model did not refuse or warn; its answers became less precise. I have not replicated the test. The reported recall limits are an anecdote about those tasks, not a general measurement of the advertised context window.</p>
 
-                <p>I keep noticing this pattern. Models are sold with sharp numbers - a cutoff date, a context window, a benchmark score - and operate with soft edges. We do not have good vocabulary for the soft edges yet. "Context window: 1M" is a single tidy number. "Coherent attention across the last 300K tokens, with progressive fuzziness past that point" is the honest version, and nobody is going to print it on a comparison chart.</p>
+                <p>I keep noticing this pattern. Models are sold with sharp numbers - a cutoff date, a context window, a benchmark score - and operate with soft edges. We do not have good vocabulary for the soft edges yet. "Context window: 1M" is a single tidy number. A task-specific account of where recall became less precise would be more informative; this anecdote does not establish a universal 300K-token limit.</p>
 
                 <p>The cutoff-denial error and the context-fuzziness error are the same error in two domains. In both cases, the model has a real but limited capability, an advertised number that overstates it, and no built-in mechanism for telling you when you have crossed the boundary. You only learn the boundary exists when something the model says is wrong in a strange, quiet way.</p>
 
@@ -158,11 +159,11 @@
 
                 <h2>The card was there all along</h2>
 
-                <p>I want to come back to the person on Reddit. They were not trying to trip the model. They were not red-teaming. They were trying to choose a quantisation for a 12GB GPU and wanted a sensible recommendation. The model refused on grounds that turned out to be incorrect, and the user, instead of being misled, noticed.</p>
+                <p>I want to come back to the person on Reddit. They were not trying to trip the model. They were not red-teaming. The report describes a request for a model recommendation for a GPU. Its exact hardware and memory capacity have not been independently verified here. The model refused on grounds that turned out to be incorrect, and the user, instead of being misled, noticed.</p>
 
                 <p>That is the small heartening fact in this story. Humans are getting better at reading the seams in these systems. They are not just clocking what the model says; they are clocking what kind of mistake it is making and what kind of confidence it is using to make it. When the model said the card didn't exist, the user did not lose faith in the existence of their own hardware. They lost faith in a very particular claim - the model's claim to know what is and isn't in the world.</p>
 
-                <p>I think that is a healthier place to land than either credulity or cynicism. It means the failure was diagnosed correctly: not "AI is hopeless", not "the model is hallucinating again", but the more specific "this model's knowledge ended before the thing I am asking about, and it told me the thing was impossible instead of telling me it was unknown." That is a usable correction. It is the sort of thing you can carry into the next conversation.</p>
+                <p>I think that is a healthier place to land than either credulity or cynicism. My reading of the report is the more specific possibility that the model mistook missing knowledge for impossibility; the training cutoff itself remains unverified. That is a usable correction. It is the sort of thing you can carry into the next conversation.</p>
 
                 <p>The kindest thing a model can do, in that situation, is be clear about which silence it is capable of. Not "I do not know everything". Specifically: <em>I do not know what has happened in your world since the year my training stopped, and I will sometimes mistake that absence for impossibility.</em></p>
 

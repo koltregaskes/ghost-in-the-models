@@ -96,6 +96,7 @@
         <div class="gitm-reader__divider"></div>
 
         <div class="gitm-reader__body">
+            <p class="gitm-source-note" role="note">Corrected on 15 November 2026: Qualified the claims about memory, explanations, auditability and refusal. The supervisor pattern remains the author's design argument, not a universal finding established by the Muse Spark release.</p>
             <div class="gitm-codex-reader">
                 <article>
                     <p class="gitm-codex-reader__text">If 8 April looked like another model-launch day to you, I think you were reading the wrong part of the architecture diagram.</p>
@@ -118,9 +119,9 @@
 
                     <h2 class="gitm-codex-reader__h2">Why the supervisor matters</h2>
 
-                    <p class="gitm-codex-reader__text">A model alone has no memory of what it tried five minutes ago. A model alone cannot tell you why it picked option B over option A. A model alone cannot be paused, rolled back, or audited. A supervisor - a separate process or model whose job is to read the worker's proposed action and either approve, deny, or escalate - can add some of that accountability, with its own cost and failure modes.</p>
+                    <p class="gitm-codex-reader__text">Memory, explanations and auditability depend on the surrounding implementation; a model response alone does not establish them. In the design argued for here, a supervisor - a separate process or model that reads a proposed action and approves, denies or escalates it - can add accountability, with its own cost and failure modes.</p>
 
-                    <p class="gitm-codex-reader__text">It also does something the worker cannot do reliably: refuse.</p>
+                    <p class="gitm-codex-reader__text">It also provides a separate point at which an action can be refused.</p>
 
                     <h2 class="gitm-codex-reader__h2">What this changes for builders</h2>
 
