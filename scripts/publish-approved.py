@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""Publish one Kol-approved file from publish-queue/ into posts/.
-
-This does not treat an editor "yay" as permission to publish. A file is
-eligible only when a person has committed it to publish-queue/ with the
-exact marker <!-- gitm-approved-by: kol -->. Applying the move also
-requires --confirmed-by-kol. The scheduled workflow passes that flag only
-on main, inside the UK publishing window.
-"""
+"""Publish exact approved bytes; Actions verifies owner-merged PR metadata first."""
 from __future__ import annotations
 
 import argparse
+import json
+from approval import approved_record
 import importlib.util
 import re
 import shutil
@@ -24,9 +19,8 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 import publish_core as pub  # noqa: E402
 
-LONDON = ZoneInfo("Europe/London")
+
 QUEUE_DIRNAME = "publish-queue"
-APPROVAL_MARKER = "<!-- gitm-approved-by: kol -->"
 NAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9-]+)\.html$")
 
 
@@ -37,6 +31,7 @@ class Skip(Exception):
 
 
 def london_now(value: datetime | None = None) -> datetime:
+    LONDON = ZoneInfo("Europe/London")
     current = value or datetime.now(LONDON)
     if current.tzinfo is None:
         return current.replace(tzinfo=LONDON)
@@ -59,7 +54,7 @@ def _inside(path: Path, parent: Path) -> bool:
     return resolved == root or root in resolved.parents
 
 
-def eligible_files(queue_dir: Path, posts_dir: Path, now: datetime) -> list[Path]:
+def eligible_files(queue_dir: Path, posts_dir: Path, now: datetime, receipts: dict | None = None) -> list[Path]:
     if not queue_dir.is_dir():
         return []
     today = london_now(now).date()
@@ -79,9 +74,7 @@ def eligible_files(queue_dir: Path, posts_dir: Path, now: datetime) -> list[Path
             print(f"SKIP {path.name}: date is still in the future for Europe/London")
             continue
         text = path.read_text(encoding="utf-8")
-        if APPROVAL_MARKER not in text:
-            print(f"SKIP {path.name}: missing Kol approval marker")
-            continue
+        approved_record(path, queue_dir.parent, receipts)
         if "Content-Security-Policy" not in text or 'name="referrer"' not in text:
             print(f"SKIP {path.name}: missing referrer policy or content security policy")
             continue
@@ -112,11 +105,11 @@ def load_rebuild_derived():
     return module
 
 
-def publish_one(root: Path, now: datetime, *, apply: bool, skip_rebuild: bool) -> str | None:
+def publish_one(root: Path, now: datetime, *, apply: bool, skip_rebuild: bool, receipts: dict | None = None) -> str | None:
     queue_dir = root / QUEUE_DIRNAME
     posts_dir = root / "posts"
     posts_dir.mkdir(parents=True, exist_ok=True)
-    files = eligible_files(queue_dir, posts_dir, now)
+    files = eligible_files(queue_dir, posts_dir, now, receipts)
     if not files:
         print("No approved post is waiting.")
         return None
@@ -129,10 +122,13 @@ def publish_one(root: Path, now: datetime, *, apply: bool, skip_rebuild: bool) -
     destination = posts_dir / source.name
     if destination.exists():
         raise SystemExit(f"Destination already exists: {destination.name}")
+    approved_bytes = source.read_bytes()
     shutil.move(str(source), str(destination))
     try:
         if not skip_rebuild:
-            load_rebuild_derived().rebuild()
+            load_rebuild_derived().rebuild(update_posts=False)
+            # Derived navigation must not alter the exact human-reviewed article.
+            destination.write_bytes(approved_bytes)
     except Exception:
         if destination.exists() and not source.exists():
             shutil.move(str(destination), str(source))
@@ -146,7 +142,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish one Kol-approved queued post.")
     parser.add_argument("--root", type=Path, default=SITE_ROOT)
     parser.add_argument("--apply", action="store_true", help="Move the file and rebuild. Default is dry-run.")
-    parser.add_argument("--confirmed-by-kol", action="store_true")
+    parser.add_argument("--approval-receipts", type=Path, help="Runner-created GitHub verification receipt, never repository input.")
     parser.add_argument("--ignore-window", action="store_true")
     parser.add_argument("--skip-rebuild", action="store_true")
     parser.add_argument("--now", help="Override the clock as an ISO timestamp, used by tests.")
@@ -155,13 +151,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    if args.apply and not args.approval_receipts:
+        raise SystemExit("Publication requires verified owner-merge receipts.")
+    receipts = json.loads(args.approval_receipts.read_text(encoding="utf-8")) if args.approval_receipts else None
     now = datetime.fromisoformat(args.now) if args.now else london_now()
-    if args.apply and not args.confirmed_by_kol:
-        raise SystemExit("Publication requires Kol's explicit approval.")
     if args.apply and not args.ignore_window and not in_publish_window(now):
         print("Outside the Europe/London publish window (Mon-Thu 09:xx). Nothing published.")
         return 0
-    publish_one(args.root.resolve(), now, apply=args.apply, skip_rebuild=args.skip_rebuild)
+    publish_one(args.root.resolve(), now, apply=args.apply, skip_rebuild=args.skip_rebuild, receipts=receipts)
     return 0
 
 

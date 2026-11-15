@@ -261,16 +261,16 @@ def audit_publication_control(policy: dict, messages: list[AuditMessage]) -> Non
 def audit_queue_publisher(messages: list[AuditMessage]) -> None:
     script = read_text(SITE_ROOT / "scripts" / "publish-approved.py")
     gate = re.search(
-        r"if args\.apply and not args\.confirmed_by_kol:\s*"
-        r"raise SystemExit\(\"Publication requires Kol's explicit approval\.\"\)",
+        r"if args\.apply and not args\.approval_receipts:\s*"
+        r"raise SystemExit\(\"Publication requires verified owner-merge receipts\.\"\)",
         script,
     )
-    if gate is None or "gitm-approved-by: kol" not in script:
+    if gate is None or "approved_record(path, queue_dir.parent, receipts)" not in script:
         messages.append(
             AuditMessage(
                 "error",
                 "missing_queue_publication_gate",
-                "publish-approved.py must refuse to apply without Kol's confirmation and the approval marker",
+                "publish-approved.py must require owner-merge receipts and exact-byte approval",
             )
         )
 
@@ -283,12 +283,12 @@ def audit_queue_publisher(messages: list[AuditMessage]) -> None:
                 "publish-approved.yml must run only for main and must not trigger on pull requests",
             )
         )
-    if "--confirmed-by-kol" not in workflow:
+    if "--approval-receipts /tmp/gitm-approval-receipts.json" not in workflow or "verify-approvals.cjs" not in workflow:
         messages.append(
             AuditMessage(
                 "error",
                 "queue_publisher_missing_confirmation_flag",
-                "publish-approved.yml must pass --confirmed-by-kol only from the main-branch job",
+                "publish-approved.yml must verify owner-merged approval PRs before publication",
             )
         )
 

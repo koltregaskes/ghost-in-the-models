@@ -480,13 +480,14 @@ def update_rotation(posts: list[dict]) -> None:
     write_text(path, json.dumps(rotation, indent=2) + '\n')
 
 
-def rebuild() -> None:
+def rebuild(*, update_posts: bool = True) -> None:
     posts = load_posts()
     if not posts:
         raise ValueError('No posts found to rebuild from.')
     counts = build_counts(posts)
     policy = load_site_policy()
-    update_navigation(posts)
+    if update_posts:
+        update_navigation(posts)
     index_path = SITE_ROOT / 'index.html'
     current_index = read_text(index_path) if index_path.exists() else ''
     if homepage_is_protected(current_index):

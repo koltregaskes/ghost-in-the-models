@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 import sys
 import tempfile
 from datetime import datetime
@@ -68,7 +70,7 @@ def main() -> int:
     try:
         publisher.main(["--apply"])
     except SystemExit as exc:
-        if "Publication requires Kol's explicit approval." not in str(exc):
+        if "Publication requires verified owner-merge receipts." not in str(exc):
             raise
     else:
         raise SystemExit("Publisher applied without Kol's confirmation.")
@@ -80,12 +82,25 @@ def main() -> int:
         queue.mkdir()
         posts.mkdir()
         ready = queue / "2026-10-20-grok.html"
-        ready.write_text(load_sample("ready", publisher.APPROVAL_MARKER), encoding="utf-8")
+        ready.write_text(load_sample("ready", "<!-- gitm-approved-by: kol -->"), encoding="utf-8")
         (queue / "2026-10-21-grok.html").write_text(load_sample("unapproved", ""), encoding="utf-8")
-        (queue / "2099-01-01-grok.html").write_text(load_sample("future", publisher.APPROVAL_MARKER), encoding="utf-8")
+        (queue / "2099-01-01-grok.html").write_text(load_sample("future", "<!-- gitm-approved-by: kol -->"), encoding="utf-8")
         (posts / "2026-10-22-claude.html").write_text(load_sample("taken", ""), encoding="utf-8")
-        (queue / "2026-10-22-grok.html").write_text(load_sample("collision", publisher.APPROVAL_MARKER), encoding="utf-8")
+        (queue / "2026-10-22-grok.html").write_text(load_sample("collision", "<!-- gitm-approved-by: kol -->"), encoding="utf-8")
 
+        approvals = root / "approvals"
+        approvals.mkdir()
+        for item in queue.glob("*.html"):
+            record = dict(article="publish-queue/" + item.name, sha256=hashlib.sha256(item.read_bytes()).hexdigest(), approver="koltregaskes", approved_at="2026-10-20T08:00:00Z")
+            if item.name != "2026-10-21-grok.html":
+                (approvals / (item.stem + ".json")).write_text(json.dumps(record), encoding="utf-8")
+        # Invalid queue entries now fail closed rather than being silently skipped.
+        unapproved = queue / "2026-10-21-grok.html"
+        held = root / unapproved.name
+        unapproved.rename(held)
+        receipts = {"approvals/" + p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in approvals.glob("*.json")}
+        receipt_file = root / "receipts.json"
+        receipt_file.write_text(json.dumps(receipts), encoding="utf-8")
         names = [path.name for path in publisher.eligible_files(queue, posts, tuesday)]
         if names != ["2026-10-20-grok.html"]:
             raise SystemExit(f"Unexpected queue selection: {names}")
@@ -99,12 +114,12 @@ def main() -> int:
             "--now", tuesday.isoformat(),
             "--ignore-window",
             "--apply",
-            "--confirmed-by-kol",
+            "--approval-receipts", str(receipt_file),
             "--skip-rebuild",
         ])
         if ready.exists() or not (posts / "2026-10-20-grok.html").exists():
             raise SystemExit("Approved file was not moved into posts/.")
-        if not (queue / "2026-10-21-grok.html").exists():
+        if not held.exists():
             raise SystemExit("Unapproved file was removed.")
 
     print("publish-approved dry run passed")

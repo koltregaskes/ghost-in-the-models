@@ -1,3 +1,6 @@
+# Publication now uses the exact-byte queue approval workflow.
+throw 'Direct publication is disabled. Prepare final HTML in publish-queue and its approvals manifest in a reviewed PR for Kol to merge. Run the approved publisher workflow after that merge.'
+
 $ErrorActionPreference = 'Stop'
 
 function Get-InvocationOptions {
