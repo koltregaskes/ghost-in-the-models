@@ -11,3 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: python3 scripts/test-public-output.py
+      - run: node --test scripts/test-privacy-references.mjs

@@ -75,9 +75,24 @@ Cookieless analytics (#1498/#367) is planned and not active. Contact remains
 unverified. Confirm host log handling, privacy details and the working contact
 route before launch; no email address is invented by this change.
 
-**Pages source: UNKNOWN in the supplied offline evidence.** Workflow files do
-not prove which source the repository setting uses. A read-only Pages settings
-receipt is needed. If it is legacy branch publishing, the allowlist is NOT
-enforced until Kol approves changing the source to GitHub Actions. This patch
-does not change Pages, account, DNS or security settings. Artifact exclusion
-also does not remove files already visible in the source repository/history.
+**Verified Pages source: legacy, main:/.** The live site publishes directly
+from the main branch root. The Actions artifact allowlist does NOT govern that
+route. Keep unapproved changes off live main until Kol approves a switch to an
+enforced Actions source and the existing owner verifies it. This patch changes
+no Pages, account, DNS or security settings. Source-repository visibility and
+history are unaffected by artifact exclusion.
+
+The guard extracts complete HTML attribute values before decoding HTML5 entities,
+uses HTML srcset candidate rules, decodes CSS url()/@import arguments and JS
+string escapes, then asks Node's WHATWG URL parser for the actual destination.
+Malformed URLs fail. The standard-library Python HTML extractor and Node lexer
+follow KT Photography PR #40's round-three design; no package is installed.
+Unknown dynamic external templates fail explicitly. Runtime/obfuscated URL
+construction still needs a browser/network review; static checks are not a
+complete JavaScript execution analysis.
+
+scripts/public_artifact.py is the shared allowlist/builder used by both this
+patch and PR #49's pinned signature verifier. Integrate that same file and
+verify essay hashes inside the exact _site directory before uploading it.
+Final Chief signatures must cover the combined privacy-footer and sourcing
+correction bytes. www.nasa.gov is a reviewed navigation host for PR #50.

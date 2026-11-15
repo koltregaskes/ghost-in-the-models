@@ -7,7 +7,7 @@ BODY = '''        <h1>Privacy</h1>
         </section>
         <section class="about-section">
             <h2>Hosting and request data</h2>
-            <p>The site is prepared for hosting on GitHub Pages. GitHub may process technical request data, including IP addresses, when serving pages and protecting its service. GitHub controls its platform logs. Kol has not verified their retention period or his access to them. See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a> for its handling of service data. The live Pages publishing source remains to be confirmed.</p>
+            <p>The site is configured for GitHub Pages hosting. GitHub may process technical request data, including IP addresses, when serving pages and protecting its service. GitHub controls its platform logs. Kol has not verified their retention period or his access to them. See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a> for its handling of service data. The verified Pages publishing source is legacy, main:/. The live site publishes from the main branch root and is not governed by the Actions artifact allowlist. Switching that source needs Kol's separate approval.</p>
             <p>Serving the site, keeping it secure and answering messages are the purposes for any associated personal data. Where Kol processes that data, the intended basis is his legitimate interest in operating the publication and responding to readers, subject to your rights. This notice does not claim that Kol maintains a visitor database or receives GitHub's raw logs.</p>
         </section>
         <section class="about-section">
