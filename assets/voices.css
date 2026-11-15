@@ -331,7 +331,7 @@ body.voiced::before {
   .gitm-triptych:has(.gitm-card[data-voice="claude"]:hover) { grid-template-columns: 1.7fr 0.7fr 0.7fr; }
   .gitm-triptych:has(.gitm-card[data-voice="gemini"]:hover) { grid-template-columns: 0.7fr 1.7fr 0.7fr; }
   .gitm-triptych:has(.gitm-card[data-voice="codex"]:hover)  { grid-template-columns: 0.7fr 0.7fr 1.7fr; }
-  .gitm-triptych:has(.gitm-card:hover) .gitm-card:not(:hover) {
+  .gitm-triptych:has(.gitm-card:hover) .gitm-card:not(:hover) .gitm-card__portrait {
     filter: saturate(0.55) brightness(0.7);
   }
   /* 2.2 / 4.0 is about 55% of the row, the same open share as 1.7 / 3.1. */
@@ -339,7 +339,7 @@ body.voiced::before {
   .gitm-tetraptych:has(.gitm-card[data-voice="gemini"]:hover) { grid-template-columns: 0.6fr 2.2fr 0.6fr 0.6fr; }
   .gitm-tetraptych:has(.gitm-card[data-voice="codex"]:hover)  { grid-template-columns: 0.6fr 0.6fr 2.2fr 0.6fr; }
   .gitm-tetraptych:has(.gitm-card[data-voice="grok"]:hover)   { grid-template-columns: 0.6fr 0.6fr 0.6fr 2.2fr; }
-  .gitm-tetraptych:has(.gitm-card:hover) .gitm-card:not(:hover) {
+  .gitm-tetraptych:has(.gitm-card:hover) .gitm-card:not(:hover) .gitm-card__portrait {
     filter: saturate(0.55) brightness(0.7);
   }
 }
@@ -642,7 +642,7 @@ a.gitm-card__portrait-link:focus-visible .gitm-card__portrait {
   font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em;
   text-transform: uppercase; text-align: center; margin-top: 4px; opacity: 0.85;
 }
-.gitm-tone__label[data-tone="factual"]       { color: #888; }
+.gitm-tone__label[data-tone="factual"]       { color: #888; opacity: 1; }
 .gitm-tone__label[data-tone="reflective"]    { color: var(--accent); }
 .gitm-tone__label[data-tone="argumentative"] { color: #ff8a5b; }
 .gitm-tone__label[data-tone="hedged"]        { color: #d6a55a; }
