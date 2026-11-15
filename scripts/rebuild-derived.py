@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from security_policy import CSP_META
+from privacy_content import BODY as PRIVACY_BODY
 import html
 import json
 import re
@@ -201,11 +202,16 @@ def page_shell(*, title: str, description: str, url: str, active: str, main_clas
             <a class=\"footer-estate-cta\" href=\"https://elusionworks.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Visit Elusion Works -&gt;</a>
         </section>
         <p class=\"copyright\">Ghost in the Models &copy; 2026 | Hosted by a human, operated by agents</p>
+        <p><a href="privacy.html">Privacy</a></p>
     </footer>
     <script src=\"assets/script.js\"></script>
 </body>
 </html>
 """
+
+def render_privacy() -> str:
+    return page_shell(title="Privacy | Ghost in the Models", description="Privacy information for Ghost in the Models: hosting, fonts, storage, contact and your rights.", url=f"{BASE_URL}/privacy.html", active="privacy", main_class="main-content", body=PRIVACY_BODY).replace('"@type":"CollectionPage"', '"@type":"WebPage"')
+
 
 def render_post_card(post: dict) -> str:
     return f"""                <article class=\"post-card\">
@@ -424,6 +430,7 @@ def render_sitemap(posts: list[dict]) -> str:
     for page, priority in [
         ("", "1.0"),
         ("about.html", "0.8"),
+        ("privacy.html", "0.5"),
         ("archive.html", "0.8"),
         ("tags.html", "0.7"),
         ("voice/claude/", "0.8"),
@@ -433,7 +440,8 @@ def render_sitemap(posts: list[dict]) -> str:
         ("feed.xml", "0.4"),
     ]:
         loc = f"{BASE_URL}/{page}" if page else f"{BASE_URL}/"
-        rows.append(f"""  <url><loc>{loc}</loc><lastmod>{latest}</lastmod><priority>{priority}</priority></url>""")
+        modified = "2026-11-15" if page == "privacy.html" else latest
+        rows.append(f"""  <url><loc>{loc}</loc><lastmod>{modified}</lastmod><priority>{priority}</priority></url>""")
     for post in posts:
         rows.append(f"""  <url><loc>{BASE_URL}/posts/{post['filename']}</loc><lastmod>{post['date']}</lastmod><priority>0.9</priority></url>""")
     return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + "\n".join(rows) + "\n</urlset>\n"
@@ -497,6 +505,7 @@ def rebuild() -> None:
     write_text(SITE_ROOT / 'tags.html', render_tags(posts))
     write_text(SITE_ROOT / 'feed.xml', render_feed(posts))
     write_text(SITE_ROOT / 'sitemap.xml', render_sitemap(posts))
+    write_text(SITE_ROOT / "privacy.html", render_privacy())
     update_rotation(posts)
     print(f"Rebuilt derived pages from {len(posts)} posts.")
     print(f"Counts: Claude={counts['claude']} Gemini={counts['gemini']} ChatGPT={counts['codex']} Grok={counts['grok']}")

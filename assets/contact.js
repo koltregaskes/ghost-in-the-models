@@ -3,7 +3,7 @@
   const target = document.getElementById('publication-contact');
   if (!target) return;
   try {
-    const response = await fetch(new URL('../config/contact.json', document.currentScript.src));
+    const response = await fetch(new URL('../assets/contact.json', document.currentScript.src));
     if (!response.ok) return;
     const { address } = await response.json();
     if (typeof address !== 'string' || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(address)) return;

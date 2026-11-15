@@ -1,0 +1,117 @@
+"""Offline artifact closure, host inventory and hostile URL regressions."""
+import importlib.util
+import json
+import re
+import tempfile
+import unittest
+import argparse
+from pathlib import Path
+from html.parser import HTMLParser
+from urllib.parse import urljoin,urlsplit,unquote
+from public_output import allowed,hosts
+
+ROOT=Path(__file__).resolve().parent.parent
+spec=importlib.util.spec_from_file_location('build_public',ROOT/'scripts/build-public.py');builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
+BASE='https://ghostinthemodels.com/'
+
+
+class References(HTMLParser):
+    def __init__(self):super().__init__();self.refs=[];self.resources=[];self.footers=[];self.in_footer=False
+    def handle_starttag(self,tag,attrs):
+        a=dict(attrs)
+        if tag=='footer':self.in_footer=True;self.footers.append([])
+        if self.in_footer and tag=='a':self.footers[-1].append(a.get('href',''))
+        for name in ['href','src','poster','data']:
+            if a.get(name):self.refs.append(a[name])
+        for name in ['src','poster','data']:
+            if a.get(name):self.resources.append(a[name])
+        if tag=='link' and any(rel in a.get('rel','').split() for rel in ['stylesheet','icon','preconnect','preload','prefetch','dns-prefetch']):self.resources.append(a.get('href',''))
+        if a.get('srcset'):self.refs.extend(x.strip().split()[0] for x in a['srcset'].split(','))
+        if tag=='meta' and a.get('http-equiv','').lower()=='refresh':
+            m=re.search(r'url\s*=\s*(.+)',a.get('content',''),re.I)
+            if m:self.refs.append(m[1])
+    def handle_endtag(self,tag):
+        if tag=='footer':self.in_footer=False
+
+
+def check_artifact(output,inventory):
+    files=[p for p in output.rglob('*') if p.is_file()]
+    assert files,'Empty artifact'
+    declared=set().union(*[set(v) for v in inventory.values()])
+    found=set();resource_hosts=set();pages=0;references=0
+    for p in files:
+        name=p.relative_to(output).as_posix()
+        assert allowed(name),('Unlisted artifact file',name)
+        assert not p.is_symlink(),name
+        if p.suffix not in {'.html','.css','.js','.xml','.txt','.md','.json'}:continue
+        text=p.read_text(encoding='utf-8');found.update(hosts(text))
+        refs=[]
+        if p.suffix=='.html':
+            pages+=1;parser=References();parser.feed(text);refs=parser.refs
+            for ref in parser.resources:
+                if not ref.startswith('data:'):resource_hosts.update(hosts(ref))
+            for footer in parser.footers:assert any(urlsplit(r).path.endswith('privacy.html') for r in footer),('Footer privacy link missing',name)
+        if p.suffix in {'.css','.html'}:
+            refs += [m[1].strip(' \"\'') for m in re.finditer(r'url\(\s*([^)]*)\)',text,re.I)]
+            for m in re.finditer(r'(?:url\(|@import\s+)[\s\"\']*([^\s)\"\']+)',text,re.I):
+                if not m[1].startswith('data:'):resource_hosts.update(hosts(m[1]))
+        if p.suffix=='.js':
+            # Fetches and script-relative JSON must resolve in the deployed tree.
+            refs += re.findall(r"new URL\(['\"]([^'\"]+)['\"],\s*document\.currentScript\.src",text)
+            for ref in re.findall(r"(?:fetch|import|sendBeacon|WebSocket|EventSource)\s*\(\s*['\"]([^'\"]+)",text):resource_hosts.update(hosts(ref))
+        for ref in refs:
+            if ref.startswith(('data:','#','mailto:','tel:','javascript:')):continue
+            url=urlsplit(urljoin(BASE+name,ref))
+            if url.hostname not in {'ghostinthemodels.com','www.ghostinthemodels.com'}:continue
+            path=unquote(url.path).lstrip('/')
+            if path.startswith('ghost-in-the-models/'):path=path[len('ghost-in-the-models/'):]
+            target=(output/path).resolve()
+            assert output.resolve() in target.parents or target==output.resolve(),('Reference escaped artifact',name,ref)
+            if target.is_dir():target=target/'index.html'
+            assert target.is_file(),('Broken artifact reference',name,ref)
+            references+=1
+    assert not found-declared,('Unlisted public URL hosts',sorted(found-declared))
+    assert not resource_hosts-set(inventory['resource_hosts'])-set(inventory['site_hosts']),('Undisclosed resource hosts',sorted(resource_hosts))
+    # Font CSS itself is fetched from Google and references its static host.
+    privacy=(output/'privacy.html').read_text(encoding='utf-8')
+    for host in inventory['resource_hosts']:assert host in privacy,('Missing privacy disclosure',host)
+    print(f'Artifact verified: {len(files)} files, {pages} pages, {references} local references; {len(found)} URL hosts; no unlisted hosts or files')
+    return len(files)
+
+
+class OutputTests(unittest.TestCase):
+    def test_url_boundaries(self):
+        for suffix in ['/path','?q=x','#fragment',':8443/path',' text','\"','\'','`',')',',next',';']:
+            self.assertEqual(hosts('HTTPS://Example.COM'+suffix),{'example.com'})
+        self.assertEqual(hosts('//reader@example.com:8443/a'),{'example.com'})
+        self.assertEqual(hosts('https://reader:label@EXAMPLE.COM:8443/a'),{'example.com'})
+        self.assertEqual(hosts('https://one.example/a,https://two.example/b'),{'one.example','two.example'})
+        self.assertEqual(hosts('WSS://Example.COM:443/path'),{'example.com'})
+
+    def test_allowlist(self):
+        for name in ['drafts/test.html','publish-queue/test.html','scripts/test.js','config/contact.json','docs/x.html','.git/config','assets/.hidden.js','assets/../drafts/x.js','preview/option-a.html','assets/test.env','assets/test.key']:
+            self.assertFalse(allowed(name),name)
+
+    def test_artifact_and_negative_guards(self):
+        inventory=json.loads((ROOT/'config/privacy-hosts.json').read_text())
+        with tempfile.TemporaryDirectory() as raw:
+            output=Path(raw)/'public';builder.build(ROOT,output)
+            check_artifact(output,inventory)
+            (output/'assets/injected.js').write_text('fetch("//UNLISTED.example:443/path")',encoding='utf-8')
+            with self.assertRaises(AssertionError):check_artifact(output,inventory)
+            (output/'assets/injected.js').write_text('',encoding='utf-8')
+            index=output/'index.html';original=index.read_text(encoding='utf-8')
+            index.write_text(original+'<a href="drafts/missing.html">Broken local reference</a>',encoding='utf-8')
+            with self.assertRaises(AssertionError):check_artifact(output,inventory)
+            index.write_text(original,encoding='utf-8')
+            (output/'assets/injected.js').write_text('fetch("https://x.com/active")',encoding='utf-8')
+            with self.assertRaises(AssertionError):check_artifact(output,inventory)
+            (output/'assets/injected.js').write_text('',encoding='utf-8')
+            (output/'queue.html').write_text('private',encoding='utf-8')
+            with self.assertRaises(AssertionError):check_artifact(output,inventory)
+
+
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--artifact',type=Path);args,remaining=parser.parse_known_args()
+    if args.artifact:check_artifact(args.artifact.resolve(),json.loads((ROOT/'config/privacy-hosts.json').read_text()))
+    else:unittest.main(argv=['test-public-output.py']+remaining)

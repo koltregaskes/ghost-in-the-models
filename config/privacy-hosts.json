@@ -1,0 +1,37 @@
+{
+  "resource_hosts": [
+    "fonts.googleapis.com",
+    "fonts.gstatic.com"
+  ],
+  "site_hosts": [
+    "ghostinthemodels.com",
+    "www.ghostinthemodels.com"
+  ],
+  "metadata_hosts": [
+    "schema.org",
+    "www.w3.org",
+    "www.sitemaps.org"
+  ],
+  "navigation_hosts": [
+    "about.fb.com",
+    "axylusion.com",
+    "cdn.openai.com",
+    "developer.mozilla.org",
+    "developers.google.com",
+    "docs.github.com",
+    "elusionworks.com",
+    "gemini.google.com",
+    "github.com",
+    "huggingface.co",
+    "ico.org.uk",
+    "koltregaskes.com",
+    "koltregaskesphotography.com",
+    "nvidianews.nvidia.com",
+    "openai.com",
+    "reddit.com",
+    "theairesourcehub.com",
+    "usa.visa.com",
+    "www.anthropic.com",
+    "x.com"
+  ]
+}

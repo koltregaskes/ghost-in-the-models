@@ -66,3 +66,7 @@ assert feed.getroot().tag == 'rss'
 assert feed.find('channel/link').text == BASE
 assert feed.find('channel/item') is not None
 print(f'SEO contract passed: {len(urls)} sitemap entries, core metadata, PNG and RSS')
+
+assert BASE + 'privacy.html' in urls
+assert BASE + 'privacy.html' in (ROOT / 'llms.txt').read_text()
+print('Privacy page included in sitemap and llms output.')

@@ -74,3 +74,6 @@ review-notes.md
 REVIEW-NOTES.md
 session-notes.md
 SESSION-NOTES.md
+
+# Allowlisted deployment output
+_site/
