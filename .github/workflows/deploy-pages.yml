@@ -1,50 +1,82 @@
 name: Deploy Pages
-
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
   schedule:
     - cron: "45 6 * * *"
-
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   validate:
     runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Validate site
         shell: pwsh
         run: ./scripts/validate-site.ps1
-
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout candidate data
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require external trust pins
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const root = ${{ toJSON(vars.GITM_APPROVAL_ROOT_SHA256) }};
+            const verifier = ${{ toJSON(vars.GITM_APPROVAL_VERIFIER_COMMIT) }};
+            if (!/^[0-9a-f]{64}$/.test(root) || !/^[0-9a-f]{40}$/.test(verifier)) {
+              throw new Error('Chief approval setup incomplete: configure the public root digest and pinned verifier commit outside the repository.');
+            }
+
+      - name: Checkout pinned verifier code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ vars.GITM_APPROVAL_VERIFIER_COMMIT }}
+          path: verifier
+          persist-credentials: false
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
 
-      - name: Upload artifact
+      - name: Build the shared allowlisted public artifact
+        run: python3 -I verifier/scripts/build-approved-artifact.py --root candidate --output _site
+
+      - name: Verify Chief signatures and signer rotation history
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const {spawnSync} = require('node:child_process');
+            const pin = ${{ toJSON(vars.GITM_APPROVAL_ROOT_SHA256) }};
+            const result = spawnSync('python3', ['-I', 'verifier/scripts/verify-approvals.py', '--root', 'candidate', '--trust-root-sha256', pin, '--mode', 'all', '--artifact', '_site'], {stdio: 'inherit'});
+            if (result.error || result.status !== 0) throw new Error('Chief signature verification failed.');
+
+      - name: Upload verified checkout
         uses: actions/upload-pages-artifact@v5
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
