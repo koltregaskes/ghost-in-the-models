@@ -1,2 +1,7 @@
 # Keep text files with LF line endings in the repo, whatever the editor or OS.
 * text=auto eol=lf
+
+# Signatures and article hashes refer to raw bytes on Windows and Linux alike.
+/approvals/** -text
+/posts/*.html -text
+/publish-queue/*.html -text

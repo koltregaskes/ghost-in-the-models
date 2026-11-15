@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-"""Publish exact approved bytes; Actions verifies owner-merged PR metadata first."""
+"""Prepare exact Chief-signed bytes; never infer approval from a GitHub account."""
 from __future__ import annotations
 
 import argparse
-import json
-from approval import approved_record
-import importlib.util
-import re
-import shutil
 import sys
-from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
-
 SCRIPTS_DIR = Path(__file__).resolve().parent
 SITE_ROOT = SCRIPTS_DIR.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
+from approval import approved_record, verify_public
+from approval_trust import ApprovalError, regular_bytes, trusted_signers
+import importlib.util
+import re
+import shutil
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import publish_core as pub  # noqa: E402
 
@@ -54,7 +53,7 @@ def _inside(path: Path, parent: Path) -> bool:
     return resolved == root or root in resolved.parents
 
 
-def eligible_files(queue_dir: Path, posts_dir: Path, now: datetime, receipts: dict | None = None) -> list[Path]:
+def eligible_files(queue_dir: Path, posts_dir: Path, now: datetime, signers: bytes) -> list[Path]:
     if not queue_dir.is_dir():
         return []
     today = london_now(now).date()
@@ -69,12 +68,12 @@ def eligible_files(queue_dir: Path, posts_dir: Path, now: datetime, receipts: di
         if not match:
             print(f"SKIP {path.name}: filename must be YYYY-MM-DD-slug.html")
             continue
+        approved_record(path, queue_dir.parent, signers)
         post_date = datetime.strptime(match.group(1), "%Y-%m-%d").date()
         if post_date > today:
             print(f"SKIP {path.name}: date is still in the future for Europe/London")
             continue
         text = path.read_text(encoding="utf-8")
-        approved_record(path, queue_dir.parent, receipts)
         if "Content-Security-Policy" not in text or 'name="referrer"' not in text:
             print(f"SKIP {path.name}: missing referrer policy or content security policy")
             continue
@@ -105,11 +104,11 @@ def load_rebuild_derived():
     return module
 
 
-def publish_one(root: Path, now: datetime, *, apply: bool, skip_rebuild: bool, receipts: dict | None = None) -> str | None:
+def publish_one(root: Path, now: datetime, *, apply: bool, skip_rebuild: bool, signers: bytes) -> str | None:
     queue_dir = root / QUEUE_DIRNAME
     posts_dir = root / "posts"
     posts_dir.mkdir(parents=True, exist_ok=True)
-    files = eligible_files(queue_dir, posts_dir, now, receipts)
+    files = eligible_files(queue_dir, posts_dir, now, signers)
     if not files:
         print("No approved post is waiting.")
         return None
@@ -117,24 +116,31 @@ def publish_one(root: Path, now: datetime, *, apply: bool, skip_rebuild: bool, r
     if not apply:
         print(f"DRY RUN would publish {source.name}")
         return source.name
-    if root.resolve() != SITE_ROOT and not skip_rebuild:
-        raise SystemExit("Refusing to rebuild a root other than this repository.")
     destination = posts_dir / source.name
     if destination.exists():
         raise SystemExit(f"Destination already exists: {destination.name}")
-    approved_bytes = source.read_bytes()
+    approved_bytes = regular_bytes(source, root)
+    approved_record(source, root, signers, content=approved_bytes)
     shutil.move(str(source), str(destination))
     try:
+        approved_record(destination, root, signers)
         if not skip_rebuild:
-            load_rebuild_derived().rebuild(update_posts=False)
-            # Derived navigation must not alter the exact human-reviewed article.
-            destination.write_bytes(approved_bytes)
+            rebuild = load_rebuild_derived()
+            # Run pinned generator code against the explicit candidate data.
+            rebuild.SITE_ROOT = root
+            rebuild.POSTS_DIR = root / "posts"
+            rebuild.rebuild(update_posts=False)
+        # Check again after moving/rebuilding. Never overwrite a detected edit
+        # with old bytes and silently claim that the approved article survived.
+        if regular_bytes(destination, root) != approved_bytes:
+            raise ApprovalError("Article changed during preparation")
+        approved_record(destination, root, signers)
     except Exception:
         if destination.exists() and not source.exists():
             shutil.move(str(destination), str(source))
         raise
     relative = destination.relative_to(root).as_posix()
-    print(f"PUBLISHED {relative}")
+    print(f"PREPARED {relative} (local candidate, not a public deployment)")
     return relative
 
 
@@ -142,7 +148,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish one Kol-approved queued post.")
     parser.add_argument("--root", type=Path, default=SITE_ROOT)
     parser.add_argument("--apply", action="store_true", help="Move the file and rebuild. Default is dry-run.")
-    parser.add_argument("--approval-receipts", type=Path, help="Runner-created GitHub verification receipt, never repository input.")
+    parser.add_argument("--trust-root-sha256", required=True, help="Externally pinned SHA-256 of the initial PUBLIC allowed_signers file.")
     parser.add_argument("--ignore-window", action="store_true")
     parser.add_argument("--skip-rebuild", action="store_true")
     parser.add_argument("--now", help="Override the clock as an ISO timestamp, used by tests.")
@@ -151,16 +157,19 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    if args.apply and not args.approval_receipts:
-        raise SystemExit("Publication requires verified owner-merge receipts.")
-    receipts = json.loads(args.approval_receipts.read_text(encoding="utf-8")) if args.approval_receipts else None
+    signers = trusted_signers(args.root.resolve(), args.trust_root_sha256)
+    verify_public(args.root.resolve(), signers)
     now = datetime.fromisoformat(args.now) if args.now else london_now()
     if args.apply and not args.ignore_window and not in_publish_window(now):
         print("Outside the Europe/London publish window (Mon-Thu 09:xx). Nothing published.")
         return 0
-    publish_one(args.root.resolve(), now, apply=args.apply, skip_rebuild=args.skip_rebuild, receipts=receipts)
+    publish_one(args.root.resolve(), now, apply=args.apply, skip_rebuild=args.skip_rebuild, signers=signers)
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except ApprovalError as exc:
+        print(f"APPROVAL REJECTED: {exc}", file=sys.stderr)
+        raise SystemExit(1)

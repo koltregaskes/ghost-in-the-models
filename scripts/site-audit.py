@@ -260,37 +260,13 @@ def audit_publication_control(policy: dict, messages: list[AuditMessage]) -> Non
 
 def audit_queue_publisher(messages: list[AuditMessage]) -> None:
     script = read_text(SITE_ROOT / "scripts" / "publish-approved.py")
-    gate = re.search(
-        r"if args\.apply and not args\.approval_receipts:\s*"
-        r"raise SystemExit\(\"Publication requires verified owner-merge receipts\.\"\)",
-        script,
-    )
-    if gate is None or "approved_record(path, queue_dir.parent, receipts)" not in script:
-        messages.append(
-            AuditMessage(
-                "error",
-                "missing_queue_publication_gate",
-                "publish-approved.py must require owner-merge receipts and exact-byte approval",
-            )
-        )
-
+    if "trusted_signers(args.root.resolve(), args.trust_root_sha256)" not in script or "approved_record(path, queue_dir.parent, signers)" not in script:
+        messages.append(AuditMessage("error", "missing_queue_publication_gate", "Publisher must verify the externally anchored Chief signature and exact bytes"))
     workflow = read_text(SITE_ROOT / ".github" / "workflows" / "publish-approved.yml")
     if re.search(r"(?m)^[\s-]*pull_request\s*:", workflow) or "refs/heads/main" not in workflow:
-        messages.append(
-            AuditMessage(
-                "error",
-                "queue_publisher_not_main_only",
-                "publish-approved.yml must run only for main and must not trigger on pull requests",
-            )
-        )
-    if "--approval-receipts /tmp/gitm-approval-receipts.json" not in workflow or "verify-approvals.cjs" not in workflow:
-        messages.append(
-            AuditMessage(
-                "error",
-                "queue_publisher_missing_confirmation_flag",
-                "publish-approved.yml must verify owner-merged approval PRs before publication",
-            )
-        )
+        messages.append(AuditMessage("error", "queue_publisher_not_main_only", "Candidate preparation must run on main only"))
+    if "verify-approvals.py" not in workflow or "GITM_APPROVAL_ROOT_SHA256" not in workflow or "GITM_APPROVAL_VERIFIER_COMMIT" not in workflow or "contents: write" in workflow:
+        messages.append(AuditMessage("error", "missing_signed_candidate_gate", "Candidate workflow must use pinned signature verification with a read-only repository token"))
 
     for rel in (
         "voice/grok/index.html",

@@ -1,5 +1,5 @@
 # Publication now uses the exact-byte queue approval workflow.
-throw 'Direct publication is disabled. Prepare final HTML in publish-queue and its approvals manifest in a reviewed PR for Kol to merge. Run the approved publisher workflow after that merge.'
+throw 'Direct publication is disabled, including -Force. The Chief must record Kol approval privately and sign the exact-byte approval record. Use the signed candidate workflow; a GitHub review or merge is not Kol approval.'
 
 $ErrorActionPreference = 'Stop'
 

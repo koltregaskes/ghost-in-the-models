@@ -1,0 +1,3 @@
+# Not initialised. Kol and the Chief must add the dedicated PUBLIC signing key.
+# Format: gitm-chief ssh-ed25519 BASE64_PUBLIC_KEY
+# The initial file's SHA-256 must be pinned outside this repository in Actions.

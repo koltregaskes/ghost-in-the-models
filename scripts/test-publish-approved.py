@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib.util
 import hashlib
 import json
+from approval_test_support import Fixture
+from approval_trust import trusted_signers
 import sys
 import tempfile
 from datetime import datetime
@@ -67,60 +69,28 @@ def main() -> int:
     assert publisher.in_publish_window(datetime.fromisoformat("2026-10-29T09:20:00+00:00"))
     assert not publisher.in_publish_window(datetime.fromisoformat("2026-10-30T09:20:00+00:00"))
 
-    try:
-        publisher.main(["--apply"])
-    except SystemExit as exc:
-        if "Publication requires verified owner-merge receipts." not in str(exc):
-            raise
-    else:
-        raise SystemExit("Publisher applied without Kol's confirmation.")
-
     with tempfile.TemporaryDirectory() as raw:
-        root = Path(raw)
-        queue = root / "publish-queue"
-        posts = root / "posts"
-        queue.mkdir()
-        posts.mkdir()
+        fixture = Fixture(Path(raw))
+        root = fixture.root
+        queue, posts = root / "publish-queue", root / "posts"
         ready = queue / "2026-10-20-grok.html"
-        ready.write_text(load_sample("ready", "<!-- gitm-approved-by: kol -->"), encoding="utf-8")
-        (queue / "2026-10-21-grok.html").write_text(load_sample("unapproved", ""), encoding="utf-8")
-        (queue / "2099-01-01-grok.html").write_text(load_sample("future", "<!-- gitm-approved-by: kol -->"), encoding="utf-8")
-        (posts / "2026-10-22-claude.html").write_text(load_sample("taken", ""), encoding="utf-8")
-        (queue / "2026-10-22-grok.html").write_text(load_sample("collision", "<!-- gitm-approved-by: kol -->"), encoding="utf-8")
-
-        approvals = root / "approvals"
-        approvals.mkdir()
-        for item in queue.glob("*.html"):
-            record = dict(article="publish-queue/" + item.name, sha256=hashlib.sha256(item.read_bytes()).hexdigest(), approver="koltregaskes", approved_at="2026-10-20T08:00:00Z")
-            if item.name != "2026-10-21-grok.html":
-                (approvals / (item.stem + ".json")).write_text(json.dumps(record), encoding="utf-8")
-        # Invalid queue entries now fail closed rather than being silently skipped.
-        unapproved = queue / "2026-10-21-grok.html"
-        held = root / unapproved.name
-        unapproved.rename(held)
-        receipts = {"approvals/" + p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in approvals.glob("*.json")}
-        receipt_file = root / "receipts.json"
-        receipt_file.write_text(json.dumps(receipts), encoding="utf-8")
-        names = [path.name for path in publisher.eligible_files(queue, posts, tuesday)]
-        if names != ["2026-10-20-grok.html"]:
-            raise SystemExit(f"Unexpected queue selection: {names}")
-
-        publisher.main(["--root", str(root), "--now", tuesday.isoformat(), "--ignore-window"])
-        if not ready.exists():
-            raise SystemExit("Dry run moved a queued file.")
-
-        publisher.main([
-            "--root", str(root),
-            "--now", tuesday.isoformat(),
-            "--ignore-window",
-            "--apply",
-            "--approval-receipts", str(receipt_file),
-            "--skip-rebuild",
-        ])
-        if ready.exists() or not (posts / "2026-10-20-grok.html").exists():
-            raise SystemExit("Approved file was not moved into posts/.")
-        if not held.exists():
-            raise SystemExit("Unapproved file was removed.")
+        ready.write_text(load_sample("ready", ""), encoding="utf-8", newline="\n")
+        future = queue / "2099-01-01-grok.html"
+        future.write_text(load_sample("future", ""), encoding="utf-8", newline="\n")
+        taken = posts / "2026-10-22-claude.html"
+        taken.write_text(load_sample("taken", ""), encoding="utf-8", newline="\n")
+        collision = queue / "2026-10-22-grok.html"
+        collision.write_text(load_sample("collision", ""), encoding="utf-8", newline="\n")
+        for item in [ready, future, taken, collision]:
+            fixture.record(item)
+        signers = trusted_signers(root, fixture.pin)
+        names = [path.name for path in publisher.eligible_files(queue, posts, tuesday, signers)]
+        assert names == [ready.name], names
+        publisher.publish_one(root, tuesday, apply=False, skip_rebuild=True, signers=signers)
+        assert ready.exists(), "Dry run moved the queued file"
+        publisher.publish_one(root, tuesday, apply=True, skip_rebuild=True, signers=signers)
+        assert not ready.exists() and (posts / ready.name).exists()
+        assert future.exists(), "Future article disappeared"
 
     print("publish-approved dry run passed")
     return 0
