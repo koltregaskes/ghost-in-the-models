@@ -8,7 +8,7 @@ import argparse
 from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urljoin,urlsplit,unquote
-from public_output import allowed,hosts,inspect_sources
+from public_output import allowed,hosts,inspect_sources,validate_inspection
 
 ROOT=Path(__file__).resolve().parent.parent
 spec=importlib.util.spec_from_file_location('build_public',ROOT/'scripts/build-public.py');builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
@@ -44,7 +44,8 @@ def check_artifact(output,inventory):
         if p.suffix=='.html':
             pages+=1;parser=FooterLinks();parser.feed(text)
             for footer in parser.footers:assert any(urlsplit(r).path.endswith('privacy.html') for r in footer),('Footer privacy link missing',name)
-    inspected=inspect_sources(sources)
+    mentions=json.loads((ROOT/'config/privacy-non-request-mentions.json').read_text(encoding='utf-8'))
+    inspected=inspect_sources(sources,mentions)
     found.update(inspected['hosts']);resource_hosts.update(inspected['resource_hosts'])
     for ref in inspected['references']:
         url=urlsplit(ref['url']);name=ref['name']
@@ -66,6 +67,12 @@ def check_artifact(output,inventory):
 
 
 class OutputTests(unittest.TestCase):
+    def test_inspection_schema_fails_closed(self):
+        valid=dict(hosts=['example.com'],resource_hosts=[],references=[dict(name='index.html',url='https://example.com/')])
+        self.assertEqual(validate_inspection(valid),valid)
+        for value in [None,[],{},dict(valid,hosts=False),dict(valid,resource_hosts=[None]),dict(valid,references=[dict(name=False,url='/')]),dict(valid,references=[dict(name='x',url='/',extra=True)]),dict(valid,extra=[])]:
+            with self.subTest(value=value),self.assertRaises(ValueError):validate_inspection(value)
+
     def test_url_boundaries(self):
         for suffix in ['/path','?q=x','#fragment',':8443/path']:
             self.assertEqual(hosts('HTTPS://Example.COM'+suffix),{'example.com'})
@@ -89,6 +96,19 @@ class OutputTests(unittest.TestCase):
             index=output/'index.html';original=index.read_text(encoding='utf-8')
             index.write_text(original+'<a href="drafts/missing.html">Broken local reference</a>',encoding='utf-8')
             with self.assertRaises(AssertionError):check_artifact(output,inventory)
+            index.write_text(original,encoding='utf-8')
+            # The review's four exact bypasses must fail the real artifact
+            # checker, not only the isolated source extractor.
+            for payload in [
+                '<meta http-equiv="refresh" content="0,url=https://evil.invalid">',
+                '<iframe srcdoc="&lt;img src=&quot;https://evil.invalid/a&quot;&gt;"></iframe>',
+                '<iframe srcdoc="&lt;img src=&quot;https://ev&amp;#105;l.invalid/a&quot;&gt;"></iframe>',
+                '<style>body{background-image:image-set("https://evil.invalid/a" 1x)}</style>',
+                '<script>const u=`${fetch(`https://evil.invalid/a`)}`;</script>',
+            ]:
+                with self.subTest(payload=payload):
+                    index.write_text(original+payload,encoding='utf-8')
+                    with self.assertRaises(AssertionError):check_artifact(output,inventory)
             index.write_text(original,encoding='utf-8')
             (output/'assets/injected.js').write_text('fetch("https://x.com/active")',encoding='utf-8')
             with self.assertRaises(AssertionError):check_artifact(output,inventory)

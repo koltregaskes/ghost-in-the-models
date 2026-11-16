@@ -82,14 +82,29 @@ enforced Actions source and the existing owner verifies it. This patch changes
 no Pages, account, DNS or security settings. Source-repository visibility and
 history are unaffected by artifact exclusion.
 
-The guard extracts complete HTML attribute values before decoding HTML5 entities,
-uses HTML srcset candidate rules, decodes CSS url()/@import arguments and JS
-string escapes, then asks Node's WHATWG URL parser for the actual destination.
-Malformed URLs fail. The standard-library Python HTML extractor and Node lexer
-follow KT Photography PR #40's round-three design; no package is installed.
-Unknown dynamic external templates fail explicitly. Runtime/obfuscated URL
-construction still needs a browser/network review; static checks are not a
-complete JavaScript execution analysis.
+The guard follows KT Photography PR #40 at cf0cabb: structured extraction reads
+complete attribute values before HTML5 entity decoding, srcset candidates,
+strict semicolon/comma refresh destinations, recursive srcdoc, CSS url(),
+@import and image-set(), and JavaScript strings and template expressions.
+An independent backstop sweeps every URL-like token after entity and JS/CSS
+escape normalisation, including comments and prose. Both layers use WHATWG URL
+parsing. Malformed references, unsupported refresh syntax, excessive nesting
+and malformed helper output fail explicitly. Python and Node need no packages.
+
+Only reviewed inert text can use config/privacy-non-request-mentions.json.
+An entry needs kind "non-request mention", an exact artifact path, an exact
+hostname and a reason. Unused entries fail. A structured reference can never
+use an entry, even when the same host is also reviewed in the host inventory.
+Active resources must pass the narrower resource-host inventory; a reviewed
+navigation destination does not authorise an image, stylesheet or fetch.
+
+Threat model: these checks catch accidental or unreviewed third-party
+references in the allowlisted artifact's text. They do not prove arbitrary
+JavaScript safe: runtime string assembly, obfuscation, remote code, redirects,
+server behaviour and future third-party responses need separate review and
+browser/network evidence. The backstop intentionally over-reports inert text;
+review its exact file and reason before adding an exception. This is a source
+guard, not a sandbox, request trace or enforcement of legacy main:/ Pages.
 
 scripts/public_artifact.py is the shared allowlist/builder used by both this
 patch and PR #49's pinned signature verifier. Integrate that same file and

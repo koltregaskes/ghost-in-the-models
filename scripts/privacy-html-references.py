@@ -9,6 +9,34 @@ import sys
 ENTITY = re.compile(r"&(#(?:[xX][0-9a-fA-F]+|[0-9]+);?|[A-Za-z][A-Za-z0-9]*;?)")
 ATTRIBUTE = re.compile(r'''([^\s/=<>`]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?''')
 URL_ATTRIBUTES = {"href", "src", "action", "formaction", "poster", "data", "cite", "background", "longdesc", "manifest", "xlink:href"}
+ASCII_SPACE = "\t\n\f\r "
+
+
+def refresh_destination(content):
+    # Accept the supported declarative-refresh grammar explicitly. A syntax we
+    # cannot classify must fail, never leave an active URL to a mention exception.
+    delay = re.match(r"^[\t\n\f\r ]*[0-9]+(?:\.[0-9]+)?", content)
+    if not delay:
+        raise ValueError("Unsupported refresh delay")
+    remainder = content[delay.end():].strip(ASCII_SPACE)
+    if not remainder:
+        return ""  # Delay-only refresh reloads the current document.
+    if remainder[0] not in ";,":
+        raise ValueError("Unsupported refresh separator")
+    destination = remainder[1:].strip(ASCII_SPACE)
+    if destination.startswith((";", ",")):
+        raise ValueError("Unsupported refresh separator")
+    if destination[:3].lower() == "url":
+        marker = re.match(r"url[\t\n\f\r ]*=[\t\n\f\r ]*", destination, re.I)
+        if not marker:
+            raise ValueError("Unsupported refresh URL marker")
+        destination = destination[marker.end():]
+    if destination.startswith(('"', "'")):
+        end = destination.find(destination[0], 1)
+        if end < 0 or destination[end + 1:].strip(ASCII_SPACE):
+            raise ValueError("Unsupported quoted refresh destination")
+        destination = destination[1:end]
+    return destination
 
 
 def decode_attribute(value):
@@ -50,21 +78,21 @@ class References(HTMLParser):
             self.base = attrs["href"]
         for name, value in attrs.items():
             if name in URL_ATTRIBUTES:
-                self.references.append({"kind": "url", "value": value, "resource": name in {"src", "poster", "data", "background"} or tag == "link" and any(rel in attrs.get("rel", "").split() for rel in {"stylesheet", "icon", "preconnect", "preload", "prefetch", "dns-prefetch"})})
+                self.references.append({"kind": "url", "value": value, "resource": name in {"src", "poster", "data", "background"} or tag == "link" and any(rel in attrs.get("rel", "").lower().split() for rel in {"stylesheet", "icon", "preconnect", "preload", "prefetch", "dns-prefetch"})})
             elif name in {"srcset", "imagesrcset"}:
-                self.references.append({"kind": "srcset", "value": value, "resource": True})
+                self.references.append({"kind": "srcset", "value": value})
             elif name == "ping":
                 self.references.extend({"kind": "url", "value": v} for v in re.split(r"[\t\n\f\r ]+", value.strip()) if v)
             elif name == "style":
                 self.references.append({"kind": "css", "value": value})
+            elif name == "srcdoc":
+                self.references.append({"kind": "html", "value": value})
             elif name.startswith("on"):
                 self.references.append({"kind": "js", "value": value})
         if tag == "meta" and attrs.get("property", attrs.get("name", "")).lower() in {"og:url", "og:image", "twitter:image", "twitter:url"}:
             self.references.append({"kind": "url", "value": attrs.get("content", "")})
         if tag == "meta" and attrs.get("http-equiv", "").lower() == "refresh":
-            match = re.search(r"(?:^|;)\s*url\s*=\s*(.*)$", attrs.get("content", ""), re.I)
-            if match:
-                self.references.append({"kind": "url", "value": match[1].strip().strip("\"'"), "resource": True})
+            self.references.append({"kind": "url", "value": refresh_destination(attrs.get("content", "")), "resource": True})
         if tag in {"script", "style"}:
             self.raw_kind = "js" if tag == "script" else "css"
             self.raw_parts = []
@@ -85,18 +113,43 @@ class References(HTMLParser):
             self.raw_parts = []
 
 
-def extract(source):
+def extract(source, decode_only=False):
+    if not isinstance(source, str):
+        raise ValueError("Invalid source")
+    decoded = source
+    for _ in range(16):
+        following = html.unescape(decoded)
+        if following == decoded:
+            break
+        decoded = following
+    else:
+        raise ValueError("Entity nesting exceeds the inspection limit")
+    if decode_only:
+        return {"decodedText": decoded}
     parser = References()
     parser.feed(source)
     parser.close()
-    return {"base": parser.base, "references": parser.references}
+    references = [{**ref, "resource": ref.get("resource", False)} for ref in parser.references]
+    return {"base": parser.base, "references": references, "decodedText": decoded}
 
 
 if __name__ == "__main__":
     try:
         source = sys.stdin.buffer.read().decode("utf-8")
-        result = [extract(value) for value in json.loads(source)] if "--batch" in sys.argv else extract(source)
+        if sys.argv[1:] == ["--batch"]:
+            values = json.loads(source)
+            if not isinstance(values, list):
+                raise ValueError("Invalid batch")
+            result = []
+            for entry in values:
+                if not isinstance(entry, dict) or set(entry) != {"source", "html"} or not isinstance(entry["html"], bool):
+                    raise ValueError("Invalid batch entry")
+                result.append(extract(entry["source"], not entry["html"]))
+        elif sys.argv[1:] in ([], ["--decode-text"]):
+            result = extract(source, bool(sys.argv[1:]))
+        else:
+            raise ValueError("Unknown helper mode")
         print(json.dumps(result))
     except Exception:
-        print("Cannot extract complete HTML references", file=sys.stderr)
+        print("Cannot extract HTML references", file=sys.stderr)
         sys.exit(1)

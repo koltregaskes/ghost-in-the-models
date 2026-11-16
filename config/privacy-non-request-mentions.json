@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "mentions": [
+    {
+      "kind": "non-request mention",
+      "file": "cross-site-nav.js",
+      "host": "$",
+      "reason": "The backstop decodes the inert slash-matching regular expression in replace(/\\/$/, '') into the URL-like text //$. This expression removes a trailing slash from a route key and never makes a request. Structured references to this host remain forbidden."
+    }
+  ]
+}

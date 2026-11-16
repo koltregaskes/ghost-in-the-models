@@ -1,19 +1,11 @@
 // Complete references first, WHATWG URL parsing second. No hostname regex.
-import {spawnSync} from 'node:child_process';
-import {fileURLToPath, pathToFileURL} from 'node:url';
+import {pathToFileURL} from 'node:url';
 import {readFileSync} from 'node:fs';
-import {sourceReferences, cssReferences, jsReferenceEntries, srcsetReferences} from './privacy-source-references.mjs';
+import {htmlReferences, batchReferences, cssReferences, jsReferenceEntries, srcsetReferences} from './privacy-source-references.mjs';
+import {backstopHosts,validateMentions} from './privacy-backstop.mjs';
 
 const BASE='https://ghostinthemodels.com/';
-const helper=fileURLToPath(new URL('./privacy-html-references.py',import.meta.url));
 const fail=message=>{throw Error(message);};
-
-function htmlBatch(values) {
-  if(!values.length)return [];
-  const output=spawnSync(process.platform==='win32'?'python':'python3',[helper,'--batch'],{input:JSON.stringify(values),encoding:'utf8',maxBuffer:32*1024*1024});
-  if(output.error || output.status!==0)fail('Cannot extract complete HTML references');
-  try{return JSON.parse(output.stdout);}catch{fail('Malformed HTML extraction result');}
-}
 
 function literals(source,kind) {
   if(kind==='js')return jsReferenceEntries(source);
@@ -46,42 +38,64 @@ function complete(value,base) {
   return url;
 }
 
-export function inspectSources(sources) {
-  const html=htmlBatch(sources.filter(s=>s.kind==='html').map(s=>s.source));let htmlIndex=0;
+export function inspectSources(sources,{mentions={version:1,mentions:[]}}={}) {
+  if(!Array.isArray(sources)||sources.some(file=>!file||typeof file.name!=='string'||typeof file.source!=='string'||!['html','js','css','text','url'].includes(file.kind)||file.baseURL!==undefined&&typeof file.baseURL!=='string'))fail('Invalid public source batch');
+  const exceptions=validateMentions(mentions),used=new Set();
+  const extracted=batchReferences(sources);
   const all=new Set(),resources=new Set(),references=[];
-  for(const file of sources) {
+  for(const [index,file] of sources.entries()) {
     const initial=file.baseURL || new URL(file.name || '',BASE).href;
-    const parsed=file.kind==='html'?html[htmlIndex++]:null;
-    const base=parsed?.base===null || parsed?.base===undefined ? complete(initial,BASE) : complete(parsed.base,initial);
-    if(base.hostname)all.add(base.hostname);
-    const entries=parsed?parsed.references.flatMap(ref=>literals(ref.value,ref.kind).map(v=>({...v,resource:ref.resource || v.resource,local:ref.kind==='url'||ref.kind==='srcset'||ref.kind==='css'}))):literals(file.source,file.kind);
-    function inspect(entry,depth=0) {
-      if(depth>3)fail('Unsupported recursive reference template');
+    const structured=new Set();
+    function remember(url,resource=false) {
+      if(url.hostname){structured.add(url.hostname);all.add(url.hostname);if(resource)resources.add(url.hostname);}
+    }
+    function document(parsed,initialBase,depth) {
+      if(depth>32)fail('Nested HTML exceeds the inspection limit');
+      const base=complete(parsed.base??initialBase,initialBase);
+      remember(base);
+      for(const ref of parsed.references) {
+        if(ref.kind==='html'){document(htmlReferences(ref.value),base.href,depth+1);continue;}
+        for(const entry of literals(ref.value,ref.kind))inspect({...entry,resource:ref.resource||entry.resource,local:['url','srcset','css'].includes(ref.kind)},base,depth);
+      }
+    }
+    function inspect(entry,base,depth=0) {
+      if(depth>32)fail('Unsupported recursive reference template');
       const value=entry.value;
       // HTML built by a JS string is parsed as HTML before its attribute URLs.
       if(/<[a-z!][\s\S]*>/i.test(value) && !/^data:/i.test(value)) {
-        const nested=sourceReferences(value,'html');
-        for(const ref of nested.values)inspect({value:ref,resource:entry.resource},depth+1);
+        document(htmlReferences(value),base.href,depth+1);
         return;
       }
       const url=complete(value,base);
-      if(url.hostname) {
-        all.add(url.hostname);
-        if(entry.resource)resources.add(url.hostname);
-      }
+      remember(url,entry.resource);
       if(entry.local || file.kind==='css')references.push({name:file.name || '',url:url.href});
     }
-    for(const entry of entries)inspect(entry);
+    const base=complete(initial,BASE);
+    if(file.kind==='html')document(extracted[index],base.href,0);
+    else {remember(base);for(const entry of literals(file.source,file.kind))inspect(entry,base);}
     // Script-relative contact JSON is an actual same-origin fetch, unlike an
     // arbitrary string literal. Keep its source URL as the resolution base.
     if(file.kind==='js')for(const m of file.source.matchAll(/new URL\(\s*(['"])([^'"]+)\1\s*,\s*document\.currentScript\.src\s*\)/g)) {
       const url=complete(m[2],initial);references.push({name:file.name,url:url.href});
     }
+    for(const host of backstopHosts(file.source,{baseURL:base.href,decodedText:extracted[index].decodedText})) {
+      const exception=exceptions.find(entry=>entry.file===file.name&&entry.host===host);
+      if(exception&&!structured.has(host))used.add(exception);
+      else all.add(host);
+    }
+    // An entry is never allowed to excuse an active host, even when that host
+    // is also reviewed elsewhere in the inventory. Require its removal.
+    if(exceptions.some(entry=>entry.file===file.name&&structured.has(entry.host)))fail('Active reference cannot use a non-request mention exception');
   }
+  if(exceptions.some(entry=>!used.has(entry)))fail('Unused non-request mention exception');
   return {hosts:[...all].sort(),resource_hosts:[...resources].sort(),references};
 }
 
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
-  try{process.stdout.write(JSON.stringify(inspectSources(JSON.parse(readFileSync(0,'utf8'))))+'\n');}
+  try{
+    const payload=JSON.parse(readFileSync(0,'utf8'));
+    if(!payload||Array.isArray(payload)||Object.keys(payload).sort().join('|')!=='mentions|sources')fail('Invalid inspection input');
+    process.stdout.write(JSON.stringify(inspectSources(payload.sources,{mentions:payload.mentions}))+'\n');
+  }
   catch{console.error('Cannot parse complete public references; malformed or unsupported input');process.exitCode=1;}
 }
