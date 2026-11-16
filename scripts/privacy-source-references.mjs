@@ -203,7 +203,7 @@ export function srcsetReferences(source) {
 export function sourceReferences(source,kind) {
     if(kind==='css')return {base:null,values:cssReferences(source)};
     if(kind==='js')return {base:null,values:jsReferences(source)};
-    if(kind==='url')return {base:null,values:[source]};
+    if(['url','load-url','document-url'].includes(kind))return {base:null,values:[source]};
     if(kind==='srcset')return {base:null,values:srcsetReferences(source)};
     if(kind!=='html')fail();
     const parsed=runHtmlHelper(source);
@@ -215,7 +215,7 @@ export function validateHtmlHelperOutput(parsed,decodeOnly=false) {
     if(!exactKeys(parsed,decodeOnly?['decodedText']:['base','references','decodedText'])||typeof parsed.decodedText!=='string')fail();
     if(!decodeOnly){
         if(parsed.base!==null&&typeof parsed.base!=='string'||!Array.isArray(parsed.references))fail();
-        for(const ref of parsed.references)if(!exactKeys(ref,['kind','value','resource'])||!['url','srcset','css','js','html'].includes(ref.kind)||typeof ref.value!=='string'||typeof ref.resource!=='boolean')fail();
+        for(const ref of parsed.references)if(!exactKeys(ref,['kind','value','resource'])||!['url','load-url','document-url','srcset','css','js','html'].includes(ref.kind)||typeof ref.value!=='string'||typeof ref.resource!=='boolean')fail();
     }
     return parsed;
 }

@@ -97,6 +97,11 @@ class OutputTests(unittest.TestCase):
             index.write_text(original+'<a href="drafts/missing.html">Broken local reference</a>',encoding='utf-8')
             with self.assertRaises(AssertionError):check_artifact(output,inventory)
             index.write_text(original,encoding='utf-8')
+            for row in json.loads((ROOT/'scripts/fixtures/privacy-round5.json').read_text(encoding='utf-8')):
+                with self.subTest(round5=row['case']):
+                    index.write_text(original+row['source'],encoding='utf-8')
+                    with self.assertRaises(AssertionError):check_artifact(output,inventory)
+            index.write_text(original,encoding='utf-8')
             # The review's four exact bypasses must fail the real artifact
             # checker, not only the isolated source extractor.
             for payload in [

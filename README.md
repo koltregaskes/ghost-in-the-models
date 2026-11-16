@@ -106,6 +106,17 @@ browser/network evidence. The backstop intentionally over-reports inert text;
 review its exact file and reason before adding an exception. This is a source
 guard, not a sandbox, request trace or enforcement of legacy main:/ Pages.
 
+HTML and SVG data: documents in iframe/frame, object and embed loading
+attributes are decoded and inspected recursively, including percent-encoded
+and base64 payloads. Unsupported document encodings, malformed bytes and
+excessive nesting fail closed. The independent sweep also inspects decoded
+data: text and percent escapes. SVG image references, link resources and ping
+are automatic loads; navigation hosts cannot authorise them. Indirect JavaScript
+targets such as `fetch(u)` and `img.src = u` remain outside this static guard's
+scope and require runtime verification.
+Document decoding supports UTF-8 and ASCII; non-ASCII HTML requires an explicit
+UTF-8 charset, and unsupported charset/XML encodings fail explicitly.
+
 scripts/public_artifact.py is the shared allowlist/builder used by both this
 patch and PR #49's pinned signature verifier. Integrate that same file and
 verify essay hashes inside the exact _site directory before uploading it.

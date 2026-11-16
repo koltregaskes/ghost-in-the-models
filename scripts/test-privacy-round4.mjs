@@ -97,7 +97,7 @@ for(const [label,payload] of [
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'gitm-parser-schema-'));
   // Keep fixtures in the test temporary directory; no site code is executed.
   await fs.writeFile(path.join(directory,'package.json'),'{"type":"module"}');
-  for(const name of ['privacy-hosts.mjs','privacy-source-references.mjs','privacy-backstop.mjs'])await fs.copyFile(fileURLToPath(new URL(name,import.meta.url)),path.join(directory,name));
+  for(const name of ['privacy-hosts.mjs','privacy-source-references.mjs','privacy-backstop.mjs','privacy-data-documents.mjs'])await fs.copyFile(fileURLToPath(new URL(name,import.meta.url)),path.join(directory,name));
   await fs.writeFile(path.join(directory,'privacy-html-references.py'),'import sys\nsys.stdout.write('+JSON.stringify(JSON.stringify(payload))+')\n');
   const input={sources:[source('<img src="https://evil.invalid/a">')],mentions:{version:1,mentions:[]}};
   const result=spawnSync(process.execPath,[path.join(directory,'privacy-hosts.mjs')],{input:JSON.stringify(input),encoding:'utf8'});

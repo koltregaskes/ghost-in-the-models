@@ -3,6 +3,7 @@ import {pathToFileURL} from 'node:url';
 import {readFileSync} from 'node:fs';
 import {htmlReferences, batchReferences, cssReferences, jsReferenceEntries, srcsetReferences} from './privacy-source-references.mjs';
 import {backstopHosts,validateMentions} from './privacy-backstop.mjs';
+import {decodeDataURL,MAX_DOCUMENT_DEPTH} from './privacy-data-documents.mjs';
 
 const BASE='https://ghostinthemodels.com/';
 const fail=message=>{throw Error(message);};
@@ -12,6 +13,7 @@ function literals(source,kind) {
   if(kind==='css')return cssReferences(source).map(value=>({value,resource:true}));
   if(kind==='srcset')return srcsetReferences(source).map(value=>({value,resource:true}));
   if(kind==='url')return [{value:source,resource:false}];
+  if(kind==='load-url'||kind==='document-url')return [{value:source,resource:true,document:kind==='document-url'}];
   if(kind==='text') {
     // Text/XML/Markdown discovery files are navigation/metadata. Extract complete
     // element text, attribute values or Markdown link destinations, never an
@@ -50,16 +52,16 @@ export function inspectSources(sources,{mentions={version:1,mentions:[]}}={}) {
       if(url.hostname){structured.add(url.hostname);all.add(url.hostname);if(resource)resources.add(url.hostname);}
     }
     function document(parsed,initialBase,depth) {
-      if(depth>32)fail('Nested HTML exceeds the inspection limit');
+      if(depth>MAX_DOCUMENT_DEPTH)fail('Nested HTML exceeds the inspection limit');
       const base=complete(parsed.base??initialBase,initialBase);
       remember(base);
       for(const ref of parsed.references) {
         if(ref.kind==='html'){document(htmlReferences(ref.value),base.href,depth+1);continue;}
-        for(const entry of literals(ref.value,ref.kind))inspect({...entry,resource:ref.resource||entry.resource,local:['url','srcset','css'].includes(ref.kind)},base,depth);
+        for(const entry of literals(ref.value,ref.kind))inspect({...entry,resource:ref.resource||entry.resource,local:['url','load-url','document-url','srcset','css'].includes(ref.kind)},base,depth);
       }
     }
     function inspect(entry,base,depth=0) {
-      if(depth>32)fail('Unsupported recursive reference template');
+      if(depth>MAX_DOCUMENT_DEPTH)fail('Unsupported recursive reference template');
       const value=entry.value;
       // HTML built by a JS string is parsed as HTML before its attribute URLs.
       if(/<[a-z!][\s\S]*>/i.test(value) && !/^data:/i.test(value)) {
@@ -67,6 +69,10 @@ export function inspectSources(sources,{mentions={version:1,mentions:[]}}={}) {
         return;
       }
       const url=complete(value,base);
+      if(entry.document&&url.protocol==='data:'){
+        const embedded=decodeDataURL(url.href);
+        if(embedded.kind)document(htmlReferences(embedded.source),base.href,depth+1);
+      }
       remember(url,entry.resource);
       if(entry.local || file.kind==='css')references.push({name:file.name || '',url:url.href});
     }
