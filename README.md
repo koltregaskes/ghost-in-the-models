@@ -106,16 +106,42 @@ browser/network evidence. The backstop intentionally over-reports inert text;
 review its exact file and reason before adding an exception. This is a source
 guard, not a sandbox, request trace or enforcement of legacy main:/ Pages.
 
-HTML and SVG data: documents in iframe/frame, object and embed loading
-attributes are decoded and inspected recursively, including percent-encoded
-and base64 payloads. Unsupported document encodings, malformed bytes and
+The HTML extractor deliberately fails closed rather than approximating HTML5
+tree construction. After an svg or math start tag, script, style, title, desc,
+foreignObject, MathML integration points, noscript, template, textarea, xmp,
+iframe, noembed, noframes and plaintext are rejected
+until the end of that input, even after the foreign root closes. CDATA syntax
+is rejected everywhere, including incomplete declarations. Ordinary SVG shapes
+and image references remain supported. SMIL set/animation elements targeting
+href (including namespace prefixes and case variants) are rejected rather than
+interpreting their to/from/by/values attributes.
+
+Loaded data: HTML, SVG, CSS and JavaScript resources are decoded and inspected
+recursively, including percent-encoded and base64 payloads and nested imports.
+MIME type whitespace and case are normalised; all 16 WHATWG JavaScript MIME
+aliases are recognised. Every script element rejects data: in src, href or
+xlink:href, regardless of namespace or MIME, including inside srcdoc. Classic
+scripts can execute bytes irrespective of their declared data: MIME type.
+Other unsupported data: resource types fail closed, apart from an explicit
+inert raster-image/font list. Unsupported encodings, malformed bytes and
 excessive nesting fail closed. The independent sweep also inspects decoded
-data: text and percent escapes. SVG image references, link resources and ping
+data: text and percent escapes. No mention can exempt a backstop host inside a
+decoded data: view. CSS/JS data backstop hosts conservatively count as resources;
+HTML/SVG namespace and metadata hosts remain distinct from actual loads.
+SVG image references, link resources and ping
 are automatic loads; navigation hosts cannot authorise them. Indirect JavaScript
 targets such as `fetch(u)` and `img.src = u` remain outside this static guard's
 scope and require runtime verification.
 Document decoding supports UTF-8 and ASCII; non-ASCII HTML requires an explicit
 UTF-8 charset, and unsupported charset/XML encodings fail explicitly.
+Namespace prefixes are compared by local name conservatively, including SVG
+XML namespace aliases for elements and href/src attributes.
+The shared recursion limit is 32 and the data URL byte limit remains 16 MiB.
+Parser caching uses complete content and parsing mode, clones validated results
+and is bounded to 128 entries and 8 million UTF-16 units. Host/mention decisions
+are never cached. Entity-token fixed points are proven by the same Python
+decoder; a changing token triggers complete-source decoding, retaining the
+existing nesting/error behaviour. See GUARD-PARITY.md for portable regressions.
 
 scripts/public_artifact.py is the shared allowlist/builder used by both this
 patch and PR #49's pinned signature verifier. Integrate that same file and

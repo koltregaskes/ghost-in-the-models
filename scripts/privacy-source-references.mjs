@@ -4,6 +4,32 @@ import {fileURLToPath} from 'node:url';
 const htmlHelper=fileURLToPath(new URL('./privacy-html-references.py',import.meta.url));
 const asciiSpace=char=>/[\t\n\f\r ]/.test(char || 'x');
 const fail=()=>{throw Error('Cannot extract a complete source reference');};
+// Process-local, content-keyed LRU. Cache only validated successes, never host
+// decisions or mention use. Clone results so callers cannot mutate later reads.
+const helperCache=new Map(),MAX_CACHE_UNITS=8*1024*1024;
+let cacheUnits=0;
+function cached(source,decodeOnly) {
+    const key=(decodeOnly?'text:':'html:')+source,entry=helperCache.get(key);
+    if(!entry)return null;
+    helperCache.delete(key);helperCache.set(key,entry);
+    return structuredClone(entry.parsed);
+}
+function retain(source,decodeOnly,parsed) {
+    const key=(decodeOnly?'text:':'html:')+source;
+    const units=key.length+JSON.stringify(parsed).length;
+    if(units>MAX_CACHE_UNITS)return;
+    if(helperCache.has(key)){cacheUnits-=helperCache.get(key).units;helperCache.delete(key);}
+    while(helperCache.size&&(helperCache.size>=128||cacheUnits+units>MAX_CACHE_UNITS)){
+        const oldest=helperCache.keys().next().value;
+        cacheUnits-=helperCache.get(oldest).units;helperCache.delete(oldest);
+    }
+    helperCache.set(key,{parsed:structuredClone(parsed),units});cacheUnits+=units;
+}
+function retainDecoded(source,decodedText) {
+    retain(source,true,{decodedText});
+    // The helper returns the fixed point of bounded HTML entity decoding.
+    retain(decodedText,true,{decodedText});
+}
 
 function escapeValue(source, index, kind) {
     let i=index+1;
@@ -124,12 +150,12 @@ export function cssReferences(source) {
 }
 
 export function jsReferences(source, roles=false) {
-    const values=[];let i=0,canStartRegex=true;
+    const values=[];let i=0,canStartRegex=true,context='';
     while(i<source.length){
         const char=source[i];
-        if(/\s/.test(char)){i++;continue;}
-        if(source.startsWith('//',i)){const end=source.indexOf('\n',i+2);i=end<0?source.length:end;continue;}
-        if(source.startsWith('/*',i)){const end=source.indexOf('*/',i+2);if(end<0)fail();i=end+2;continue;}
+        if(/\s/.test(char)){context+=' ';i++;continue;}
+        if(source.startsWith('//',i)){const end=source.indexOf('\n',i+2);i=end<0?source.length:end;context+=' ';continue;}
+        if(source.startsWith('/*',i)){const end=source.indexOf('*/',i+2);if(end<0)fail();i=end+2;context+=' ';continue;}
         if(char==='"'||char==="'"||char==='`'){
             const raw=char==='`'&&/\bString\s*\.\s*raw\s*$/.test(source.slice(0,i));
             const part=char==='`'?templateAt(source,i,raw):stringAt(source,i,raw?'raw':'js');
@@ -139,18 +165,20 @@ export function jsReferences(source, roles=false) {
             const protocolComparison=/^https?:$/i.test(part.value)
                 && /\[\s*(?:(['"])https?:\1\s*,\s*)*$/.test(source.slice(0,i))
                 && /^(?:\s*,\s*(['"])https?:\1)*\s*\]\s*\.\s*includes\s*\(\s*[\w$.]+\.protocol\s*\)/.test(source.slice(part.end));
-            if(!protocolComparison)values.push(roles ? {value:part.value,resource:/\b(?:fetch|sendBeacon|WebSocket|EventSource|import)\s*\(\s*$/.test(source.slice(0,i))} : part.value);
-            i=part.end;canStartRegex=false;continue;
+            const resource=/\b(?:fetch|sendBeacon|WebSocket|EventSource|import)\s*\(\s*$/.test(context)
+                || /\b(?:import|export)\s+(?:[^;()]*\bfrom\s*)?$/.test(context);
+            if(!protocolComparison)values.push(roles ? {value:part.value,resource} : part.value);
+            context+='""';i=part.end;canStartRegex=false;continue;
         }
         if(char==='/'&&canStartRegex){
             let inClass=false;i++;
             while(i<source.length){if(source[i]==='\\'){i+=2;continue;}if(source[i]==='[')inClass=true;if(source[i]===']')inClass=false;if(source[i++]==='/'&&!inClass)break;}
             while(/[a-z]/i.test(source[i]||''))i++;
-            canStartRegex=false;continue;
+            context+='/regex/';canStartRegex=false;continue;
         }
         const word=source.slice(i).match(/^[a-z_$][\w$]*/i)?.[0];
-        if(word){i+=word.length;canStartRegex=['return','throw','case','delete','void','typeof','instanceof','in','of','yield','await'].includes(word);continue;}
-        canStartRegex=!/[\w)\]}]/.test(char);i++;
+        if(word){context+=word;i+=word.length;canStartRegex=['return','throw','case','delete','void','typeof','instanceof','in','of','yield','await'].includes(word);continue;}
+        context+=char;canStartRegex=!/[\w)\]}]/.test(char);i++;
     }
     return values;
 }
@@ -221,15 +249,30 @@ export function validateHtmlHelperOutput(parsed,decodeOnly=false) {
 }
 
 function runHtmlHelper(source,decodeOnly=false) {
+    const hit=cached(source,decodeOnly);if(hit)return hit;
     const result=spawnSync(process.platform==='win32'?'python':'python3',[htmlHelper,...(decodeOnly?['--decode-text']:[])],{input:source,encoding:'utf8',maxBuffer:16*1024*1024});
     if(result.status!==0)throw Error('Cannot extract HTML references; Python 3 is required');
     let parsed;try{parsed=JSON.parse(result.stdout);}catch{fail();}
     validateHtmlHelperOutput(parsed,decodeOnly);
     if(source.length&&parsed.decodedText.length===0)fail();
+    retain(source,decodeOnly,parsed);retainDecoded(source,parsed.decodedText);
     return parsed;
 }
 
-export const decodeReferenceText=source=>runHtmlHelper(source,true).decodedText;
+export function decodeReferenceText(source) {
+    const hit=cached(source,true);if(hit)return hit.decodedText;
+    // HTML's named references are ASCII alphanumeric; numeric references use
+    // decimal/hex digits. If every possible token is a Python-proven fixed
+    // point, the entire text is unchanged. If any token changes, decode the
+    // complete source as before (decoding can create a reference across tokens).
+    const tokens=[...new Set(source.match(/&(?:#(?:[xX][0-9a-fA-F]+|[0-9]+);?|[A-Za-z][A-Za-z0-9]*;?)/g)||[])];
+    const decodedTokens=new Map(tokens.map(token=>[token,cached(token,true)]));
+    const missing=tokens.filter(token=>!decodedTokens.get(token));
+    if(missing.length)batchReferences(missing.map(source=>({source,kind:'text'}))).forEach((entry,index)=>decodedTokens.set(missing[index],entry));
+    // Keep this invocation's results locally: a token list can exceed the LRU.
+    if(tokens.every(token=>decodedTokens.get(token).decodedText===token))return source;
+    return runHtmlHelper(source,true).decodedText;
+}
 
 export const jsReferenceEntries=source=>jsReferences(source,true);
 export const htmlReferences=source=>runHtmlHelper(source);
@@ -242,6 +285,11 @@ export function batchReferences(sources) {
     parsed.forEach((entry,index)=>{
         validateHtmlHelperOutput(entry,!input[index].html);
         if(input[index].source.length&&!entry.decodedText.length)fail();
+    });
+    // Do not seed until the entire batch has passed its exact schema checks.
+    parsed.forEach((entry,index)=>{
+        retain(input[index].source,!input[index].html,entry);
+        retainDecoded(input[index].source,entry.decodedText);
     });
     return parsed;
 }

@@ -51,6 +51,13 @@ export function inspectSources(sources,{mentions={version:1,mentions:[]}}={}) {
     function remember(url,resource=false) {
       if(url.hostname){structured.add(url.hostname);all.add(url.hostname);if(resource)resources.add(url.hostname);}
     }
+    function activeBackstop(source,base,resource=true) {
+      // Inside a parsed CSS/JS or decoded data view, even a backstop-only host
+      // cannot inherit an inert mention. Conservatively give it a resource role.
+      for(const host of backstopHosts(source,{baseURL:base})) {
+        structured.add(host);all.add(host);if(resource)resources.add(host);
+      }
+    }
     function document(parsed,initialBase,depth) {
       if(depth>MAX_DOCUMENT_DEPTH)fail('Nested HTML exceeds the inspection limit');
       const base=complete(parsed.base??initialBase,initialBase);
@@ -64,14 +71,19 @@ export function inspectSources(sources,{mentions={version:1,mentions:[]}}={}) {
       if(depth>MAX_DOCUMENT_DEPTH)fail('Unsupported recursive reference template');
       const value=entry.value;
       // HTML built by a JS string is parsed as HTML before its attribute URLs.
-      if(/<[a-z!][\s\S]*>/i.test(value) && !/^data:/i.test(value)) {
+      if(/<[a-z!][\s\S]*>/i.test(value) && !/^data:/i.test(value.replace(/[\t\n\r]/g,'').replace(/^[\x00-\x20]+/,''))) {
         document(htmlReferences(value),base.href,depth+1);
         return;
       }
       const url=complete(value,base);
-      if(entry.document&&url.protocol==='data:'){
-        const embedded=decodeDataURL(url.href);
-        if(embedded.kind)document(htmlReferences(embedded.source),base.href,depth+1);
+      if(entry.resource&&url.protocol==='data:'){
+        const embedded=decodeDataURL(url.href,{resource:true});
+        if(embedded.kind){
+          if(depth>=MAX_DOCUMENT_DEPTH)fail('Data resource exceeds the inspection limit');
+          activeBackstop(embedded.source,base.href,embedded.kind!=='html');
+          if(embedded.kind==='html')document(htmlReferences(embedded.source),base.href,depth+1);
+          else for(const ref of literals(embedded.source,embedded.kind))inspect({...ref,resource:true,local:true},base,depth+1);
+        }
       }
       remember(url,entry.resource);
       if(entry.local || file.kind==='css')references.push({name:file.name || '',url:url.href});
@@ -84,7 +96,10 @@ export function inspectSources(sources,{mentions={version:1,mentions:[]}}={}) {
     if(file.kind==='js')for(const m of file.source.matchAll(/new URL\(\s*(['"])([^'"]+)\1\s*,\s*document\.currentScript\.src\s*\)/g)) {
       const url=complete(m[2],initial);references.push({name:file.name,url:url.href});
     }
-    for(const host of backstopHosts(file.source,{baseURL:base.href,decodedText:extracted[index].decodedText})) {
+    const decodedHosts=new Set();
+    const swept=backstopHosts(file.source,{baseURL:base.href,decodedText:extracted[index].decodedText,decodedHosts});
+    for(const host of decodedHosts)structured.add(host);
+    for(const host of swept) {
       const exception=exceptions.find(entry=>entry.file===file.name&&entry.host===host);
       if(exception&&!structured.has(host))used.add(exception);
       else all.add(host);

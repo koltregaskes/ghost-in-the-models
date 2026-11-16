@@ -10,6 +10,13 @@ ENTITY = re.compile(r"&(#(?:[xX][0-9a-fA-F]+|[0-9]+);?|[A-Za-z][A-Za-z0-9]*;?)")
 ATTRIBUTE = re.compile(r'''([^\s/=<>`]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?''')
 URL_ATTRIBUTES = {"href", "src", "action", "formaction", "poster", "data", "cite", "background", "longdesc", "manifest", "xlink:href"}
 ASCII_SPACE = "\t\n\f\r "
+# HTMLParser has no HTML5 namespace/tree builder. Once foreign content has
+# appeared, do not guess when browser error recovery returns to HTML. Keeping
+# this flag to end of input deliberately rejects some otherwise harmless pages.
+FOREIGN_UNSUPPORTED = {"script", "style", "title", "desc", "foreignobject",
+                       "mi", "mo", "mn", "ms", "mtext", "annotation-xml",
+                       "noscript", "template", "textarea", "xmp", "iframe",
+                       "noembed", "noframes", "plaintext"}
 
 
 def reference_kind(tag, name, attrs):
@@ -80,8 +87,14 @@ class References(HTMLParser):
         self.base = None
         self.raw_kind = None
         self.raw_parts = []
+        self.foreign_seen = False
 
     def handle_starttag(self, tag, _):
+        local_tag = tag.rsplit(":", 1)[-1]
+        if local_tag in {"svg", "math"}:
+            self.foreign_seen = True
+        if self.foreign_seen and local_tag in FOREIGN_UNSUPPORTED:
+            raise ValueError("Unsupported foreign-content parsing context")
         raw = self.get_starttag_text()
         raw = raw[re.match(r"<\s*[^\s/>]+", raw).end():]
         attrs = {}
@@ -89,11 +102,23 @@ class References(HTMLParser):
             name = match[1].lower()
             if name not in attrs:  # HTML uses the first duplicate attribute.
                 attrs[name] = decode_attribute(next((v for v in match.groups()[1:] if v is not None), ""))
+        if tag.rsplit(":", 1)[-1] == "script":
+            for name, value in attrs.items():
+                clean = value.translate(str.maketrans("", "", "\t\n\r")).strip("".join(map(chr, range(33))))
+                if name.rsplit(":", 1)[-1] in {"src", "href"} and clean.lower().startswith("data:"):
+                    raise ValueError("Data URL on script element is unsupported")
+        # Reject href animation, including arbitrary namespace prefixes. It
+        # cannot be represented as a single static URL (values is a list).
+        targets = [value for name, value in attrs.items()
+                   if name.rsplit(":", 1)[-1] == "attributename"]
+        if tag.rsplit(":", 1)[-1] in {"set", "animate", "animatecolor", "animatetransform", "animatemotion"} and any(target.strip(ASCII_SPACE).rsplit(":", 1)[-1].lower() == "href" for target in targets):
+            raise ValueError("Unsupported SMIL href animation")
         if tag == "base" and self.base is None and "href" in attrs:
             self.base = attrs["href"]
         for name, value in attrs.items():
-            if name in URL_ATTRIBUTES:
-                self.references.append({"kind": reference_kind(tag, name, attrs), "value": value})
+            local_name = name.rsplit(":", 1)[-1]
+            if name in URL_ATTRIBUTES or local_name in {"src", "href"}:
+                self.references.append({"kind": reference_kind(local_tag, local_name, attrs), "value": value})
             elif name in {"srcset", "imagesrcset"}:
                 self.references.append({"kind": "srcset", "value": value})
             elif name == "ping":
@@ -116,6 +141,11 @@ class References(HTMLParser):
         self.handle_starttag(tag, attrs)
         if tag in {"script", "style"}:
             self.handle_endtag(tag)
+
+    def unknown_decl(self, data):
+        # Reject CDATA everywhere, including bogus HTML comments. HTMLParser
+        # otherwise hides markup that HTML5 can reprocess as active elements.
+        raise ValueError("Unsupported marked declaration")
 
     def handle_data(self, data):
         if self.raw_kind:
@@ -141,6 +171,8 @@ def extract(source, decode_only=False):
         raise ValueError("Entity nesting exceeds the inspection limit")
     if decode_only:
         return {"decodedText": decoded}
+    if re.search(r"<!\[CDATA\[", source, re.I):
+        raise ValueError("Unsupported CDATA syntax")
     parser = References()
     parser.feed(source)
     parser.close()

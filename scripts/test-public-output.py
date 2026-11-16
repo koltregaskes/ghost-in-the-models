@@ -115,6 +115,13 @@ class OutputTests(unittest.TestCase):
                     index.write_text(original+payload,encoding='utf-8')
                     with self.assertRaises(AssertionError):check_artifact(output,inventory)
             index.write_text(original,encoding='utf-8')
+            parity=json.loads((ROOT/'scripts/fixtures/privacy-guard-parity-probes.json').read_text(encoding='utf-8'))
+            for row in parity:
+                if row['probe']!='p48c.mjs' or not row['expected'].startswith('reject-or-'):continue
+                with self.subTest(parity=row['label']):
+                    index.write_text(original+row['source'],encoding='utf-8')
+                    with self.assertRaises((AssertionError,ValueError)):check_artifact(output,inventory)
+            index.write_text(original,encoding='utf-8')
             (output/'assets/injected.js').write_text('fetch("https://x.com/active")',encoding='utf-8')
             with self.assertRaises(AssertionError):check_artifact(output,inventory)
             (output/'assets/injected.js').write_text('',encoding='utf-8')

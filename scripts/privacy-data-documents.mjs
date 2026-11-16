@@ -1,6 +1,14 @@
 // Data URL inspection only: never navigate, evaluate, fetch or load the bytes.
 const MAX_BYTES=16*1024*1024;
 export const MAX_DOCUMENT_DEPTH=32;
+// WHATWG JavaScript MIME type essences (HTML's historical aliases included).
+export const JAVASCRIPT_MIME_TYPES=new Set([
+    'application/ecmascript','application/javascript','application/x-ecmascript','application/x-javascript',
+    'text/ecmascript','text/javascript','text/javascript1.0','text/javascript1.1',
+    'text/javascript1.2','text/javascript1.3','text/javascript1.4','text/javascript1.5',
+    'text/jscript','text/livescript','text/x-ecmascript','text/x-javascript',
+]);
+const INERT_MIME_TYPES=new Set(['image/png','image/jpeg','image/gif','image/webp','image/avif','image/bmp','image/x-icon','image/vnd.microsoft.icon','font/woff','font/woff2','font/ttf','font/otf','application/font-woff','application/font-sfnt','application/vnd.ms-fontobject']);
 
 function percentBytes(value) {
     if(/%(?![0-9a-f]{2})/i.test(value))throw Error('Malformed data URL escape');
@@ -13,7 +21,7 @@ function percentBytes(value) {
     return Buffer.concat(chunks);
 }
 
-export function decodeDataURL(value) {
+export function decodeDataURL(value,{resource=false}={}) {
     let url;try{url=new URL(value);}catch{throw Error('Malformed data URL');}
     if(url.protocol!=='data:')return null;
     const path=url.pathname,comma=path.indexOf(',');
@@ -21,10 +29,13 @@ export function decodeDataURL(value) {
     const parts=path.slice(0,comma).split(';').map(part=>part.trim().toLowerCase());
     const type=parts.shift()||'text/plain';
     const document=type==='text/html'||type==='image/svg+xml';
+    const kind=document?'html':type==='text/css'?'css':JAVASCRIPT_MIME_TYPES.has(type)?'js':null;
+    const textual=kind!==null;
+    if(resource&&!textual&&!INERT_MIME_TYPES.has(type))throw Error('Unsupported data resource MIME type');
     const base64=parts.at(-1)==='base64';
     if(base64)parts.pop();
     if(parts.some(part=>part==='base64'))throw Error('Unsupported data URL encoding');
-    if(document&&parts.some(part=>part!=='utf8'&&!/^charset\s*=\s*(?:"(?:utf-8|us-ascii)"|(?:utf-8|us-ascii))$/.test(part)))throw Error('Unsupported data document parameter');
+    if(textual&&parts.some(part=>part!=='utf8'&&!/^charset\s*=\s*(?:"(?:utf-8|us-ascii)"|(?:utf-8|us-ascii))$/.test(part)))throw Error('Unsupported data resource parameter');
     let bytes=percentBytes(path.slice(comma+1));
     if(base64){
         const text=bytes.toString('ascii').replace(/[\t\n\f\r ]/g,'');
@@ -33,17 +44,18 @@ export function decodeDataURL(value) {
         bytes=Buffer.from(text,'base64');
     }
     if(bytes.length>MAX_BYTES)throw Error('Oversized data document');
-    if(document&&bytes.includes(0))throw Error('Unsupported data document encoding');
-    if(document&&parts.some(part=>part.includes('us-ascii'))&&bytes.some(byte=>byte>127))throw Error('Non-ASCII data document');
+    if(textual&&bytes.includes(0))throw Error('Unsupported data resource encoding');
+    if(textual&&parts.some(part=>part.includes('us-ascii'))&&bytes.some(byte=>byte>127))throw Error('Non-ASCII data resource');
     if(type==='text/html'&&!parts.some(part=>part.includes('utf-8'))&&bytes.some(byte=>byte>127))throw Error('Non-ASCII HTML needs an explicit UTF-8 charset');
-    let source;try{source=new TextDecoder('utf-8',{fatal:document}).decode(bytes);}catch{throw Error('Undecodable data document');}
+    let source;try{source=new TextDecoder('utf-8',{fatal:textual}).decode(bytes);}catch{throw Error('Undecodable data resource');}
     if(document&&/<\?xml\b[^>]*\bencoding\s*=\s*['"](?!(?:utf-8|us-ascii)['"])/i.test(source))throw Error('Unsupported XML document encoding');
-    return {source,kind:document?'html':null};
+    if(kind==='css'&&/@charset\s+['"](?!(?:utf-8|us-ascii)['"])/i.test(source))throw Error('Unsupported CSS encoding');
+    return {source,kind};
 }
 
 // Independent backstop views include percent escapes and data URL bodies even
 // outside recognised request syntax. Keep originals, and bound recursive views.
-export function decodedTextViews(source) {
+export function decodedTextViews(source,{dataSources=[]}={}) {
     const views=[];
     const percent=source.replace(/(?:%[0-9a-f]{2})+/gi,part=>Buffer.from(part.match(/[0-9a-f]{2}/gi).map(byte=>parseInt(byte,16))).toString('utf8'));
     if(percent!==source)views.push(percent);
@@ -55,7 +67,8 @@ export function decodedTextViews(source) {
         // view whose decoded markup begins at the next source delimiter.
         const boundary=match.index+match[0].length;
         const value=source.slice(match.index,boundary)+source.slice(boundary,end).replace(/[)};,]+$/,'');
-        views.push(decodeDataURL(value).source);
+        const decoded=decodeDataURL(value).source;
+        views.push(decoded);dataSources.push(decoded);
     }
     return views;
 }
