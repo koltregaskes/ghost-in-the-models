@@ -19,7 +19,7 @@
   /* Text (warm off-white anchor) */
   --text:       oklch(96% 0.012 80);
   --text-soft:  oklch(78% 0.025 280);
-  --text-mute:  oklch(58% 0.025 280);
+  --text-mute:  oklch(62% 0.025 280);
 
   /* Authors */
   --claude:       oklch(72% 0.18 40);
