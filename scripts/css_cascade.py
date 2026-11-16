@@ -235,12 +235,37 @@ def gradient_colours(value,t):
     return accumulated
 
 
+@lru_cache(None)
+def media_bounds(condition):
+    if not condition.startswith('@media'):return ()
+    query=condition[len('@media'):].strip()
+    bounds=[]
+    for term in re.split(r'\s+and\s+',query):
+        match=re.fullmatch(r'\(\s*(min|max)-width\s*:\s*(\d+(?:\.\d+)?)px\s*\)',term)
+        if match:bounds.append((match[1],float(match[2])));continue
+        if term=='(prefers-reduced-motion: reduce)':continue
+        raise Unsupported('Unsupported media condition: '+condition)
+    return tuple(bounds)
+
+
+def viewport_widths(rules):
+    widths={320,390,768,1024,1280}
+    # Include every parsed width breakpoint, including layout/container blocks.
+    for _,_,conditions,_ in rules:
+        for condition in conditions:
+            if condition.startswith('@media'):media_bounds(condition)
+            for value in re.findall(r'(?:min|max)-width\s*:\s*(\d+(?:\.\d+)?)px',condition):
+                point=float(value)
+                widths.update({max(1,point-1),max(1,point),point+1})
+    return sorted(widths)
+
+
+@lru_cache(None)
 def active(conditions,width):
     for condition in conditions:
-        if condition.startswith('@media') and not re.search(r'(?:min|max)-width:|prefers-reduced-motion:',condition):raise Unsupported('Unsupported media condition: '+condition)
         if condition.startswith('@supports') and not re.fullmatch(r'@supports(?: not)? \(animation-timeline: (?:scroll|view)\(\)\)',condition):raise Unsupported('Unsupported feature condition: '+condition)
-        for bound,value in re.findall(r'(min|max)-width:\s*(\d+)px',condition):
-            if bound=='min' and width<int(value) or bound=='max' and width>int(value):return False
+        for bound,value in media_bounds(condition):
+            if bound=='min' and width<value or bound=='max' and width>value:return False
         # The current feature/container branches contain layout/reveal controls;
         # their colour-bearing extensions are rejected below rather than masked.
     return True
@@ -352,7 +377,8 @@ def computed(node,rules,width,cache,inventory):
             bgs=gradient_colours(bgvalue,t)
         elif bgvalue.startswith('url('):
             raise Unsupported('Image surface requires a rendered contrast measurement')
-        elif bgvalue in {'inherit','unset','initial'}:bgs=[[0,0,0,0]]
+        elif bgvalue=='inherit':bgs=[list(pixel) for pixel in parent['bg']]
+        elif bgvalue in {'unset','initial'}:bgs=[[0,0,0,0]]
         else:bgs=[colour(bgvalue,t)]
         opacity=float(props.get('opacity','1'))
     except ValueError as exc:raise Unsupported(str(exc)) from exc
@@ -426,9 +452,18 @@ def filtered(pixel,source):
 
 
 def audit_sources(sources):
-    pairs=[];exempt=[];inventory=set();unsupported=[];coverage=[]
+    pairs=[];exempt=[];inventory=set();unsupported=[];coverage=[];viewports={}
     for name,source in sources:
-        try:rules,animation=parse(source)
+        try:
+            rules,animation=parse(source)
+            widths=viewport_widths(rules)
+            # Reuse arithmetic only when the complete active colour cascade is
+            # identical. Every boundary width still gets its own reported pairs.
+            groups={}
+            for width in widths:
+                signature=tuple(order for _,dec,conditions,order in rules if relevant(dec) and active(conditions,width))
+                groups.setdefault(signature,[]).append(width)
+            viewports[name]=dict(widths=widths,distinct_colour_cascades=len(groups))
         except Unsupported as exc:unsupported.append(dict(file=name,error=str(exc)));continue
         voices=name=='voices.css';themes=['neutral','claude','gemini','codex','grok'] if voices else ['claude','gemini','codex','grok']
         coverage.extend(dict(file=name,selector=s,properties=[k for k,_,_ in d],conditions=list(c)) for s,d,c,_ in rules if relevant(d))
@@ -441,7 +476,8 @@ def audit_sources(sources):
                     unsupported.append(dict(file=name,selector=selector,error='A decorative paint selector gained foreground/focus semantics'));continue
                 exempt.append(dict(file=name,selector=selector,reason='named non-text artwork paint'));continue
             for theme in themes:
-                for width in [320,390,1280]:
+                for equivalent in groups.values():
+                    width=equivalent[0]
                     if not active(conditions,width):continue
                     for state in [set(),{'hover','focus','focus-visible'},{'sibling-hover'}]:
                         try:
@@ -449,7 +485,8 @@ def audit_sources(sources):
                             found,reason=pairs_for(target,rules,width,inventory)
                             if reason:exempt.append(dict(file=name,selector=selector,theme=theme,width=width,reason=reason))
                             for value,threshold,role in found:
-                                pairs.append(dict(file=name,selector=selector,theme=theme,width=width,state='sibling-hover' if 'sibling-hover' in state else 'interactive' if state else 'normal',role=role,ratio=round(value,5),threshold=threshold))
+                                for sampled_width in equivalent:
+                                    pairs.append(dict(file=name,selector=selector,theme=theme,width=sampled_width,state='sibling-hover' if 'sibling-hover' in state else 'interactive' if state else 'normal',role=role,ratio=round(value,5),threshold=threshold))
                         except (ValueError,KeyError) as exc:unsupported.append(dict(file=name,selector=selector,theme=theme,width=width,error=str(exc)))
     if not pairs and not unsupported:unsupported.append(dict(error='No colour pairs were examined; empty coverage cannot pass'))
-    return dict(declarations=coverage,pairs=pairs,failures=[p for p in pairs if p['ratio']+.00001<p['threshold']],unsupported=unsupported,exceptions=exempt,computed_value_notes=sorted(inventory))
+    return dict(declarations=coverage,pairs=pairs,failures=[p for p in pairs if p['ratio']+.00001<p['threshold']],unsupported=unsupported,exceptions=exempt,computed_value_notes=sorted(inventory),viewports=viewports)

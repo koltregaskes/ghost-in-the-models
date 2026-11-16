@@ -28,34 +28,45 @@ def resolve(value,tokens):
     return value
 
 
-def colour(value,tokens):
+def interpolation_colour(value,tokens):
+    from colour_spaces import mix
     value=resolve(value,tokens).strip().lower()
-    if value in ('inherit','currentcolor'): return colour(tokens['__ink'],tokens)
-    if value in ('transparent','none'): return [0,0,0,0]
-    if value in ('black','white'): return [0,0,0,1] if value=='black' else [1,1,1,1]
+    if value in ('inherit','currentcolor'):return interpolation_colour(tokens['__ink'],tokens)
+    if value in ('transparent','none'):return 'srgb',[0,0,0],0
+    if value in ('black','white'):return 'srgb',([0,0,0] if value=='black' else [1,1,1]),1
     if value.startswith('#'):
-        h=value[1:];h=''.join(c*2 for c in h) if len(h) in (3,4) else h
+        h=value[1:]
+        if len(h) not in {3,4,6,8} or not re.fullmatch('[0-9a-f]+',h):raise ValueError('Invalid hex colour')
+        if len(h) in {3,4}:h=''.join(c*2 for c in h)
         c=[int(h[i:i+2],16)/255 for i in range(0,len(h),2)]
-        return c+[1] if len(c)==3 else c
-    if value.startswith('color-mix('):
-        mode,a,b=split(value[10:-1]);m=re.fullmatch(r'(.*?)\s+([\d.]+)%',a)
-        weight=float(m[2])/100 if m else .5
-        first=colour(m[1] if m else a,tokens);second=colour(b,tokens)
-        alpha=first[3]*weight+second[3]*(1-weight)
-        return [(first[i]*first[3]*weight+second[i]*second[3]*(1-weight))/alpha if alpha else 0 for i in range(3)]+[alpha]
-    if value.startswith('oklch('):
-        terms=value[6:-1].replace('/',' ').split();light=float(terms[0].rstrip('%'))/(100 if '%' in terms[0] else 1)
-        c=float(terms[1]);angle=math.radians(float(terms[2]));a=c*math.cos(angle);b=c*math.sin(angle)
-        l=(light+.3963377774*a+.2158037573*b)**3
-        m=(light-.1055613458*a-.0638541728*b)**3
-        s=(light-.0894841775*a-1.291485548*b)**3
-        linear=[4.0767416621*l-3.3077115913*m+.2309699292*s,-1.2684380046*l+2.6097574011*m-.3413193965*s,-.0041960863*l-.7034186147*m+1.707614701*s]
-        rgb=[max(0,min(1,12.92*x if x<=.0031308 else 1.055*x**(1/2.4)-.055)) for x in linear]
-        return rgb+[float(terms[3]) if len(terms)>3 else 1]
-    if value.startswith(('rgb(','rgba(')):
+        return 'srgb',c[:3],c[3] if len(c)==4 else 1
+    if value.startswith('color-mix(') and value.endswith(')'):
+        parts=split(value[10:-1])
+        if len(parts)!=3:raise ValueError('color-mix requires two colours')
+        parsed=[]
+        for part in parts[1:]:
+            match=re.fullmatch(r'(.*?)\s+([\d.]+)%',part)
+            parsed.append((interpolation_colour(match[1] if match else part,tokens),float(match[2]) if match else None))
+        return mix(parts[0],parsed[0][0],parsed[1][0],parsed[0][1],parsed[1][1])
+    if value.startswith(('oklab(','oklch(')) and value.endswith(')'):
+        name=value[:5];terms=value[6:-1].replace('/',' ').split()
+        if len(terms) not in {3,4} or any('%' in v for v in terms[1:]):raise ValueError('Unsupported OKLab/OKLCH syntax')
+        light=float(terms[0].rstrip('%'))/(100 if '%' in terms[0] else 1)
+        coords=[light,float(terms[1]),float(terms[2])]
+        return name,coords,float(terms[3]) if len(terms)==4 else 1
+    if value.startswith(('rgb(','rgba(')) and value.endswith(')'):
         terms=re.split(r'[, /]+',value[value.index('(')+1:-1])
-        return [float(x)/255 for x in terms[:3]]+[float(terms[3]) if len(terms)>3 else 1]
+        if len(terms) not in {3,4}:raise ValueError('Unsupported RGB syntax')
+        return 'srgb',[float(x)/255 for x in terms[:3]],float(terms[3]) if len(terms)==4 else 1
     raise ValueError('Unrecognised colour: '+value)
+
+
+def colour(value,tokens):
+    from colour_spaces import convert
+    space,coords,alpha=interpolation_colour(value,tokens)
+    if not 0<=alpha<=1:raise ValueError('Unsupported alpha outside 0..1')
+    rgb=convert(coords,space,'srgb')
+    return [max(0,min(1,v)) for v in rgb]+[alpha]
 
 
 def over(a,b): return [a[i]*a[3]+b[i]*(1-a[3]) for i in range(3)]+[1]
