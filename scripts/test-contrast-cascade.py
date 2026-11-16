@@ -99,4 +99,34 @@ class RoundFourTests(unittest.TestCase):
             for expected,actual in zip(rgb,convert(convert(rgb,'srgb','oklab'),'oklab','srgb')):self.assertAlmostEqual(expected,actual,places=5)
 
 
+class RoundFiveTests(unittest.TestCase):
+    def test_currentcolor_in_color_mix_uses_parent_ink(self):
+        for keyword in ['currentColor','currentcolor','CURRENTCOLOR']:
+            with self.subTest(keyword=keyword):
+                r=report('body{color:#000;background:#000}.review-current{color:color-mix(in srgb,'+keyword+' 95%,white)}')
+                pairs=[p for p in r['pairs'] if p['selector']=='.review-current']
+                self.assertFalse(r['unsupported']);self.assertTrue(pairs)
+                self.assertAlmostEqual(pairs[0]['ratio'],1.07872,places=4)
+                self.assertTrue(all(p['ratio']<4.5 for p in pairs))
+    def test_keyword_case_inherits_dark_ink(self):
+        for keyword in ['currentColor','currentcolor','CURRENTCOLOR','inherit','INHERIT','UnSeT']:
+            with self.subTest(keyword=keyword):
+                r=report('body{color:#000;background:#000}.review-current{COLOR:'+keyword+'}')
+                self.assertFalse(r['unsupported']);self.assertTrue(any(p['selector']=='.review-current' and p['ratio']==1 for p in r['failures']))
+    def test_background_keywords_case_and_custom_property_case(self):
+        r=report('body{background:#000;color:#eee}.review-current{--Ink:#000;--ink:#fff;BACKGROUND:INHERIT;COLOR:VAR(--Ink)}')
+        self.assertFalse(r['unsupported']);self.assertTrue(any(p['selector']=='.review-current' and p['ratio']==1 for p in r['failures']))
+    def test_default_preference_cannot_be_masked_by_reduce(self):
+        r=report('.review-motion{color:#000;background:#000}@media (prefers-reduced-motion: reduce){.review-motion{color:#fff}}')
+        self.assertFalse(r['unsupported'])
+        self.assertTrue(any(p['selector']=='.review-motion' and p['preference']=='no-preference' for p in r['failures']))
+        self.assertTrue(any(p['selector']=='.review-motion' and p['preference']=='reduce' and p['ratio']==21 for p in r['pairs']))
+    def test_explicit_no_preference_and_uppercase_queries(self):
+        r=report('.review-motion{color:#fff;background:#000}@MEDIA (PREFERS-REDUCED-MOTION: NO-PREFERENCE){.review-motion{color:#000}}')
+        self.assertFalse(r['unsupported']);self.assertTrue(any(p['selector']=='.review-motion' and p['preference']=='no-preference' for p in r['failures']))
+    def test_other_preference_features_fail_explicitly(self):
+        r=report('@media (prefers-contrast: more){.review-motion{color:#000}}')
+        self.assertTrue(r['unsupported'])
+
+
 if __name__=='__main__':unittest.main()

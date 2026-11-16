@@ -173,6 +173,7 @@ def declarations(source):
         if not text.strip():continue
         if ':' not in text:raise Unsupported('Invalid declaration')
         name,value=text.split(':',1);name=name.strip();value=value.strip()
+        if not name.startswith('--'):name=name.lower()
         important=bool(re.search(r'!\s*important\s*$',value,re.I))
         value=re.sub(r'!\s*important\s*$','',value,flags=re.I).strip()
         result.append((name,value,important))
@@ -192,6 +193,7 @@ def parse(source):
                 if text[i:].strip():raise Unsupported('Unsupported CSS statement: '+text[i:i+60])
                 break
             header=text[i:start].strip();body,end=balanced(text,start,'{','}');i=end
+            header=re.sub(r'^@[A-Za-z-]+',lambda m:m[0].lower(),header)
             if header.startswith('@'):
                 if header.startswith('@keyframes') or header.startswith('@view-transition'):
                     excluded.append((header,'animation frames / non-colour navigation metadata'));continue
@@ -238,12 +240,13 @@ def gradient_colours(value,t):
 @lru_cache(None)
 def media_bounds(condition):
     if not condition.startswith('@media'):return ()
-    query=condition[len('@media'):].strip()
+    query=condition[len('@media'):].strip().lower()
     bounds=[]
     for term in re.split(r'\s+and\s+',query):
         match=re.fullmatch(r'\(\s*(min|max)-width\s*:\s*(\d+(?:\.\d+)?)px\s*\)',term)
         if match:bounds.append((match[1],float(match[2])));continue
-        if term=='(prefers-reduced-motion: reduce)':continue
+        preference=re.fullmatch(r'\(\s*prefers-reduced-motion\s*:\s*(reduce|no-preference)\s*\)',term)
+        if preference:bounds.append(('motion',preference[1]));continue
         raise Unsupported('Unsupported media condition: '+condition)
     return tuple(bounds)
 
@@ -254,24 +257,26 @@ def viewport_widths(rules):
     for _,_,conditions,_ in rules:
         for condition in conditions:
             if condition.startswith('@media'):media_bounds(condition)
-            for value in re.findall(r'(?:min|max)-width\s*:\s*(\d+(?:\.\d+)?)px',condition):
+            for value in re.findall(r'(?:min|max)-width\s*:\s*(\d+(?:\.\d+)?)px',condition,re.I):
                 point=float(value)
                 widths.update({max(1,point-1),max(1,point),point+1})
     return sorted(widths)
 
 
 @lru_cache(None)
-def active(conditions,width):
+def active(conditions,width,preference='no-preference'):
     for condition in conditions:
         if condition.startswith('@supports') and not re.fullmatch(r'@supports(?: not)? \(animation-timeline: (?:scroll|view)\(\)\)',condition):raise Unsupported('Unsupported feature condition: '+condition)
         for bound,value in media_bounds(condition):
             if bound=='min' and width<value or bound=='max' and width>value:return False
+            if bound=='motion' and preference!=value:return False
         # The current feature/container branches contain layout/reveal controls;
         # their colour-bearing extensions are rejected below rather than masked.
     return True
 
 
 def expand(value,variables,seen=()):
+    value=re.sub(r'\bvar(?=\()', 'var',value,flags=re.I)
     while 'var(' in value:
         start=value.index('var(');inside,end=balanced(value,start+3);parts=split(inside);key=parts[0]
         if not re.fullmatch(r'--[\w-]+',key) or '\\' in key:raise Unsupported('Unsupported custom-property identifier')
@@ -338,12 +343,21 @@ def probe(selector,theme,voices,state):
     return target
 
 
-def computed(node,rules,width,cache,inventory):
+def keywords(value):
+    # CSS identifiers are ASCII-insensitive; strings and custom property names
+    # retain their spelling. Call this only after custom-property expansion.
+    return re.sub(r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[A-Za-z_][\w-]*''',lambda m:m[0] if m[0][0] in '\"\'' else m[0].lower(),value)
+
+
+def ink_token(ink):return 'rgba('+','.join(str(v*255) for v in ink[:3])+','+str(ink[3])+')'
+
+
+def computed(node,rules,width,cache,inventory,preference='no-preference'):
     if node in cache:return cache[node]
-    parent=computed(node.parent,rules,width,cache,inventory) if node.parent else dict(variables={},color=[1,1,1,1],opacity=1,bg=[[0,0,0,0]],properties={})
+    parent=computed(node.parent,rules,width,cache,inventory,preference) if node.parent else dict(variables={},color=[1,1,1,1],opacity=1,bg=[[0,0,0,0]],properties={})
     winners={}
     for selector,dec,conditions,order in rules:
-        if active(conditions,width) and matches(node,selector):
+        if active(conditions,width,preference) and matches(node,selector):
             for name,value,important in dec:
                 priority=(important,specificity(selector),order)
                 if name not in winners or priority>=winners[name][0]:winners[name]=(priority,value)
@@ -352,7 +366,7 @@ def computed(node,rules,width,cache,inventory):
     for name,(_,value) in winners.items():
         if name.startswith('--'):continue
         if name in COLOUR_PROPERTIES:
-            try:props[name]=expand(value,variables)
+            try:props[name]=keywords(expand(value,variables))
             except InvalidVariable:inventory.add((name,value,'invalid computed value; CSS inheritance/initial value applies'))
     if props.get('mix-blend-mode','normal')!='normal':raise Unsupported('Non-text blend artwork needs an explicit named exception')
     if props.get('background-blend-mode','normal')!='normal' or any(k in props for k in {'all','fill','stroke'}):raise Unsupported('Colour reset/blend/SVG paint needs an explicit fixture')
@@ -361,12 +375,12 @@ def computed(node,rules,width,cache,inventory):
         if 'gitm-lifewire__viewport' not in node.classes:raise Unsupported('Position-dependent mask requires a rendered measurement')
         inventory.add(('mask','lifewire viewport','explicit edge-crop artwork; pixels require rendered acceptance'))
     ink=parent['color']
-    if props.get('color') not in {None,'inherit','unset','currentColor'}:
+    if props.get('color') not in {None,'inherit','unset','currentcolor'}:
         if props['color']=='initial':ink=[0,0,0,1]
         else:
-            try:ink=colour(props['color'],{'__ink':'#ffffff'})
+            try:ink=colour(props['color'],{'__ink':ink_token(parent['color'])})
             except ValueError as exc:raise Unsupported(str(exc)) from exc
-    t={'__ink':'rgba('+','.join(str(v*255) for v in ink[:3])+','+str(ink[3])+')'}
+    t={'__ink':ink_token(ink)}
     candidates=[(winners[k][0],props[k]) for k in ['background','background-color'] if k in winners and k in props]
     bgvalue=max(candidates)[1] if candidates else 'transparent'
     if 'background-image' in props and ('background' not in winners or winners['background-image'][0]>winners['background'][0]):
@@ -392,8 +406,8 @@ def computed(node,rules,width,cache,inventory):
 DECORATIVE={'.atmosphere::before','.atmosphere::after','.noise','.reading-progress','.logo a::before','.nav-links a::after','.btn::after','.btn:hover::after','.voice-card::before','.dispatch-poster::before','.post-card::before','.post-card:hover::before','.author-badge::before','.author-profile::before','.dispatch-feature::before','body.voiced::before','.gitm-topbar__mark','.gitm-topbar__crumb-sep','.gitm-lifewire__dot','.gitm-lifewire__dot--claude','.gitm-lifewire__dot--gemini','.gitm-lifewire__dot--codex','.gitm-lifewire__dot--grok','.gitm-tone__bar','.gitm-tone__fill[data-tone="factual"]','.gitm-tone__fill[data-tone="reflective"]','.gitm-tone__fill[data-tone="argumentative"]','.gitm-tone__fill[data-tone="hedged"]'}
 
 
-def pairs_for(node,rules,width,inventory):
-    cache={};style=computed(node,rules,width,cache,inventory);props=style['properties']
+def pairs_for(node,rules,width,inventory,preference='no-preference'):
+    cache={};style=computed(node,rules,width,cache,inventory,preference);props=style['properties']
     if props.get('display')=='none' or props.get('visibility')=='hidden':return [],'explicitly hidden'
     if node.attrs.get('aria-disabled')=='true':return [],'disabled control exception'
     if style['opacity']==0:return [],'zero-opacity hidden state'
@@ -403,12 +417,12 @@ def pairs_for(node,rules,width,inventory):
     chain=[];current=node
     while current:
         chain.append(current);current=current.parent
-    if any(computed(item,rules,width,cache,inventory)['opacity']==0 or computed(item,rules,width,cache,inventory)['properties'].get('display')=='none' for item in chain):return [],'explicitly hidden ancestor'
+    if any(computed(item,rules,width,cache,inventory,preference)['opacity']==0 or computed(item,rules,width,cache,inventory,preference)['properties'].get('display')=='none' for item in chain):return [],'explicitly hidden ancestor'
     output=[]
     for fg in fgs:
         pixels=[(fg,[0,0,0,0])]
         for item in chain:
-            s=computed(item,rules,width,cache,inventory);new=[]
+            s=computed(item,rules,width,cache,inventory,preference);new=[]
             for f,b in pixels:
                 for bg in s['bg']:
                     # Both pixels pass through the same group opacity.
@@ -461,9 +475,10 @@ def audit_sources(sources):
             # identical. Every boundary width still gets its own reported pairs.
             groups={}
             for width in widths:
-                signature=tuple(order for _,dec,conditions,order in rules if relevant(dec) and active(conditions,width))
-                groups.setdefault(signature,[]).append(width)
-            viewports[name]=dict(widths=widths,distinct_colour_cascades=len(groups))
+                for preference in ['no-preference','reduce']:
+                    signature=tuple(order for _,dec,conditions,order in rules if relevant(dec) and active(conditions,width,preference))
+                    groups.setdefault(signature,[]).append((width,preference))
+            viewports[name]=dict(widths=widths,preferences=['no-preference','reduce'],distinct_colour_cascades=len(groups))
         except Unsupported as exc:unsupported.append(dict(file=name,error=str(exc)));continue
         voices=name=='voices.css';themes=['neutral','claude','gemini','codex','grok'] if voices else ['claude','gemini','codex','grok']
         coverage.extend(dict(file=name,selector=s,properties=[k for k,_,_ in d],conditions=list(c)) for s,d,c,_ in rules if relevant(d))
@@ -477,16 +492,16 @@ def audit_sources(sources):
                 exempt.append(dict(file=name,selector=selector,reason='named non-text artwork paint'));continue
             for theme in themes:
                 for equivalent in groups.values():
-                    width=equivalent[0]
-                    if not active(conditions,width):continue
+                    width,preference=equivalent[0]
+                    if not active(conditions,width,preference):continue
                     for state in [set(),{'hover','focus','focus-visible'},{'sibling-hover'}]:
                         try:
                             target=probe(selector,theme,voices,state)
-                            found,reason=pairs_for(target,rules,width,inventory)
+                            found,reason=pairs_for(target,rules,width,inventory,preference)
                             if reason:exempt.append(dict(file=name,selector=selector,theme=theme,width=width,reason=reason))
                             for value,threshold,role in found:
-                                for sampled_width in equivalent:
-                                    pairs.append(dict(file=name,selector=selector,theme=theme,width=sampled_width,state='sibling-hover' if 'sibling-hover' in state else 'interactive' if state else 'normal',role=role,ratio=round(value,5),threshold=threshold))
+                                for sampled_width,sampled_preference in equivalent:
+                                    pairs.append(dict(file=name,selector=selector,theme=theme,width=sampled_width,preference=sampled_preference,state='sibling-hover' if 'sibling-hover' in state else 'interactive' if state else 'normal',role=role,ratio=round(value,5),threshold=threshold))
                         except (ValueError,KeyError) as exc:unsupported.append(dict(file=name,selector=selector,theme=theme,width=width,error=str(exc)))
     if not pairs and not unsupported:unsupported.append(dict(error='No colour pairs were examined; empty coverage cannot pass'))
     return dict(declarations=coverage,pairs=pairs,failures=[p for p in pairs if p['ratio']+.00001<p['threshold']],unsupported=unsupported,exceptions=exempt,computed_value_notes=sorted(inventory),viewports=viewports)
