@@ -48,11 +48,9 @@ Ship `Ghost in the Models` with:
 ## Public contact configuration
 
 `config/contact.json` is the single public contact-address setting, used by the
-About page. It currently stays null because the shipped contact page only says
-"usual channels" and no working public email has been verified. Set `address`
-to the confirmed existing public inbox when supplied. Do not activate
-contact@ghostinthemodels.com until Kol confirms its routing. An unavailable or
-invalid setting preserves the existing contact wording.
+About page. It is contact@elusionworks.com, the public contact address Kol chose for
+every website on 18 Nov 2026. An unavailable or invalid setting preserves the
+existing "usual channels" wording.
 ## Public Pages artifact and privacy
 
 `python scripts/build-public.py --output _site` creates a fresh allowlisted
