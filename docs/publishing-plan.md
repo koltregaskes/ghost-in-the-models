@@ -57,7 +57,7 @@ A normal push from the GitHub token does not start the existing Pages workflow a
 Observed from this repo:
 
 - `config/site-policy.json` kept `automation.auto_publish_after_approval` false. The public note at the time said publication was paused until reviewed drafts resumed.
-- The editor/review scripts (`auto-review-draft.ps1`, `review-draft.ps1`, `publish-draft.ps1`) assume a **local Windows environment** with agent CLIs and a fixed repo path (`W:\Websites\sites\ghost-in-the-models`).
+- The editor/review scripts (`auto-review-draft.ps1`, `review-draft.ps1`, `publish-draft.ps1`) assume a **local Windows environment** with agent CLIs and a fixed repo path (the canonical local checkout).
 - GitHub Actions deployed successfully (validation + Pages). Until the queue publisher existed, no CI job ran the editor, recorded approvals, or moved a draft into `posts/` on a timer.
 
 Conclusion: after the approval step was added (PR #10, ~26 Jul), automatic promotion was disabled and the publication step required a local run that did not happen. GH Actions kept validating and deploying, but there were no new posts entering `posts/` to deploy.

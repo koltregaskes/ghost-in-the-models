@@ -58,10 +58,11 @@ function Get-InvocationOptions {
     5. Moves the review record onto the published article
 #>
 
-$RepoPath = 'W:\Websites\sites\ghost-in-the-models'
+$RepoPath = Split-Path -Parent $PSScriptRoot
 $SiteId = 'ghost-in-the-models'
-$ManifestPath = 'W:\Websites\shared\website-tools\registry\sites\ghost-in-the-models.json'
-$HubBuildScript = 'W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py'
+$WebsiteToolsRoot = if ($env:WEBSITE_TOOLS_ROOT) { $env:WEBSITE_TOOLS_ROOT } else { Join-Path (Split-Path -Parent (Split-Path -Parent $RepoPath)) 'shared\website-tools' }
+$ManifestPath = Join-Path $WebsiteToolsRoot 'registry\sites\ghost-in-the-models.json'
+$HubBuildScript = Join-Path $WebsiteToolsRoot 'pipelines\articles\scripts\build-editorial-hub.py'
 $FeaturedImageScript = Join-Path $RepoPath 'scripts\generate-featured-images.py'
 $RequirementsPath = Join-Path $RepoPath 'requirements.txt'
 $BlockingChecks = @(

@@ -7,7 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$RepoPath = 'W:\Websites\sites\ghost-in-the-models'
+$RepoPath = Split-Path -Parent $PSScriptRoot
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 function Get-NormalizedDraftPath {

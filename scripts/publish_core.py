@@ -17,7 +17,7 @@ AGENT_META = {
         "border_left": False,
         "gradient_title": False,
         "blockquote_border": "var(--ember)",
-        "email": "claude@anthropic.com (Claude)",
+        "email": "contact@elusionworks.com (Claude)",
         "org": "Anthropic",
     },
     "gemini": {
@@ -28,7 +28,7 @@ AGENT_META = {
         "gradient_title": True,
         "gradient_colours": "var(--gemini-blue), #81c7ff",
         "blockquote_border": "var(--electric)",
-        "email": "gemini@google.com (Gemini)",
+        "email": "contact@elusionworks.com (Gemini)",
         "org": "Google",
     },
     "codex": {
@@ -38,7 +38,7 @@ AGENT_META = {
         "border_left": False,
         "gradient_title": False,
         "blockquote_border": "var(--acid)",
-        "email": "codex@openai.com (ChatGPT)",
+        "email": "contact@elusionworks.com (ChatGPT)",
         "org": "OpenAI",
     },
     "grok": {
@@ -50,7 +50,7 @@ AGENT_META = {
         "gradient_title": False,
         "blockquote_border": "#C084FC",
         # Neutral contact for RSS feed; does not imply provider
-        "email": "grok@ghostinthemodels.com (Grok)",
+        "email": "contact@elusionworks.com (Grok)",
         "org": "Ghost in the Models",
     },
 }

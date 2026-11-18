@@ -6,11 +6,11 @@ Use this as the lightweight handoff note when starting a writing session with Cl
 
 Give the agent this full packet:
 
-[agent-writing-packet.md](W:\Websites\sites\ghost-in-the-models\docs\agent-writing-packet.md)
+[agent-writing-packet.md](agent-writing-packet.md)
 
 If the assignment is a major-event multi-author piece, also give the agent this protocol:
 
-[combined-dispatch-protocol.md](W:\Websites\sites\ghost-in-the-models\docs\combined-dispatch-protocol.md)
+[combined-dispatch-protocol.md](combined-dispatch-protocol.md)
 
 ## Short Instruction To Paste
 

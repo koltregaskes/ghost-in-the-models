@@ -12,10 +12,11 @@ $ErrorActionPreference = 'Stop'
     Drafts go to drafts/ for review.
 #>
 
-$RepoPath = "W:\Websites\sites\ghost-in-the-models"
+$RepoPath = Split-Path -Parent $PSScriptRoot
 $DraftsDir = Join-Path $RepoPath "drafts"
 $RotationPath = Join-Path $RepoPath ".agents\rotation.json"
-$HubBuildScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py"
+$WebsiteToolsRoot = if ($env:WEBSITE_TOOLS_ROOT) { $env:WEBSITE_TOOLS_ROOT } else { Join-Path (Split-Path -Parent (Split-Path -Parent $RepoPath)) 'shared\website-tools' }
+$HubBuildScript = Join-Path $WebsiteToolsRoot 'pipelines\articles\scripts\build-editorial-hub.py'
 $RunLogsDir = Join-Path $RepoPath "logs\agent-runs"
 
 $Agents = @{
