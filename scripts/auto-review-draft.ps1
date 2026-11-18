@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$RepoPath = 'W:\Websites\sites\ghost-in-the-models'
+$RepoPath = Split-Path -Parent $PSScriptRoot
 $PolicyPath = Join-Path $RepoPath 'config\site-policy.json'
 $ReviewScript = Join-Path $RepoPath 'scripts\review-draft.ps1'
 $PromptPath = Join-Path $RepoPath 'docs\prompt-website-manager.md'

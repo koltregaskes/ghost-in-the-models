@@ -34,8 +34,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$RepoPath = "W:\Websites\sites\ghost-in-the-models"
-$RecorderScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\record-editorial-review.py"
+$RepoPath = Split-Path -Parent $PSScriptRoot
+$WebsiteToolsRoot = if ($env:WEBSITE_TOOLS_ROOT) { $env:WEBSITE_TOOLS_ROOT } else { Join-Path (Split-Path -Parent (Split-Path -Parent $RepoPath)) 'shared\website-tools' }
+$RecorderScript = Join-Path $WebsiteToolsRoot 'pipelines\articles\scripts\record-editorial-review.py'
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 function Write-Utf8NoBom {

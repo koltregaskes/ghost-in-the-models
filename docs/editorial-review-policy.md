@@ -47,6 +47,6 @@ That means:
 
 Use these estate-wide documents for the real process:
 
-- `W:\Websites\shared\website-tools\pipelines\articles\website-manager-editor-packet.md`
-- `W:\Websites\shared\website-tools\pipelines\articles\editorial-review-workflow.md`
-- `W:\Websites\shared\website-tools\pipelines\articles\editorial-checklist.md`
+- the shared website-tools `pipelines\articles\website-manager-editor-packet.md`
+- the shared website-tools `pipelines\articles\editorial-review-workflow.md`
+- the shared website-tools `pipelines\articles\editorial-checklist.md`

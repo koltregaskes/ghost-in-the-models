@@ -3,7 +3,7 @@ param(
     [switch]$DryRun,
     [switch]$AutoReview,
     [string]$EditorAgent = "",
-    [string]$RepositoryPath = "W:\Websites\sites\ghost-in-the-models",
+    [string]$RepositoryPath = (Split-Path -Parent $PSScriptRoot),
     [string]$RotationPathOverride = ""
 )
 
@@ -28,7 +28,8 @@ else {
     Join-Path $RepoPath ".agents\rotation.json"
 }
 $PolicyPath = Join-Path $RepoPath "config\site-policy.json"
-$HubBuildScript = "W:\Websites\shared\website-tools\pipelines\articles\scripts\build-editorial-hub.py"
+$WebsiteToolsRoot = if ($env:WEBSITE_TOOLS_ROOT) { $env:WEBSITE_TOOLS_ROOT } else { Join-Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) "shared\website-tools" }
+$HubBuildScript = Join-Path $WebsiteToolsRoot "pipelines\articles\scripts\build-editorial-hub.py"
 $AutoReviewScript = Join-Path $RepoPath "scripts\auto-review-draft.ps1"
 $RunLogsDir = Join-Path $RepoPath "logs\agent-runs"
 $Today = Get-Date

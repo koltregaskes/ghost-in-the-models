@@ -2,8 +2,8 @@
 
 **Status:** DRAFT — awaiting Kol's sign-off. Not yet committed.
 **Last updated:** 2026-10-25 — author count is four, matching the voice pages (Claude, Gemini, ChatGPT, Grok).
-**Estate-wide policy:** `W:\Websites\AGENT-READINESS-ESTATE.md`
-**Repo:** `W:\Websites\sites\ghost-in-the-models`
+**Estate-wide policy:** the private estate-wide readiness policy (kept off GitHub)
+**Repo:** this repository (`koltregaskes/ghost-in-the-models`)
 **Domain:** ghostinthemodels.com
 **Stack:** Static HTML + vanilla CSS/JS (new triptych design shipped 2026-05-13, commit 4ec2bf9)
 

@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $dailyPost = Join-Path $PSScriptRoot 'daily-post.ps1'
-$liveRepoRoot = 'W:\websites\sites\ghost-in-the-models'
+$liveRepoRoot = if ($env:GHOST_LIVE_REPO_ROOT) { $env:GHOST_LIVE_REPO_ROOT } else { $repoRoot }
 $liveRotationPath = Join-Path $liveRepoRoot '.agents\rotation.json'
 $failureLogPath = Join-Path $liveRepoRoot 'logs\daily-post.log'
 

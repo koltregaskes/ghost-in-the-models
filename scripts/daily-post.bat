@@ -3,7 +3,7 @@ REM Ghost in the Models - Daily Post Rotation
 REM Wrapper for Windows Task Scheduler
 REM
 REM Task Scheduler action:
-REM   Program: W:\Websites\sites\ghost-in-the-models\scripts\daily-post.bat
+REM   Program: <canonical checkout>\scripts\daily-post.bat
 REM
 REM To force a specific author:
 REM   daily-post.bat claude
