@@ -19,3 +19,7 @@ jobs:
       - name: Validate site
         shell: pwsh
         run: ./scripts/validate-site.ps1
+
+      - name: Verify native stderr handling on Windows PowerShell 5.1
+        shell: powershell
+        run: ./scripts/test-invoke-agent-task.ps1
